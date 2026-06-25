@@ -1,0 +1,329 @@
+name: energy-agent-diagnosis
+
+# 应用只接收运行所需配置；基础设施管理员凭据不通过 env_file 整包注入。
+x-app-environment: &app-environment
+  EDA_APP__NAME: ${EDA_APP__NAME:-energy-agent-diagnosis}
+  EDA_APP__VERSION: ${EDA_APP__VERSION:-0.1.0}
+  EDA_APP__ENVIRONMENT: ${EDA_APP__ENVIRONMENT:-development}
+  EDA_APP__DEBUG: ${EDA_APP__DEBUG:-false}
+  EDA_APP__HOST: 0.0.0.0
+  EDA_APP__PORT: 8000
+  EDA_APP__OPENAPI_ENABLED: ${EDA_APP__OPENAPI_ENABLED:-true}
+  EDA_LOGGING__LEVEL: ${EDA_LOGGING__LEVEL:-INFO}
+  EDA_LOGGING__JSON_OUTPUT: ${EDA_LOGGING__JSON_OUTPUT:-false}
+  EDA_METRICS__ENABLED: ${EDA_METRICS__ENABLED:-true}
+  EDA_METRICS__PATH: ${EDA_METRICS__PATH:-/metrics}
+  EDA_METRICS__NAMESPACE: ${EDA_METRICS__NAMESPACE:-energy_diagnosis}
+  EDA_AUTH__ENABLED: ${EDA_AUTH__ENABLED:-true}
+  EDA_AUTH__API_KEYS: ${EDA_AUTH__API_KEYS}
+  EDA_PROVIDERS__DEVICE_PROFILE: ${EDA_PROVIDERS__DEVICE_PROFILE:-mock}
+  EDA_PROVIDERS__ALARM: ${EDA_PROVIDERS__ALARM:-mock}
+  EDA_PROVIDERS__TIMESERIES: ${EDA_PROVIDERS__TIMESERIES:-mock}
+  EDA_PROVIDERS__MANUAL_SEARCH: ${EDA_PROVIDERS__MANUAL_SEARCH:-mock}
+  EDA_PROVIDERS__TICKET_SEARCH: ${EDA_PROVIDERS__TICKET_SEARCH:-mock}
+  EDA_PROVIDERS__GRAPH_RELATION: ${EDA_PROVIDERS__GRAPH_RELATION:-mock}
+  EDA_PROVIDERS__TICKET_WRITE: ${EDA_PROVIDERS__TICKET_WRITE:-mock}
+  EDA_PROVIDERS__CASE_REVIEW: ${EDA_PROVIDERS__CASE_REVIEW:-mock}
+  EDA_MODEL__MODEL_NAME: ${EDA_MODEL__MODEL_NAME:-not-configured}
+  EDA_MODEL__ENDPOINT: ${EDA_MODEL__ENDPOINT:-}
+  EDA_MODEL__TIMEOUT_SECONDS: ${EDA_MODEL__TIMEOUT_SECONDS:-30}
+  EDA_RETRIEVAL__KEYWORD_BACKEND: ${EDA_RETRIEVAL__KEYWORD_BACKEND:-opensearch}
+  EDA_RETRIEVAL__FINAL_TOP_K: ${EDA_RETRIEVAL__FINAL_TOP_K:-5}
+  EDA_RETRIEVAL__SCORE_THRESHOLD: ${EDA_RETRIEVAL__SCORE_THRESHOLD:-0.45}
+  EDA_HEALTH__PROBE_TIMEOUT_SECONDS: ${EDA_HEALTH__PROBE_TIMEOUT_SECONDS:-2}
+
+x-app-base: &app-base
+  build:
+    context: .
+  ports:
+    - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_APP_PORT:-8000}:8000"
+  healthcheck:
+    test:
+      [
+        "CMD",
+        ".venv/bin/python",
+        "-c",
+        "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live')",
+      ]
+    interval: 10s
+    timeout: 3s
+    retries: 12
+  networks: [energy]
+
+services:
+  # dev 是可独立运行的最小开发拓扑，只启用四个核心依赖。
+  app-dev:
+    <<: *app-base
+    profiles: ["dev"]
+    environment:
+      <<: *app-environment
+      EDA_DEPENDENCIES__MYSQL__ENABLED: "true"
+      EDA_DEPENDENCIES__MYSQL__REQUIRED: "true"
+      EDA_DEPENDENCIES__MYSQL__PROTOCOL: tcp
+      EDA_DEPENDENCIES__MYSQL__HOST: mysql
+      EDA_DEPENDENCIES__MYSQL__PORT: 3306
+      EDA_DEPENDENCIES__REDIS__ENABLED: "true"
+      EDA_DEPENDENCIES__REDIS__REQUIRED: "true"
+      EDA_DEPENDENCIES__REDIS__PROTOCOL: redis
+      EDA_DEPENDENCIES__REDIS__HOST: redis
+      EDA_DEPENDENCIES__REDIS__PORT: 6379
+      EDA_DEPENDENCIES__MINIO__ENABLED: "true"
+      EDA_DEPENDENCIES__MINIO__REQUIRED: "true"
+      EDA_DEPENDENCIES__MINIO__PROTOCOL: http
+      EDA_DEPENDENCIES__MINIO__URL: http://minio:9000/minio/health/ready
+      EDA_DEPENDENCIES__RABBITMQ__ENABLED: "true"
+      EDA_DEPENDENCIES__RABBITMQ__REQUIRED: "true"
+      EDA_DEPENDENCIES__RABBITMQ__PROTOCOL: tcp
+      EDA_DEPENDENCIES__RABBITMQ__HOST: rabbitmq
+      EDA_DEPENDENCIES__RABBITMQ__PORT: 5672
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+
+  # full 是阶段 1 运行验收拓扑，readiness 必须验证全部八类依赖。
+  app:
+    <<: *app-base
+    profiles: ["full"]
+    environment:
+      <<: *app-environment
+      EDA_DEPENDENCIES__MYSQL__ENABLED: "true"
+      EDA_DEPENDENCIES__MYSQL__REQUIRED: "true"
+      EDA_DEPENDENCIES__MYSQL__PROTOCOL: tcp
+      EDA_DEPENDENCIES__MYSQL__HOST: mysql
+      EDA_DEPENDENCIES__MYSQL__PORT: 3306
+      EDA_DEPENDENCIES__REDIS__ENABLED: "true"
+      EDA_DEPENDENCIES__REDIS__REQUIRED: "true"
+      EDA_DEPENDENCIES__REDIS__PROTOCOL: redis
+      EDA_DEPENDENCIES__REDIS__HOST: redis
+      EDA_DEPENDENCIES__REDIS__PORT: 6379
+      EDA_DEPENDENCIES__MINIO__ENABLED: "true"
+      EDA_DEPENDENCIES__MINIO__REQUIRED: "true"
+      EDA_DEPENDENCIES__MINIO__PROTOCOL: http
+      EDA_DEPENDENCIES__MINIO__URL: http://minio:9000/minio/health/ready
+      EDA_DEPENDENCIES__RABBITMQ__ENABLED: "true"
+      EDA_DEPENDENCIES__RABBITMQ__REQUIRED: "true"
+      EDA_DEPENDENCIES__RABBITMQ__PROTOCOL: tcp
+      EDA_DEPENDENCIES__RABBITMQ__HOST: rabbitmq
+      EDA_DEPENDENCIES__RABBITMQ__PORT: 5672
+      EDA_DEPENDENCIES__MILVUS__ENABLED: "true"
+      EDA_DEPENDENCIES__MILVUS__REQUIRED: "true"
+      EDA_DEPENDENCIES__MILVUS__PROTOCOL: tcp
+      EDA_DEPENDENCIES__MILVUS__HOST: milvus
+      EDA_DEPENDENCIES__MILVUS__PORT: 19530
+      EDA_DEPENDENCIES__NEO4J__ENABLED: "true"
+      EDA_DEPENDENCIES__NEO4J__REQUIRED: "true"
+      EDA_DEPENDENCIES__NEO4J__PROTOCOL: tcp
+      EDA_DEPENDENCIES__NEO4J__HOST: neo4j
+      EDA_DEPENDENCIES__NEO4J__PORT: 7687
+      EDA_DEPENDENCIES__INFLUXDB__ENABLED: "true"
+      EDA_DEPENDENCIES__INFLUXDB__REQUIRED: "true"
+      EDA_DEPENDENCIES__INFLUXDB__PROTOCOL: http
+      EDA_DEPENDENCIES__INFLUXDB__URL: http://influxdb:8086/health
+      EDA_DEPENDENCIES__OPENSEARCH__ENABLED: "true"
+      EDA_DEPENDENCIES__OPENSEARCH__REQUIRED: "true"
+      EDA_DEPENDENCIES__OPENSEARCH__PROTOCOL: http
+      EDA_DEPENDENCIES__OPENSEARCH__URL: http://opensearch:9200/_cluster/health
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
+  mysql:
+    profiles: ["dev", "core", "full"]
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports: ["${EDA_BIND_HOST:-127.0.0.1}:${EDA_MYSQL_PORT:-3306}:3306"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [energy]
+
+  redis:
+    profiles: ["dev", "core", "full"]
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["${EDA_BIND_HOST:-127.0.0.1}:${EDA_REDIS_PORT:-6379}:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [energy]
+
+  minio:
+    profiles: ["dev", "core", "retrieval", "full"]
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_MINIO_API_PORT:-9000}:9000"
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes: ["minio-data:/data"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [energy]
+
+  rabbitmq:
+    profiles: ["dev", "core", "full"]
+    image: rabbitmq:4.1-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_RABBITMQ_PORT:-5672}:5672"
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_RABBITMQ_CONSOLE_PORT:-15672}:15672"
+    volumes: ["rabbitmq-data:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [energy]
+
+  etcd:
+    profiles: ["retrieval", "full"]
+    image: quay.io/coreos/etcd:v3.5.18
+    command:
+      - etcd
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      # 显式使用命名卷挂载点，否则 etcd 默认目录不会持久化到所声明的卷。
+      - --data-dir=/etcd
+    volumes: ["etcd-data:/etcd"]
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [energy]
+
+  milvus:
+    profiles: ["retrieval", "full"]
+    image: milvusdb/milvus:v2.5.4
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_MILVUS_PORT:-19530}:19530"
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_MILVUS_HEALTH_PORT:-9091}:9091"
+    volumes: ["milvus-data:/var/lib/milvus"]
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    # Milvus 官方 standalone 模板放宽 seccomp；仅作用于本地容器，不授予 privileged。
+    security_opt: ["seccomp:unconfined"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://127.0.0.1:9091/healthz",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    networks: [energy]
+
+  neo4j:
+    profiles: ["graph", "full"]
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH}
+    ports:
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_NEO4J_HTTP_PORT:-7474}:7474"
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_NEO4J_BOLT_PORT:-7687}:7687"
+    volumes: ["neo4j-data:/data"]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [energy]
+
+  influxdb:
+    profiles: ["timeseries", "full"]
+    image: influxdb:2.7.11
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: energy
+      DOCKER_INFLUXDB_INIT_BUCKET: diagnosis
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+    ports: ["${EDA_BIND_HOST:-127.0.0.1}:${EDA_INFLUXDB_PORT:-8086}:8086"]
+    volumes: ["influxdb-data:/var/lib/influxdb2"]
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [energy]
+
+  opensearch:
+    profiles: ["search", "full"]
+    image: opensearchproject/opensearch:2.19.1
+    environment:
+      discovery.type: single-node
+      # 阶段 1 本地环境关闭安全插件；端口默认仅绑定 loopback，禁止对外网暴露。
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_OPENSEARCH_PORT:-9200}:9200"
+      - "${EDA_BIND_HOST:-127.0.0.1}:${EDA_OPENSEARCH_METRICS_PORT:-9600}:9600"
+    volumes: ["opensearch-data:/usr/share/opensearch/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+    networks: [energy]
+
+networks:
+  energy:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  minio-data:
+  rabbitmq-data:
+  etcd-data:
+  milvus-data:
+  neo4j-data:
+  influxdb-data:
+  opensearch-data:

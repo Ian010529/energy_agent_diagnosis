@@ -1,0 +1,52 @@
+name: stage1-ci
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 uv 和 Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.8"
+          python-version: "3.13.13"
+          enable-cache: true
+      - name: 同步锁定依赖
+        run: uv sync --all-groups --frozen
+      - name: 验证锁文件和唯一虚拟环境
+        run: |
+          uv lock --check
+          .venv/bin/python -c "import pathlib, sys; assert sys.version_info[:3] == (3, 13, 13); assert pathlib.Path(sys.prefix).resolve() == pathlib.Path('.venv').resolve()"
+      - name: 运行阶段 1 质量门禁
+        run: make check
+      - name: 检查部署脚本语法
+        run: bash -n scripts/up.sh scripts/down.sh scripts/smoke.sh
+      - name: 校验 Compose
+        run: make compose-config
+      - name: 构建应用镜像
+        run: |
+          docker build --tag energy-agent-diagnosis:ci .
+          docker run --rm energy-agent-diagnosis:ci python --version | grep 'Python 3.13.13'
+
+  integration-dev:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - name: 启动最小开发拓扑并执行真实联通验收
+        run: docker compose --env-file .env.example --profile dev up -d --build --wait
+      - name: 执行应用 Smoke Test
+        run: EDA_ENV_FILE=.env.example ./scripts/smoke.sh
+      - name: 始终输出诊断日志并停止服务
+        if: always()
+        run: |
+          docker compose --env-file .env.example --profile dev ps
+          docker compose --env-file .env.example --profile dev logs --no-color || true
+          docker compose --env-file .env.example --profile dev down

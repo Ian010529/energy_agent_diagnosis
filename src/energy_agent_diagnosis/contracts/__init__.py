@@ -1,0 +1,41 @@
+"""跨模块共享且不依赖基础设施的公共契约。"""
+
+from energy_agent_diagnosis.contracts.models import (
+    AlarmContext,
+    CandidateCause,
+    DiagnosisResult,
+    DiagnosisStatus,
+    ErrorResponse,
+    EvidenceItem,
+    EvidencePackage,
+    Principal,
+    ProviderType,
+    RequestContext,
+    Role,
+    TicketSuggestion,
+    TimeWindow,
+    ToolContext,
+    ToolMeta,
+    ToolResult,
+    ToolStatus,
+)
+
+__all__ = [
+    "AlarmContext",
+    "CandidateCause",
+    "DiagnosisResult",
+    "DiagnosisStatus",
+    "ErrorResponse",
+    "EvidenceItem",
+    "EvidencePackage",
+    "Principal",
+    "ProviderType",
+    "RequestContext",
+    "Role",
+    "TicketSuggestion",
+    "TimeWindow",
+    "ToolContext",
+    "ToolMeta",
+    "ToolResult",
+    "ToolStatus",
+]
