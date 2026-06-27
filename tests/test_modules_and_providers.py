@@ -57,6 +57,7 @@ async def test_null_provider_returns_standard_not_found() -> None:
     assert result.status is ToolStatus.NOT_FOUND
     assert result.error_code == "MOCK_DATA_NOT_CONFIGURED"
     assert result.meta.provider_type == "mock"
+    assert result.meta.source_system == "null-provider"
 
 
 @pytest.mark.parametrize(

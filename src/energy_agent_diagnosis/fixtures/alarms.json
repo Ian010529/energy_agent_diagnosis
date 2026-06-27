@@ -1,0 +1,56 @@
+[
+  {
+    "alarm_id": "ALARM-20260626-0001",
+    "device_id": "PCS-10086",
+    "site_id": "SITE-01",
+    "alarm_name": "PCS机柜温度持续升高",
+    "alarm_level": "major",
+    "trigger_time": "2026-06-26T10:20:00+08:00",
+    "raw_message": "PCS-10086 cabinet temperature keeps rising for 30 minutes"
+  },
+  {
+    "alarm_id": "ALARM-20260626-0002",
+    "device_id": "PCS-10087",
+    "site_id": "SITE-01",
+    "alarm_name": "散热风扇异常",
+    "alarm_level": "critical",
+    "trigger_time": "2026-06-26T10:25:00+08:00",
+    "raw_message": "Cooling fan tachometer is zero while cabinet temperature rises"
+  },
+  {
+    "alarm_id": "ALARM-20260626-0003",
+    "device_id": "INV-20001",
+    "site_id": "SITE-01",
+    "alarm_name": "逆变器通讯中断",
+    "alarm_level": "major",
+    "trigger_time": "2026-06-26T10:30:00+08:00",
+    "raw_message": "Inverter telemetry heartbeat missing for 5 minutes"
+  },
+  {
+    "alarm_id": "ALARM-20260626-0004",
+    "device_id": "INV-20002",
+    "site_id": "SITE-01",
+    "alarm_name": "逆变器输出功率异常",
+    "alarm_level": "minor",
+    "trigger_time": "2026-06-26T10:35:00+08:00",
+    "raw_message": "Output power is lower than expected irradiance curve"
+  },
+  {
+    "alarm_id": "ALARM-20260626-0005",
+    "device_id": "PCS-10088",
+    "site_id": "SITE-01",
+    "alarm_name": "电流采样异常",
+    "alarm_level": "major",
+    "trigger_time": "2026-06-26T10:40:00+08:00",
+    "raw_message": "Current sensor value is out of configured range"
+  },
+  {
+    "alarm_id": "ALARM-20260626-0006",
+    "device_id": "WT-40001",
+    "site_id": "SITE-03",
+    "alarm_name": "齿轮箱温度偏高",
+    "alarm_level": "major",
+    "trigger_time": "2026-06-26T10:45:00+08:00",
+    "raw_message": "Gearbox temperature is above warning threshold"
+  }
+]

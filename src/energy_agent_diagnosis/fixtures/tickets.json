@@ -1,0 +1,72 @@
+[
+  {
+    "ticket_id": "TICKET-20250132",
+    "site_id": "SITE-01",
+    "device_id": "PCS-10081",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "alarm_name": "PCS机柜温度持续升高",
+    "fault_symptom": "机柜温度在30分钟内持续升高，风扇转速多次降为0。",
+    "root_cause": "散热风扇失效",
+    "action_taken": "更换散热风扇并清理滤网，复测温度恢复正常。",
+    "is_verified": true,
+    "close_time": "2025-04-18T16:30:00+08:00"
+  },
+  {
+    "ticket_id": "TICKET-20250201",
+    "site_id": "SITE-01",
+    "device_id": "PCS-10082",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "alarm_name": "散热风扇异常",
+    "fault_symptom": "风扇转速反馈为0，柜内积尘明显。",
+    "root_cause": "风扇反馈线束松动",
+    "action_taken": "重新固定反馈线束并清理积尘。",
+    "is_verified": true,
+    "close_time": "2025-05-03T11:10:00+08:00"
+  },
+  {
+    "ticket_id": "TICKET-20250345",
+    "site_id": "SITE-01",
+    "device_id": "INV-20011",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "alarm_name": "逆变器通讯中断",
+    "fault_symptom": "逆变器遥测中断，交换机端口指示灯异常。",
+    "root_cause": "交换机端口故障",
+    "action_taken": "更换交换机端口并恢复采集器通讯。",
+    "is_verified": true,
+    "close_time": "2025-06-12T14:20:00+08:00"
+  },
+  {
+    "ticket_id": "TICKET-20250408",
+    "site_id": "SITE-01",
+    "device_id": "INV-20012",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "alarm_name": "逆变器输出功率异常",
+    "fault_symptom": "辐照正常但输出偏低，组串电压存在离散。",
+    "root_cause": "组串接头接触不良",
+    "action_taken": "复紧组串接头并复测功率曲线。",
+    "is_verified": true,
+    "close_time": "2025-07-22T09:45:00+08:00"
+  },
+  {
+    "ticket_id": "TICKET-20250519",
+    "site_id": "SITE-01",
+    "device_id": "PCS-10083",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "alarm_name": "电流采样异常",
+    "fault_symptom": "电流采样值偶发跳变，现场未发现负载突变。",
+    "root_cause": "电流传感器漂移",
+    "action_taken": "校准传感器并更新采样模块。",
+    "is_verified": false,
+    "close_time": "2025-08-07T15:10:00+08:00"
+  }
+]

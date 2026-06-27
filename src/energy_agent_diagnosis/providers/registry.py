@@ -1,4 +1,4 @@
-"""注册 Provider 实现，并提供无业务数据的阶段 1 Null 骨架。"""
+"""注册 Provider 实现，并提供未接入能力的 Null 骨架。"""
 
 from enum import StrEnum
 
@@ -22,6 +22,11 @@ from energy_agent_diagnosis.ports.providers import (
     TicketWriteProvider,
     TimeseriesProvider,
 )
+from energy_agent_diagnosis.providers.alarm import MockAlarmProvider
+from energy_agent_diagnosis.providers.device_profile import MockDeviceProfileProvider
+from energy_agent_diagnosis.providers.manual_search import MockManualSearchProvider
+from energy_agent_diagnosis.providers.ticket_search import MockTicketSearchProvider
+from energy_agent_diagnosis.providers.timeseries import MockTimeseriesProvider
 
 ProviderImplementation = (
     DeviceProfileProvider
@@ -86,22 +91,22 @@ class ProviderRegistry:
 
 
 class NullProvider:
-    """阶段 1 的统一 Mock 骨架，不伪造任何业务数据。"""
+    """未配置能力的统一 Provider 骨架，不伪造任何业务数据。"""
 
     @staticmethod
     def _not_found(context: ToolContext, operation: str) -> ProviderResult:
-        """返回可回归的标准空结果，明确当前仅有骨架。"""
+        """返回可回归的标准空结果，明确当前能力尚未接入。"""
         return ToolResult[Payload](
             success=False,
             status=ToolStatus.NOT_FOUND,
             data={},
             meta=ToolMeta(
                 trace_id=context.trace_id,
-                source_system="stage1-null-provider",
+                source_system="null-provider",
                 provider_type="mock",
             ),
             error_code="MOCK_DATA_NOT_CONFIGURED",
-            error_message=f"阶段 1 未配置业务 Mock 数据: {operation}",
+            error_message=f"当前阶段未配置该 Provider Mock 数据或能力: {operation}",
         )
 
     async def get_device_profile(self, context: ToolContext, payload: Payload) -> ProviderResult:
@@ -163,7 +168,7 @@ def build_null_registry() -> ProviderRegistry:
 
 
 def build_provider_registry(settings: ProviderSettings) -> ProviderRegistry:
-    """按配置组装 Provider；阶段 1 遇到 Real 配置时快速失败，禁止伪装回退。"""
+    """按配置组装 Provider；未实现 Real 时快速失败，禁止伪装回退。"""
     configured = {
         ProviderName.DEVICE_PROFILE: settings.device_profile,
         ProviderName.ALARM: settings.alarm,
@@ -180,8 +185,20 @@ def build_provider_registry(settings: ProviderSettings) -> ProviderRegistry:
         if provider_type is ProviderType.REAL
     ]
     if unsupported:
-        raise ValueError(f"阶段 1 尚未实现 Real Provider: {', '.join(unsupported)}")
-    return build_null_registry()
+        raise ValueError(f"尚未实现 Real Provider: {', '.join(unsupported)}")
+
+    registry = ProviderRegistry()
+    null_provider = NullProvider()
+    # 阶段 2 只启用五个只读 Mock Provider；写入和审核类仍由 NullProvider 明确提示未配置。
+    registry.register(ProviderName.DEVICE_PROFILE, MockDeviceProfileProvider())
+    registry.register(ProviderName.ALARM, MockAlarmProvider())
+    registry.register(ProviderName.TIMESERIES, MockTimeseriesProvider())
+    registry.register(ProviderName.MANUAL_SEARCH, MockManualSearchProvider())
+    registry.register(ProviderName.TICKET_SEARCH, MockTicketSearchProvider())
+    registry.register(ProviderName.GRAPH_RELATION, null_provider)
+    registry.register(ProviderName.TICKET_WRITE, null_provider)
+    registry.register(ProviderName.CASE_REVIEW, null_provider)
+    return registry
 
 
 # 静态赋值让 Mypy 验证一个 Null 实现同时满足八类端口，而非依赖 object 逃逸类型检查。

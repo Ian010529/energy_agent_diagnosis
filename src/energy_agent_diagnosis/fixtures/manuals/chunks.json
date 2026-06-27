@@ -1,0 +1,67 @@
+[
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0032",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 42,
+    "version": "2025.01",
+    "keywords": ["PCS", "温度告警", "散热", "风扇", "滤网"]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0033",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 43,
+    "version": "2025.01",
+    "keywords": ["PCS", "风扇异常", "转速", "供电", "控制板"]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0010",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 18,
+    "version": "2024.12",
+    "keywords": ["逆变器", "通讯中断", "数据采集器", "交换机"]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0024",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 31,
+    "version": "2024.12",
+    "keywords": ["逆变器", "功率异常", "辐照度", "组串电压"]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0051",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 76,
+    "version": "2025.02",
+    "keywords": ["风机", "齿轮箱", "温度", "冷却", "润滑油"]
+  }
+]

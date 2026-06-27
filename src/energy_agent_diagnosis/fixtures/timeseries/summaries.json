@@ -1,0 +1,104 @@
+[
+  {
+    "device_id": "PCS-10086",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 41.2,
+        "max": 68.7,
+        "avg": 55.4,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:18:00+08:00",
+            "value": 67.9,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 520,
+        "avg": 210,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:12:00+08:00",
+            "value": 0,
+            "reason": "fan_stopped"
+          }
+        ]
+      },
+      {
+        "metric_name": "ambient_temperature",
+        "min": 31.1,
+        "max": 33.4,
+        "avg": 32.2,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.97
+  },
+  {
+    "device_id": "INV-20001",
+    "start_time": "2026-06-26T10:00:00+08:00",
+    "end_time": "2026-06-26T10:30:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "communication_status",
+        "min": 0,
+        "max": 1,
+        "avg": 0.2,
+        "trend": "interrupted",
+        "quality": "partial",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:26:00+08:00",
+            "value": 0,
+            "reason": "heartbeat_missing"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.72
+  },
+  {
+    "device_id": "INV-20002",
+    "start_time": "2026-06-26T10:05:00+08:00",
+    "end_time": "2026-06-26T10:35:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "active_power",
+        "min": 23.4,
+        "max": 45.2,
+        "avg": 31.9,
+        "trend": "lower_than_expected",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:34:00+08:00",
+            "value": 24.1,
+            "reason": "below_expected_curve"
+          }
+        ]
+      },
+      {
+        "metric_name": "dc_voltage",
+        "min": 795.0,
+        "max": 812.5,
+        "avg": 804.8,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.94
+  }
+]

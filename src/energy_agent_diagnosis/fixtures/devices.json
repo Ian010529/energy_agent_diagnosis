@@ -1,0 +1,112 @@
+[
+  {
+    "device_id": "PCS-10086",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "site_id": "SITE-01",
+    "commission_time": "2024-03-01T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 5000,
+    "location": "储能区 A-01"
+  },
+  {
+    "device_id": "PCS-10087",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "site_id": "SITE-01",
+    "commission_time": "2024-03-02T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 5000,
+    "location": "储能区 A-02"
+  },
+  {
+    "device_id": "PCS-10088",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "site_id": "SITE-01",
+    "commission_time": "2023-11-15T08:00:00+08:00",
+    "status": "maintenance",
+    "rated_power": 2500,
+    "location": "储能区 B-01"
+  },
+  {
+    "device_id": "INV-20001",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "site_id": "SITE-01",
+    "commission_time": "2023-06-10T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 100,
+    "location": "光伏区 P-01"
+  },
+  {
+    "device_id": "INV-20002",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "site_id": "SITE-01",
+    "commission_time": "2023-06-11T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 100,
+    "location": "光伏区 P-02"
+  },
+  {
+    "device_id": "INV-20003",
+    "device_type": "inverter",
+    "device_model": "SG125HX",
+    "manufacturer": "Sungrow",
+    "site_id": "SITE-02",
+    "commission_time": "2024-01-18T08:00:00+08:00",
+    "status": "offline",
+    "rated_power": 125,
+    "location": "光伏区 P-03"
+  },
+  {
+    "device_id": "FAN-30001",
+    "device_type": "cooling_fan",
+    "device_model": "CF-900",
+    "manufacturer": "Delta",
+    "site_id": "SITE-01",
+    "commission_time": "2024-03-01T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 2,
+    "location": "PCS-10086 机柜"
+  },
+  {
+    "device_id": "FAN-30002",
+    "device_type": "cooling_fan",
+    "device_model": "CF-900",
+    "manufacturer": "Delta",
+    "site_id": "SITE-01",
+    "commission_time": "2024-03-02T08:00:00+08:00",
+    "status": "fault",
+    "rated_power": 2,
+    "location": "PCS-10087 机柜"
+  },
+  {
+    "device_id": "WT-40001",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "site_id": "SITE-03",
+    "commission_time": "2022-09-01T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 3300,
+    "location": "风机区 W-01"
+  },
+  {
+    "device_id": "ENV-90001",
+    "device_type": "environment_sensor",
+    "device_model": "ENV-T1",
+    "manufacturer": "Honeywell",
+    "site_id": "SITE-01",
+    "commission_time": "2023-05-20T08:00:00+08:00",
+    "status": "running",
+    "rated_power": 1,
+    "location": "储能区室外"
+  }
+]
