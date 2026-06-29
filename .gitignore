@@ -15,6 +15,12 @@ dist/
 build/
 *.egg-info/
 
+# 本地开发文档，不推送到远端仓库
+代码工程里的数据接入方案.md
+能源设备运维诊断 Agent_研发落地补充说明.md
+能源设备运维诊断Agent_实施计划.md
+能源设备运维诊断Agent_详细设计.md
+
 # 编辑器与系统文件
 .DS_Store
 .idea/
