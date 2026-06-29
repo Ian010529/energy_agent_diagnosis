@@ -2,33 +2,156 @@
   {
     "doc_id": "MANUAL-PCS-017",
     "chunk_id": "chunk_0032",
-    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 1，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
     "device_type": "PCS",
     "device_model": "SC5000",
     "manufacturer": "Sungrow",
     "chapter_title": "散热系统维护",
     "section_type": "维护步骤",
-    "page_no": 42,
+    "page_no": 10,
     "version": "2025.01",
-    "keywords": ["PCS", "温度告警", "散热", "风扇", "滤网"]
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
   },
   {
     "doc_id": "MANUAL-PCS-017",
     "chunk_id": "chunk_0033",
-    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 2，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
     "device_type": "PCS",
     "device_model": "SC5000",
     "manufacturer": "Sungrow",
     "chapter_title": "风扇异常处理",
     "section_type": "告警定义",
-    "page_no": 43,
+    "page_no": 11,
     "version": "2025.01",
-    "keywords": ["PCS", "风扇异常", "转速", "供电", "控制板"]
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
   },
   {
     "doc_id": "MANUAL-INV-009",
     "chunk_id": "chunk_0010",
-    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 3，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 12,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0024",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 4，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 13,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0051",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 5，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 14,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0006",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 6，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 15,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0007",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 7，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 16,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0008",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 8，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 17,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0009",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 9，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
     "device_type": "inverter",
     "device_model": "SUN2000-100KTL",
     "manufacturer": "Huawei",
@@ -36,12 +159,239 @@
     "section_type": "维护步骤",
     "page_no": 18,
     "version": "2024.12",
-    "keywords": ["逆变器", "通讯中断", "数据采集器", "交换机"]
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
   },
   {
     "doc_id": "MANUAL-INV-009",
-    "chunk_id": "chunk_0024",
-    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。",
+    "chunk_id": "chunk_0010",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 10，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 19,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0011",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 11，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 20,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0012",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 12，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 21,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0013",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 13，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 22,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0014",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 14，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 23,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0015",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 15，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 24,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0016",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 16，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 25,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0017",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 17，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 26,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0018",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 18，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 27,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0019",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 19，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 28,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0020",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 20，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 29,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0021",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 21，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 30,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0022",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 22，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
     "device_type": "inverter",
     "device_model": "SUN2000-100KTL",
     "manufacturer": "Huawei",
@@ -49,19 +399,1824 @@
     "section_type": "正文",
     "page_no": 31,
     "version": "2024.12",
-    "keywords": ["逆变器", "功率异常", "辐照度", "组串电压"]
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
   },
   {
     "doc_id": "MANUAL-WT-003",
-    "chunk_id": "chunk_0051",
-    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。",
+    "chunk_id": "chunk_0023",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 23，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
     "device_type": "wind_turbine",
     "device_model": "GW155-3.3MW",
     "manufacturer": "Goldwind",
     "chapter_title": "齿轮箱温度异常",
     "section_type": "维护步骤",
+    "page_no": 32,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0024",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 24，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 33,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0025",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 25，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 34,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0026",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 26，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 35,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0027",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 27，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 36,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0028",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 28，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 37,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0029",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 29，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 38,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0030",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 30，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 39,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0031",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 31，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 40,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0032",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 32，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 41,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0033",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 33，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 42,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0034",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 34，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 43,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0035",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 35，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 44,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0036",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 36，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 45,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0037",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 37，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 46,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0038",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 38，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 47,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0039",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 39，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 48,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0040",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 40，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 49,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0041",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 41，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 50,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0042",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 42，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 51,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0043",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 43，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 52,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0044",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 44，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 53,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0045",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 45，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 54,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0046",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 46，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 55,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0047",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 47，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 56,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0048",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 48，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 57,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0049",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 49，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 58,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0050",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 50，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 59,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0051",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 51，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 60,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0052",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 52，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 61,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0053",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 53，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 62,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0054",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 54，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 63,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0055",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 55，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 64,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0056",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 56，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 65,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0057",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 57，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 66,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0058",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 58，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 67,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0059",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 59，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 68,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0060",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 60，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 69,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0061",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 61，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 70,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0062",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 62，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 71,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0063",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 63，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 72,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0064",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 64，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 73,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0065",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 65，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 74,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0066",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 66，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 75,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0067",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 67，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
     "page_no": 76,
-    "version": "2025.02",
-    "keywords": ["风机", "齿轮箱", "温度", "冷却", "润滑油"]
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0068",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 68，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 77,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0069",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 69，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 78,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0070",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 70，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 79,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0071",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 71，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 80,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0072",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 72，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 81,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0073",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 73，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 82,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0074",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 74，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 83,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0075",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 75，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 84,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0076",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 76，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 85,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0077",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 77，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 86,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0078",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 78，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 87,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0079",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 79，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 88,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0080",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 80，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 89,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0081",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 81，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 90,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0082",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 82，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 91,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0083",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 83，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 92,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0084",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 84，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 93,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0085",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 85，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 94,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0086",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 86，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 95,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0087",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 87，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 96,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0088",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 88，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 97,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0089",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 89，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 98,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0090",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 90，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 99,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0091",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 91，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 100,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0092",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 92，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 101,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0093",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 93，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 102,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0094",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 94，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 103,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0095",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 95，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 104,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0096",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 96，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 105,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0097",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 97，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 106,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0098",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 98，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 107,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0099",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 99，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 108,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0100",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 100，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 109,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0101",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 101，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 110,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0102",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 102，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 111,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0103",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 103，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 112,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0104",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 104，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 113,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0105",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 105，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 114,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0106",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 106，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 115,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0107",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 107，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 116,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0108",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 108，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 117,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0109",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 109，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 118,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0110",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 110，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 119,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0111",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 111，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 120,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0112",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 112，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 121,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0113",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 113，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 122,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0114",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 114，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 123,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0115",
+    "content": "若PCS机柜温度持续升高，应优先检查散热风扇运行状态、滤网堵塞情况和环境温度。确认风扇转速异常时，应转人工确认后再安排停机检查。 阶段2样例片段 115，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "散热系统维护",
+    "section_type": "维护步骤",
+    "page_no": 124,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "温度告警",
+      "散热",
+      "风扇",
+      "滤网"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-017",
+    "chunk_id": "chunk_0116",
+    "content": "散热风扇异常告警出现后，检查风扇供电、转速反馈线束、风扇控制板和柜内积尘。涉及断电或拆卸前必须由现场负责人确认安全措施。 阶段2样例片段 116，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "manufacturer": "Sungrow",
+    "chapter_title": "风扇异常处理",
+    "section_type": "告警定义",
+    "page_no": 125,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "风扇异常",
+      "转速",
+      "供电",
+      "控制板"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0117",
+    "content": "逆变器通讯中断时，应先确认数据采集器在线状态、通讯链路供电、交换机端口和网络地址配置，再判断是否为逆变器本体故障。 阶段2样例片段 117，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "通讯故障排查",
+    "section_type": "维护步骤",
+    "page_no": 126,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "通讯中断",
+      "数据采集器",
+      "交换机"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-INV-009",
+    "chunk_id": "chunk_0118",
+    "content": "输出功率低于预期时，需结合辐照度、组串电压、直流侧告警和限功率策略判断，不应仅凭单点功率下降确认逆变器故障。 阶段2样例片段 118，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "manufacturer": "Huawei",
+    "chapter_title": "功率异常排查",
+    "section_type": "正文",
+    "page_no": 127,
+    "version": "2024.12",
+    "keywords": [
+      "逆变器",
+      "功率异常",
+      "辐照度",
+      "组串电压"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-WT-003",
+    "chunk_id": "chunk_0119",
+    "content": "齿轮箱温度偏高时，应同时检查润滑油温度、冷却回路、环境温度和近期负载变化。高温持续或伴随振动异常时需人工确认停机策略。 阶段2样例片段 119，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "manufacturer": "Goldwind",
+    "chapter_title": "齿轮箱温度异常",
+    "section_type": "维护步骤",
+    "page_no": 128,
+    "version": "2025.01",
+    "keywords": [
+      "风机",
+      "齿轮箱",
+      "温度",
+      "冷却",
+      "润滑油"
+    ]
+  },
+  {
+    "doc_id": "MANUAL-PCS-025",
+    "chunk_id": "chunk_0120",
+    "content": "电流采样异常时，应核对采样模块、传感器接线、校准记录和负载变化。传感器漂移需经现场复测确认。 阶段2样例片段 120，用于验证元数据过滤和关键词索引，不代表真实手册全文。",
+    "device_type": "PCS",
+    "device_model": "SC2500",
+    "manufacturer": "Sinexcel",
+    "chapter_title": "采样异常处理",
+    "section_type": "告警定义",
+    "page_no": 129,
+    "version": "2025.01",
+    "keywords": [
+      "PCS",
+      "电流采样",
+      "传感器",
+      "校准"
+    ]
   }
 ]

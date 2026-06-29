@@ -4,12 +4,26 @@
 归一化、错误和契约测试；调用方不得通过实现类型改变处理分支。
 """
 
+from enum import StrEnum
 from typing import Any, Protocol
 
 from energy_agent_diagnosis.contracts import ToolContext, ToolResult
 
 Payload = dict[str, Any]
 ProviderResult = ToolResult[Payload]
+
+
+class ProviderName(StrEnum):
+    """八类 Provider 的稳定注册名称。"""
+
+    DEVICE_PROFILE = "device_profile"
+    ALARM = "alarm"
+    TIMESERIES = "timeseries"
+    MANUAL_SEARCH = "manual_search"
+    TICKET_SEARCH = "ticket_search"
+    GRAPH_RELATION = "graph_relation"
+    TICKET_WRITE = "ticket_write"
+    CASE_REVIEW = "case_review"
 
 
 class DeviceProfileProvider(Protocol):
@@ -89,4 +103,24 @@ class CaseReviewProvider(Protocol):
 
     async def append_case_review(self, context: ToolContext, payload: Payload) -> ProviderResult:
         """返回案例审核记录状态。"""
+        ...
+
+
+ProviderImplementation = (
+    DeviceProfileProvider
+    | AlarmProvider
+    | TimeseriesProvider
+    | ManualSearchProvider
+    | TicketSearchProvider
+    | GraphRelationProvider
+    | TicketWriteProvider
+    | CaseReviewProvider
+)
+
+
+class ProviderLookup(Protocol):
+    """工具层需要的最小 Provider 查找端口。"""
+
+    def get(self, name: ProviderName) -> ProviderImplementation:
+        """返回指定 Provider 实现。"""
         ...

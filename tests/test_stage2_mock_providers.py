@@ -19,11 +19,13 @@ from energy_agent_diagnosis.ports import (
 )
 from energy_agent_diagnosis.providers import (
     MockAlarmProvider,
+    MockCaseReviewProvider,
     MockDeviceProfileProvider,
+    MockGraphRelationProvider,
     MockManualSearchProvider,
     MockTicketSearchProvider,
+    MockTicketWriteProvider,
     MockTimeseriesProvider,
-    NullProvider,
     ProviderName,
     build_provider_registry,
 )
@@ -39,6 +41,7 @@ def test_stage2_fixtures_are_valid_json_arrays() -> None:
         "timeseries/summaries.json",
         "manuals/chunks.json",
         "tickets.json",
+        "graph_relations.json",
     ):
         raw: object = json.loads((FIXTURE_ROOT / relative_path).read_text(encoding="utf-8"))
         assert isinstance(raw, list)
@@ -187,6 +190,71 @@ async def test_ticket_search_mock_respects_verified_only() -> None:
     assert no_keyword_hit.status is ToolStatus.NOT_FOUND
 
 
+@pytest.mark.asyncio
+async def test_graph_relation_mock_returns_relations_and_not_found() -> None:
+    """图谱 Mock 返回弱证据关系；未命中时不阻断主链路。"""
+    provider = MockGraphRelationProvider()
+    context = ToolContext(trace_id="trace-graph", source_system="test")
+
+    result = await provider.query_graph_relations(
+        context,
+        {"alarm_name": "PCS机柜温度持续升高", "device_type": "PCS", "top_k": 3},
+    )
+    missing = await provider.query_graph_relations(
+        context,
+        {"alarm_name": "不存在的告警", "device_type": "PCS"},
+    )
+
+    assert result.status is ToolStatus.OK
+    assert result.meta.trace_id == "trace-graph"
+    assert result.meta.provider_type is ProviderType.MOCK
+    assert result.data and result.data["relations"][0]["source_type"] == "graph"
+    assert result.data["relations"][0]["weak_evidence"] is True
+    assert missing.status is ToolStatus.NOT_FOUND
+    assert missing.error_code == "GRAPH_RELATION_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_ticket_write_mock_returns_draft_without_real_side_effect() -> None:
+    """工单写入 Mock 只生成草稿或模拟编号，不声明已提交真实系统。"""
+    provider = MockTicketWriteProvider()
+    context = ToolContext(trace_id="trace-write", source_system="test")
+
+    result = await provider.create_or_update_ticket(
+        context,
+        {"action": "create", "device_id": "PCS-10086", "summary": "检查散热风扇"},
+    )
+
+    assert result.status is ToolStatus.OK
+    assert result.meta.provider_type is ProviderType.MOCK
+    assert result.data and result.data["ticket_id"].startswith("MOCK-TICKET-")
+    assert result.data["draft"] is True
+    assert result.data["submitted"] is False
+    assert result.warnings
+
+
+@pytest.mark.asyncio
+async def test_case_review_mock_returns_review_status() -> None:
+    """案例审核 Mock 支持审核结果到案例状态的确定性流转。"""
+    provider = MockCaseReviewProvider()
+    context = ToolContext(trace_id="trace-review", source_system="test")
+
+    result = await provider.append_case_review(
+        context,
+        {
+            "session_id": "diag_s_001",
+            "review_result": "confirmed",
+            "reviewer": "reviewer-1",
+            "root_cause": "散热风扇失效",
+        },
+    )
+
+    assert result.status is ToolStatus.OK
+    assert result.meta.provider_type is ProviderType.MOCK
+    assert result.data and result.data["case_status"] == "APPROVED"
+    assert result.data["review_id"].startswith("MOCK-REVIEW-")
+
+
 def test_build_provider_registry_uses_stage2_mock_read_providers() -> None:
     """默认 mock 配置应注册阶段 2 只读 Mock，未实现 Real 仍由配置门禁拦住。"""
     registry = build_provider_registry(ProviderSettings())
@@ -210,10 +278,10 @@ def test_build_provider_registry_uses_stage2_mock_read_providers() -> None:
     )
     assert isinstance(
         cast(GraphRelationProvider, registry.get(ProviderName.GRAPH_RELATION)),
-        NullProvider,
+        MockGraphRelationProvider,
     )
     assert isinstance(
         cast(TicketWriteProvider, registry.get(ProviderName.TICKET_WRITE)),
-        NullProvider,
+        MockTicketWriteProvider,
     )
-    assert isinstance(registry.get(ProviderName.CASE_REVIEW), NullProvider)
+    assert isinstance(registry.get(ProviderName.CASE_REVIEW), MockCaseReviewProvider)

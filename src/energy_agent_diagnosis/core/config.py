@@ -71,11 +71,22 @@ class ModelSettings(BaseModel):
 
 
 class RetrievalSettings(BaseModel):
-    """后续检索实现使用的基础策略配置。"""
+    """阶段 3 RAG 检索链路的策略配置。"""
 
     keyword_backend: Literal["opensearch", "elasticsearch"] = "opensearch"
+    recall_top_k: int = Field(default=20, ge=1, le=100)
+    rerank_top_n: int = Field(default=30, ge=1, le=100)
     final_top_k: int = Field(default=5, ge=1, le=50)
     score_threshold: float = Field(default=0.45, ge=0, le=1)
+    manual_source_weight: float = Field(default=0.95, ge=0, le=1)
+    ticket_source_weight: float = Field(default=0.9, ge=0, le=1)
+    graph_source_weight: float = Field(default=0.65, ge=0, le=1)
+    weak_evidence_penalty: float = Field(default=0.7, ge=0, le=1)
+    verified_evidence_boost: float = Field(default=0.08, ge=0, le=0.3)
+    enable_graph_recall: bool = True
+    enable_vector_recall: bool = True
+    min_strong_evidence_count: int = Field(default=1, ge=0, le=10)
+    max_quote_chars: int = Field(default=180, ge=40, le=1000)
 
 
 class DependencyEndpoint(BaseModel):

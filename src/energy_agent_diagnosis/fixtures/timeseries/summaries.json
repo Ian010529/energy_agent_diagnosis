@@ -1,6 +1,7 @@
 [
   {
     "device_id": "PCS-10086",
+    "alarm_id": "ALARM-20260626-0001",
     "start_time": "2026-06-26T09:50:00+08:00",
     "end_time": "2026-06-26T10:20:00+08:00",
     "metrics": [
@@ -44,12 +45,46 @@
         "anomaly_points": []
       }
     ],
-    "data_completeness": 0.97
+    "data_completeness": 0.72
+  },
+  {
+    "device_id": "PCS-10087",
+    "alarm_id": "ALARM-20260626-0002",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 480,
+        "avg": 160,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:20:00+08:00",
+            "value": 0,
+            "reason": "tachometer_zero"
+          }
+        ]
+      },
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 39.5,
+        "max": 63.1,
+        "avg": 52.0,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.77
   },
   {
     "device_id": "INV-20001",
-    "start_time": "2026-06-26T10:00:00+08:00",
-    "end_time": "2026-06-26T10:30:00+08:00",
+    "alarm_id": "ALARM-20260626-0003",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
     "metrics": [
       {
         "metric_name": "communication_status",
@@ -67,33 +102,712 @@
         ]
       }
     ],
-    "data_completeness": 0.72
+    "data_completeness": 0.81
   },
   {
     "device_id": "INV-20002",
-    "start_time": "2026-06-26T10:05:00+08:00",
-    "end_time": "2026-06-26T10:35:00+08:00",
+    "alarm_id": "ALARM-20260626-0004",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
     "metrics": [
       {
         "metric_name": "active_power",
         "min": 23.4,
         "max": 45.2,
-        "avg": 31.9,
-        "trend": "lower_than_expected",
+        "avg": 31.8,
+        "trend": "below_expected",
         "quality": "good",
         "anomaly_points": [
           {
-            "timestamp": "2026-06-26T10:34:00+08:00",
-            "value": 24.1,
-            "reason": "below_expected_curve"
+            "timestamp": "2026-06-26T10:31:00+08:00",
+            "value": 23.4,
+            "reason": "below_irradiance_curve"
           }
         ]
       },
       {
-        "metric_name": "dc_voltage",
-        "min": 795.0,
-        "max": 812.5,
-        "avg": 804.8,
+        "metric_name": "irradiance",
+        "min": 640,
+        "max": 790,
+        "avg": 720,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      },
+      {
+        "metric_name": "string_voltage",
+        "min": 460,
+        "max": 720,
+        "avg": 610,
+        "trend": "divergent",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.85
+  },
+  {
+    "device_id": "PCS-10088",
+    "alarm_id": "ALARM-20260626-0005",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "current",
+        "min": 0.5,
+        "max": 146.0,
+        "avg": 71.5,
+        "trend": "spiking",
+        "quality": "suspect",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:38:00+08:00",
+            "value": 146.0,
+            "reason": "sensor_jump"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.9
+  },
+  {
+    "device_id": "WT-40001",
+    "alarm_id": "ALARM-20260626-0006",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "gearbox_temperature",
+        "min": 72.1,
+        "max": 91.8,
+        "avg": 83.5,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:42:00+08:00",
+            "value": 91.8,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "vibration",
+        "min": 1.1,
+        "max": 2.8,
+        "avg": 1.9,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.94
+  },
+  {
+    "device_id": "PCS-10086",
+    "alarm_id": "ALARM-20260626-0007",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 41.2,
+        "max": 70.7,
+        "avg": 55.4,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:18:00+08:00",
+            "value": 67.9,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 520,
+        "avg": 210,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:12:00+08:00",
+            "value": 0,
+            "reason": "fan_stopped"
+          }
+        ]
+      },
+      {
+        "metric_name": "ambient_temperature",
+        "min": 31.1,
+        "max": 33.4,
+        "avg": 32.2,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.72
+  },
+  {
+    "device_id": "PCS-10087",
+    "alarm_id": "ALARM-20260626-0008",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 480,
+        "avg": 160,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:20:00+08:00",
+            "value": 0,
+            "reason": "tachometer_zero"
+          }
+        ]
+      },
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 39.5,
+        "max": 63.1,
+        "avg": 52.0,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.77
+  },
+  {
+    "device_id": "INV-20001",
+    "alarm_id": "ALARM-20260626-0009",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "communication_status",
+        "min": 0,
+        "max": 1,
+        "avg": 0.2,
+        "trend": "interrupted",
+        "quality": "partial",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:26:00+08:00",
+            "value": 0,
+            "reason": "heartbeat_missing"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.81
+  },
+  {
+    "device_id": "INV-20002",
+    "alarm_id": "ALARM-20260626-0010",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "active_power",
+        "min": 23.4,
+        "max": 45.2,
+        "avg": 31.8,
+        "trend": "below_expected",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:31:00+08:00",
+            "value": 23.4,
+            "reason": "below_irradiance_curve"
+          }
+        ]
+      },
+      {
+        "metric_name": "irradiance",
+        "min": 640,
+        "max": 790,
+        "avg": 720,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      },
+      {
+        "metric_name": "string_voltage",
+        "min": 460,
+        "max": 720,
+        "avg": 610,
+        "trend": "divergent",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.85
+  },
+  {
+    "device_id": "PCS-10088",
+    "alarm_id": "ALARM-20260626-0011",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "current",
+        "min": 0.5,
+        "max": 146.0,
+        "avg": 71.5,
+        "trend": "spiking",
+        "quality": "suspect",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:38:00+08:00",
+            "value": 146.0,
+            "reason": "sensor_jump"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.9
+  },
+  {
+    "device_id": "WT-40001",
+    "alarm_id": "ALARM-20260626-0012",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "gearbox_temperature",
+        "min": 72.1,
+        "max": 91.8,
+        "avg": 83.5,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:42:00+08:00",
+            "value": 91.8,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "vibration",
+        "min": 1.1,
+        "max": 2.8,
+        "avg": 1.9,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.94
+  },
+  {
+    "device_id": "PCS-10086",
+    "alarm_id": "ALARM-20260626-0013",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 41.2,
+        "max": 68.7,
+        "avg": 55.4,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:18:00+08:00",
+            "value": 67.9,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 520,
+        "avg": 210,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:12:00+08:00",
+            "value": 0,
+            "reason": "fan_stopped"
+          }
+        ]
+      },
+      {
+        "metric_name": "ambient_temperature",
+        "min": 31.1,
+        "max": 33.4,
+        "avg": 32.2,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.72
+  },
+  {
+    "device_id": "PCS-10087",
+    "alarm_id": "ALARM-20260626-0014",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 480,
+        "avg": 160,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:20:00+08:00",
+            "value": 0,
+            "reason": "tachometer_zero"
+          }
+        ]
+      },
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 39.5,
+        "max": 63.1,
+        "avg": 52.0,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.77
+  },
+  {
+    "device_id": "INV-20001",
+    "alarm_id": "ALARM-20260626-0015",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "communication_status",
+        "min": 0,
+        "max": 1,
+        "avg": 0.2,
+        "trend": "interrupted",
+        "quality": "partial",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:26:00+08:00",
+            "value": 0,
+            "reason": "heartbeat_missing"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.81
+  },
+  {
+    "device_id": "INV-20002",
+    "alarm_id": "ALARM-20260626-0016",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "active_power",
+        "min": 23.4,
+        "max": 45.2,
+        "avg": 31.8,
+        "trend": "below_expected",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:31:00+08:00",
+            "value": 23.4,
+            "reason": "below_irradiance_curve"
+          }
+        ]
+      },
+      {
+        "metric_name": "irradiance",
+        "min": 640,
+        "max": 790,
+        "avg": 720,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      },
+      {
+        "metric_name": "string_voltage",
+        "min": 460,
+        "max": 720,
+        "avg": 610,
+        "trend": "divergent",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.85
+  },
+  {
+    "device_id": "PCS-10088",
+    "alarm_id": "ALARM-20260626-0017",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "current",
+        "min": 0.5,
+        "max": 146.0,
+        "avg": 71.5,
+        "trend": "spiking",
+        "quality": "suspect",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:38:00+08:00",
+            "value": 146.0,
+            "reason": "sensor_jump"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.9
+  },
+  {
+    "device_id": "WT-40001",
+    "alarm_id": "ALARM-20260626-0018",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "gearbox_temperature",
+        "min": 72.1,
+        "max": 91.8,
+        "avg": 83.5,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:42:00+08:00",
+            "value": 91.8,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "vibration",
+        "min": 1.1,
+        "max": 2.8,
+        "avg": 1.9,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.94
+  },
+  {
+    "device_id": "PCS-10086",
+    "alarm_id": "ALARM-20260626-0019",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 41.2,
+        "max": 70.7,
+        "avg": 55.4,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:18:00+08:00",
+            "value": 67.9,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 520,
+        "avg": 210,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:12:00+08:00",
+            "value": 0,
+            "reason": "fan_stopped"
+          }
+        ]
+      },
+      {
+        "metric_name": "ambient_temperature",
+        "min": 31.1,
+        "max": 33.4,
+        "avg": 32.2,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.72
+  },
+  {
+    "device_id": "PCS-10087",
+    "alarm_id": "ALARM-20260626-0020",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "fan_speed",
+        "min": 0,
+        "max": 480,
+        "avg": 160,
+        "trend": "falling",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:20:00+08:00",
+            "value": 0,
+            "reason": "tachometer_zero"
+          }
+        ]
+      },
+      {
+        "metric_name": "cabinet_temperature",
+        "min": 39.5,
+        "max": 63.1,
+        "avg": 52.0,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.77
+  },
+  {
+    "device_id": "INV-20001",
+    "alarm_id": "ALARM-20260626-0021",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "communication_status",
+        "min": 0,
+        "max": 1,
+        "avg": 0.2,
+        "trend": "interrupted",
+        "quality": "partial",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:26:00+08:00",
+            "value": 0,
+            "reason": "heartbeat_missing"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.81
+  },
+  {
+    "device_id": "INV-20002",
+    "alarm_id": "ALARM-20260626-0022",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "active_power",
+        "min": 23.4,
+        "max": 45.2,
+        "avg": 31.8,
+        "trend": "below_expected",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:31:00+08:00",
+            "value": 23.4,
+            "reason": "below_irradiance_curve"
+          }
+        ]
+      },
+      {
+        "metric_name": "irradiance",
+        "min": 640,
+        "max": 790,
+        "avg": 720,
+        "trend": "stable",
+        "quality": "good",
+        "anomaly_points": []
+      },
+      {
+        "metric_name": "string_voltage",
+        "min": 460,
+        "max": 720,
+        "avg": 610,
+        "trend": "divergent",
+        "quality": "good",
+        "anomaly_points": []
+      }
+    ],
+    "data_completeness": 0.85
+  },
+  {
+    "device_id": "PCS-10088",
+    "alarm_id": "ALARM-20260626-0023",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "current",
+        "min": 0.5,
+        "max": 146.0,
+        "avg": 71.5,
+        "trend": "spiking",
+        "quality": "suspect",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:38:00+08:00",
+            "value": 146.0,
+            "reason": "sensor_jump"
+          }
+        ]
+      }
+    ],
+    "data_completeness": 0.9
+  },
+  {
+    "device_id": "WT-40001",
+    "alarm_id": "ALARM-20260626-0024",
+    "start_time": "2026-06-26T09:50:00+08:00",
+    "end_time": "2026-06-26T10:20:00+08:00",
+    "metrics": [
+      {
+        "metric_name": "gearbox_temperature",
+        "min": 72.1,
+        "max": 91.8,
+        "avg": 83.5,
+        "trend": "rising",
+        "quality": "good",
+        "anomaly_points": [
+          {
+            "timestamp": "2026-06-26T10:42:00+08:00",
+            "value": 91.8,
+            "reason": "above_threshold"
+          }
+        ]
+      },
+      {
+        "metric_name": "vibration",
+        "min": 1.1,
+        "max": 2.8,
+        "avg": 1.9,
         "trend": "stable",
         "quality": "good",
         "anomaly_points": []

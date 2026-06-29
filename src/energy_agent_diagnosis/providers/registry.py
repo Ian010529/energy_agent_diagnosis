@@ -1,7 +1,5 @@
 """注册 Provider 实现，并提供未接入能力的 Null 骨架。"""
 
-from enum import StrEnum
-
 from energy_agent_diagnosis.contracts import (
     ProviderType,
     ToolContext,
@@ -17,40 +15,21 @@ from energy_agent_diagnosis.ports.providers import (
     GraphRelationProvider,
     ManualSearchProvider,
     Payload,
+    ProviderImplementation,
+    ProviderName,
     ProviderResult,
     TicketSearchProvider,
     TicketWriteProvider,
     TimeseriesProvider,
 )
 from energy_agent_diagnosis.providers.alarm import MockAlarmProvider
+from energy_agent_diagnosis.providers.case_review import MockCaseReviewProvider
 from energy_agent_diagnosis.providers.device_profile import MockDeviceProfileProvider
+from energy_agent_diagnosis.providers.graph_relation import MockGraphRelationProvider
 from energy_agent_diagnosis.providers.manual_search import MockManualSearchProvider
 from energy_agent_diagnosis.providers.ticket_search import MockTicketSearchProvider
+from energy_agent_diagnosis.providers.ticket_write import MockTicketWriteProvider
 from energy_agent_diagnosis.providers.timeseries import MockTimeseriesProvider
-
-ProviderImplementation = (
-    DeviceProfileProvider
-    | AlarmProvider
-    | TimeseriesProvider
-    | ManualSearchProvider
-    | TicketSearchProvider
-    | GraphRelationProvider
-    | TicketWriteProvider
-    | CaseReviewProvider
-)
-
-
-class ProviderName(StrEnum):
-    """八类 Provider 的稳定注册名称。"""
-
-    DEVICE_PROFILE = "device_profile"
-    ALARM = "alarm"
-    TIMESERIES = "timeseries"
-    MANUAL_SEARCH = "manual_search"
-    TICKET_SEARCH = "ticket_search"
-    GRAPH_RELATION = "graph_relation"
-    TICKET_WRITE = "ticket_write"
-    CASE_REVIEW = "case_review"
 
 
 class ProviderRegistry:
@@ -188,16 +167,14 @@ def build_provider_registry(settings: ProviderSettings) -> ProviderRegistry:
         raise ValueError(f"尚未实现 Real Provider: {', '.join(unsupported)}")
 
     registry = ProviderRegistry()
-    null_provider = NullProvider()
-    # 阶段 2 只启用五个只读 Mock Provider；写入和审核类仍由 NullProvider 明确提示未配置。
     registry.register(ProviderName.DEVICE_PROFILE, MockDeviceProfileProvider())
     registry.register(ProviderName.ALARM, MockAlarmProvider())
     registry.register(ProviderName.TIMESERIES, MockTimeseriesProvider())
     registry.register(ProviderName.MANUAL_SEARCH, MockManualSearchProvider())
     registry.register(ProviderName.TICKET_SEARCH, MockTicketSearchProvider())
-    registry.register(ProviderName.GRAPH_RELATION, null_provider)
-    registry.register(ProviderName.TICKET_WRITE, null_provider)
-    registry.register(ProviderName.CASE_REVIEW, null_provider)
+    registry.register(ProviderName.GRAPH_RELATION, MockGraphRelationProvider())
+    registry.register(ProviderName.TICKET_WRITE, MockTicketWriteProvider())
+    registry.register(ProviderName.CASE_REVIEW, MockCaseReviewProvider())
     return registry
 
 

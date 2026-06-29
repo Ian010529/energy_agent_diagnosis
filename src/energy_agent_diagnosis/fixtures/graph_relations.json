@@ -1,0 +1,366 @@
+[
+  {
+    "relation_id": "GRAPH-REL-0001",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "散热风扇",
+    "fault_cause": "风扇失效",
+    "action": "检查风扇转动状态和转速反馈",
+    "confidence": 0.62,
+    "source_refs": [
+      "manual:MANUAL-PCS-017"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0002",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "滤网",
+    "fault_cause": "滤网堵塞",
+    "action": "清理滤网并复测柜内温度",
+    "confidence": 0.68,
+    "source_refs": [
+      "ticket:TICKET-20250132"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0003",
+    "alarm_name": "散热风扇异常",
+    "device_type": "PCS",
+    "component": "风扇反馈线束",
+    "fault_cause": "线束松动",
+    "action": "检查转速反馈线束端子",
+    "confidence": 0.74,
+    "source_refs": [
+      "ticket:TICKET-20250201"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0004",
+    "alarm_name": "逆变器通讯中断",
+    "device_type": "inverter",
+    "component": "交换机",
+    "fault_cause": "交换机端口故障",
+    "action": "检查交换机端口和网络地址配置",
+    "confidence": 0.8,
+    "source_refs": [
+      "ticket:TICKET-20250345"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0005",
+    "alarm_name": "逆变器输出功率异常",
+    "device_type": "inverter",
+    "component": "组串接头",
+    "fault_cause": "接触不良",
+    "action": "复测组串电压并检查接头",
+    "confidence": 0.86,
+    "source_refs": [
+      "ticket:TICKET-20250408"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0006",
+    "alarm_name": "电流采样异常",
+    "device_type": "PCS",
+    "component": "电流传感器",
+    "fault_cause": "传感器漂移",
+    "action": "校准传感器并核对负载变化",
+    "confidence": 0.62,
+    "source_refs": [
+      "ticket:TICKET-20250519"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0007",
+    "alarm_name": "齿轮箱温度偏高",
+    "device_type": "wind_turbine",
+    "component": "冷却回路",
+    "fault_cause": "冷却效率下降",
+    "action": "检查冷却泵和润滑油温度",
+    "confidence": 0.68,
+    "source_refs": [
+      "manual:MANUAL-WT-003"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0008",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "散热风扇",
+    "fault_cause": "风扇失效",
+    "action": "检查风扇转动状态和转速反馈",
+    "confidence": 0.74,
+    "source_refs": [
+      "manual:MANUAL-PCS-017"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0009",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "滤网",
+    "fault_cause": "滤网堵塞",
+    "action": "清理滤网并复测柜内温度",
+    "confidence": 0.8,
+    "source_refs": [
+      "ticket:TICKET-20250132"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0010",
+    "alarm_name": "散热风扇异常",
+    "device_type": "PCS",
+    "component": "风扇反馈线束",
+    "fault_cause": "线束松动",
+    "action": "检查转速反馈线束端子",
+    "confidence": 0.86,
+    "source_refs": [
+      "ticket:TICKET-20250201"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0011",
+    "alarm_name": "逆变器通讯中断",
+    "device_type": "inverter",
+    "component": "交换机",
+    "fault_cause": "交换机端口故障",
+    "action": "检查交换机端口和网络地址配置",
+    "confidence": 0.62,
+    "source_refs": [
+      "ticket:TICKET-20250345"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0012",
+    "alarm_name": "逆变器输出功率异常",
+    "device_type": "inverter",
+    "component": "组串接头",
+    "fault_cause": "接触不良",
+    "action": "复测组串电压并检查接头",
+    "confidence": 0.68,
+    "source_refs": [
+      "ticket:TICKET-20250408"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0013",
+    "alarm_name": "电流采样异常",
+    "device_type": "PCS",
+    "component": "电流传感器",
+    "fault_cause": "传感器漂移",
+    "action": "校准传感器并核对负载变化",
+    "confidence": 0.74,
+    "source_refs": [
+      "ticket:TICKET-20250519"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0014",
+    "alarm_name": "齿轮箱温度偏高",
+    "device_type": "wind_turbine",
+    "component": "冷却回路",
+    "fault_cause": "冷却效率下降",
+    "action": "检查冷却泵和润滑油温度",
+    "confidence": 0.8,
+    "source_refs": [
+      "manual:MANUAL-WT-003"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0015",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "散热风扇",
+    "fault_cause": "风扇失效",
+    "action": "检查风扇转动状态和转速反馈",
+    "confidence": 0.86,
+    "source_refs": [
+      "manual:MANUAL-PCS-017"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0016",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "滤网",
+    "fault_cause": "滤网堵塞",
+    "action": "清理滤网并复测柜内温度",
+    "confidence": 0.62,
+    "source_refs": [
+      "ticket:TICKET-20250132"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0017",
+    "alarm_name": "散热风扇异常",
+    "device_type": "PCS",
+    "component": "风扇反馈线束",
+    "fault_cause": "线束松动",
+    "action": "检查转速反馈线束端子",
+    "confidence": 0.68,
+    "source_refs": [
+      "ticket:TICKET-20250201"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0018",
+    "alarm_name": "逆变器通讯中断",
+    "device_type": "inverter",
+    "component": "交换机",
+    "fault_cause": "交换机端口故障",
+    "action": "检查交换机端口和网络地址配置",
+    "confidence": 0.74,
+    "source_refs": [
+      "ticket:TICKET-20250345"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0019",
+    "alarm_name": "逆变器输出功率异常",
+    "device_type": "inverter",
+    "component": "组串接头",
+    "fault_cause": "接触不良",
+    "action": "复测组串电压并检查接头",
+    "confidence": 0.8,
+    "source_refs": [
+      "ticket:TICKET-20250408"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0020",
+    "alarm_name": "电流采样异常",
+    "device_type": "PCS",
+    "component": "电流传感器",
+    "fault_cause": "传感器漂移",
+    "action": "校准传感器并核对负载变化",
+    "confidence": 0.86,
+    "source_refs": [
+      "ticket:TICKET-20250519"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0021",
+    "alarm_name": "齿轮箱温度偏高",
+    "device_type": "wind_turbine",
+    "component": "冷却回路",
+    "fault_cause": "冷却效率下降",
+    "action": "检查冷却泵和润滑油温度",
+    "confidence": 0.62,
+    "source_refs": [
+      "manual:MANUAL-WT-003"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0022",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "散热风扇",
+    "fault_cause": "风扇失效",
+    "action": "检查风扇转动状态和转速反馈",
+    "confidence": 0.68,
+    "source_refs": [
+      "manual:MANUAL-PCS-017"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0023",
+    "alarm_name": "PCS机柜温度持续升高",
+    "device_type": "PCS",
+    "component": "滤网",
+    "fault_cause": "滤网堵塞",
+    "action": "清理滤网并复测柜内温度",
+    "confidence": 0.74,
+    "source_refs": [
+      "ticket:TICKET-20250132"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0024",
+    "alarm_name": "散热风扇异常",
+    "device_type": "PCS",
+    "component": "风扇反馈线束",
+    "fault_cause": "线束松动",
+    "action": "检查转速反馈线束端子",
+    "confidence": 0.8,
+    "source_refs": [
+      "ticket:TICKET-20250201"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0025",
+    "alarm_name": "逆变器通讯中断",
+    "device_type": "inverter",
+    "component": "交换机",
+    "fault_cause": "交换机端口故障",
+    "action": "检查交换机端口和网络地址配置",
+    "confidence": 0.86,
+    "source_refs": [
+      "ticket:TICKET-20250345"
+    ],
+    "verified": false
+  },
+  {
+    "relation_id": "GRAPH-REL-0026",
+    "alarm_name": "逆变器输出功率异常",
+    "device_type": "inverter",
+    "component": "组串接头",
+    "fault_cause": "接触不良",
+    "action": "复测组串电压并检查接头",
+    "confidence": 0.62,
+    "source_refs": [
+      "ticket:TICKET-20250408"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0027",
+    "alarm_name": "电流采样异常",
+    "device_type": "PCS",
+    "component": "电流传感器",
+    "fault_cause": "传感器漂移",
+    "action": "校准传感器并核对负载变化",
+    "confidence": 0.68,
+    "source_refs": [
+      "ticket:TICKET-20250519"
+    ],
+    "verified": true
+  },
+  {
+    "relation_id": "GRAPH-REL-0028",
+    "alarm_name": "齿轮箱温度偏高",
+    "device_type": "wind_turbine",
+    "component": "冷却回路",
+    "fault_cause": "冷却效率下降",
+    "action": "检查冷却泵和润滑油温度",
+    "confidence": 0.74,
+    "source_refs": [
+      "manual:MANUAL-WT-003"
+    ],
+    "verified": true
+  }
+]

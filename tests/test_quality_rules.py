@@ -11,6 +11,7 @@ ALLOWED_LOGIC_IMPORT_PREFIXES = (
     "energy_agent_diagnosis.contracts",
     "energy_agent_diagnosis.ports",
     "energy_agent_diagnosis.core.module",
+    "energy_agent_diagnosis.tools",
 )
 
 
@@ -61,9 +62,10 @@ def test_logic_modules_do_not_import_infrastructure() -> None:
                 else:
                     continue
                 for name in imported:
-                    project_import_forbidden = name.startswith(
-                        "energy_agent_diagnosis"
-                    ) and not name.startswith(ALLOWED_LOGIC_IMPORT_PREFIXES)
+                    same_logic_package = name.startswith(f"energy_agent_diagnosis.{package}.")
+                    project_import_forbidden = name.startswith("energy_agent_diagnosis") and not (
+                        name.startswith(ALLOWED_LOGIC_IMPORT_PREFIXES) or same_logic_package
+                    )
                     root_name = name.split(".", maxsplit=1)[0]
                     third_party_forbidden = (
                         not name.startswith("energy_agent_diagnosis")

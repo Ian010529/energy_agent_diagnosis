@@ -32,4 +32,4 @@ curl "${curl_args[@]}" "${base_url}/health/live" >/dev/null
 curl "${curl_args[@]}" "${base_url}/health/ready" >/dev/null
 curl "${curl_args[@]}" -H "X-API-Key: ${api_key}" "${base_url}/api/v1/system/ping" >/dev/null
 curl "${curl_args[@]}" "${base_url}/metrics" | grep -q "energy_diagnosis_http_requests_total"
-echo "阶段 1 smoke test 通过。"
+echo "应用 smoke test 通过；阶段 2 Mock/D2 契约由 make check 覆盖。"
