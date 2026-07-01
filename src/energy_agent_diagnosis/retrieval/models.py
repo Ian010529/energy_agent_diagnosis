@@ -37,7 +37,11 @@ class RetrievalCandidate:
     keyword_score: float | None = None
     vector_score: float | None = None
     rerank_score: float | None = None
+    retrieval_score: float | None = None
     source_reliability: float = 1.0
+    freshness_score: float | None = None
+    verification_score: float | None = None
+    relevance_to_alarm: float | None = None
     final_score: float = 0.0
     weak_evidence: bool = False
     verified: bool = False

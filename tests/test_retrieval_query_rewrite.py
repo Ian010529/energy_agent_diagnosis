@@ -1,11 +1,14 @@
 """验证阶段 3 查询重写符合 RAG 文档约束。"""
 
+import pytest
+
 from energy_agent_diagnosis.contracts import RequestContext
 from energy_agent_diagnosis.retrieval.query_rewrite import rewrite_query
 
 
-def test_rewrite_query_generates_filters_and_multi_route_queries() -> None:
-    """告警上下文应被标准化为手册、工单和图谱三路 query。"""
+@pytest.mark.asyncio
+async def test_rewrite_query_generates_filters_and_multi_route_queries() -> None:
+    """告警上下文应被标准化为手册、工单 and 图谱三路 query。"""
     request = RequestContext.model_validate(
         {
             "request_id": "req-1",
@@ -24,7 +27,7 @@ def test_rewrite_query_generates_filters_and_multi_route_queries() -> None:
         }
     )
 
-    query = rewrite_query(request)
+    query = await rewrite_query(request)
 
     assert query.filters == {
         "device_type": "PCS",
@@ -41,7 +44,8 @@ def test_rewrite_query_generates_filters_and_multi_route_queries() -> None:
     assert "SC5000" in query.keyword_terms
 
 
-def test_rewrite_query_falls_back_when_message_is_empty() -> None:
+@pytest.mark.asyncio
+async def test_rewrite_query_falls_back_when_message_is_empty() -> None:
     """没有自然语言消息时，规则字段仍能形成可检索表达。"""
     request = RequestContext.model_validate(
         {
@@ -54,7 +58,7 @@ def test_rewrite_query_falls_back_when_message_is_empty() -> None:
         }
     )
 
-    query = rewrite_query(request)
+    query = await rewrite_query(request)
 
     assert query.degraded_reason == "EMPTY_MESSAGE_RULE_FALLBACK"
     assert query.manual_query

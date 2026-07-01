@@ -32,7 +32,7 @@ async def test_recall_collects_manual_ticket_and_graph_candidates() -> None:
     result = await recall_candidates(
         build_provider_registry(ProviderSettings()),
         ToolContext(trace_id="trace-recall", source_system="pytest"),
-        rewrite_query(request),
+        await rewrite_query(request),
         RetrievalSettings(score_threshold=0.1),
     )
 
@@ -58,7 +58,7 @@ async def test_recall_degrades_sources_without_raising() -> None:
     result = await recall_candidates(
         build_null_registry(),
         ToolContext(trace_id="trace-null", source_system="pytest"),
-        rewrite_query(request),
+        await rewrite_query(request),
         RetrievalSettings(),
     )
 

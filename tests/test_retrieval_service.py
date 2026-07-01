@@ -130,3 +130,278 @@ async def test_retrieve_evidence_records_rewrite_degradation_for_empty_message()
 
     assert "EMPTY_MESSAGE_RULE_FALLBACK" in package.degraded_sources
     assert package.ranked_evidence
+
+
+@pytest.mark.asyncio
+async def test_qwen_rewrite_success() -> None:
+    from unittest.mock import AsyncMock
+
+    from energy_agent_diagnosis.retrieval.query_rewrite import rewrite_query
+
+    request = request_context(
+        session_id="diag-qwen",
+        trace_id="trace-qwen",
+        device_type="PCS",
+        device_model="SC5000",
+        manufacturer="Sungrow",
+        site_id="SITE-01",
+        alarm_name="PCS机柜温度持续升高",
+        message="温度高",
+    )
+
+    mock_client = AsyncMock()
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "manual_query": "LLM manual query",
+        "ticket_query": "LLM ticket query",
+        "graph_query": "LLM graph query",
+        "keyword_terms": ["LLM", "keyword"],
+    }
+    mock_client.post.return_value = mock_response
+
+    query = await rewrite_query(request, endpoint="http://qwen-rewrite", client=mock_client)
+
+    assert query.llm_rewrite_used is True
+    assert query.manual_query == "LLM manual query"
+    assert query.ticket_query == "LLM ticket query"
+    assert query.graph_query == "LLM graph query"
+    assert query.keyword_terms == ("LLM", "keyword")
+    assert query.degraded_reason is None
+
+
+@pytest.mark.asyncio
+async def test_qwen_rewrite_fallback() -> None:
+    from unittest.mock import AsyncMock
+
+    import httpx
+
+    from energy_agent_diagnosis.retrieval.query_rewrite import rewrite_query
+
+    request = request_context(
+        session_id="diag-qwen-fail",
+        trace_id="trace-qwen-fail",
+        device_type="PCS",
+        device_model="SC5000",
+        manufacturer="Sungrow",
+        site_id="SITE-01",
+        alarm_name="PCS机柜温度持续升高",
+        message="温度高",
+    )
+
+    mock_client = AsyncMock()
+    mock_client.post.side_effect = httpx.TimeoutException("Timeout")
+
+    query = await rewrite_query(request, endpoint="http://qwen-rewrite", client=mock_client)
+
+    assert query.llm_rewrite_used is False
+    assert query.degraded_reason == "QWEN_REWRITE_TIMEOUT"
+    assert query.manual_query != "LLM manual query"
+
+
+@pytest.mark.asyncio
+async def test_reranker_success_and_fallback() -> None:
+    from unittest.mock import AsyncMock
+
+    from energy_agent_diagnosis.retrieval.models import RetrievalCandidate
+    from energy_agent_diagnosis.retrieval.rerank import rerank_candidates
+
+    candidates = [
+        RetrievalCandidate(
+            source_type="manual",
+            source_id="M-1",
+            content="Content 1",
+            raw={},
+            channel="manual_keyword",
+            keyword_score=0.8,
+        )
+    ]
+
+    settings = RetrievalSettings(reranker_endpoint="http://reranker")
+    mock_client = AsyncMock()
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = [0.95]
+    mock_client.post.return_value = mock_response
+
+    ranked = await rerank_candidates(candidates, settings, client=mock_client)
+    assert len(ranked) == 1
+    assert ranked[0].rerank_score == 0.95
+
+    mock_client.post.side_effect = Exception("error")
+    degraded = []
+    ranked_fb = await rerank_candidates(
+        candidates,
+        settings,
+        client=mock_client,
+        degraded_sources=degraded,
+    )
+    assert len(ranked_fb) == 1
+    assert ranked_fb[0].rerank_score is None
+    assert "RERANKER_FAILED_Exception" in degraded
+
+
+@pytest.mark.asyncio
+async def test_timeseries_summary_inclusion_and_degradation() -> None:
+    from energy_agent_diagnosis.contracts import RequestContext
+    from energy_agent_diagnosis.providers import build_provider_registry
+    from energy_agent_diagnosis.retrieval.service import retrieve_evidence
+
+    registry = build_provider_registry(ProviderSettings())
+    request = RequestContext.model_validate(
+        {
+            "request_id": "req-ts-ok",
+            "trace_id": "trace-ts-ok",
+            "session_id": "session-ts-ok",
+            "source": "alarm",
+            "device_id": "PCS-10086",
+            "device": {"device_type": "PCS", "device_model": "SC5000"},
+            "alarm": {
+                "alarm_name": "PCS机柜温度持续升高",
+                "trigger_time": "2026-06-26T10:05:00+08:00",
+            },
+            "message": "test",
+        }
+    )
+
+    settings = RetrievalSettings(score_threshold=0.1, final_top_k=5)
+    package = await retrieve_evidence(
+        registry,
+        ToolContext(trace_id="t1", source_system="test"),
+        request,
+        settings,
+    )
+
+    ts_evidences = [item for item in package.ranked_evidence if item.source_type == "timeseries"]
+    assert len(ts_evidences) == 1
+    assert ts_evidences[0].source_id == "PCS-10086"
+    assert "cabinet_temperature" in ts_evidences[0].quote_text
+    assert ts_evidences[0].score > 0
+    assert len(package.ranked_evidence) <= settings.final_top_k
+
+    request_no_time = RequestContext.model_validate(
+        {
+            "request_id": "req-ts-deg",
+            "trace_id": "trace-ts-deg",
+            "session_id": "session-ts-deg",
+            "source": "alarm",
+            "device_id": "PCS-10086",
+            "device": {"device_type": "PCS", "device_model": "SC5000"},
+            "alarm": {
+                "alarm_name": "PCS机柜温度持续升高",
+            },
+            "message": "test",
+        }
+    )
+    package_deg = await retrieve_evidence(
+        registry,
+        ToolContext(trace_id="t2", source_system="test"),
+        request_no_time,
+        settings,
+    )
+    assert "timeseries" in package_deg.degraded_sources
+
+
+@pytest.mark.asyncio
+async def test_timeseries_candidate_is_sent_to_reranker() -> None:
+    """时序摘要应作为统一候选进入 reranker 入参。"""
+    from unittest.mock import AsyncMock
+
+    from energy_agent_diagnosis.contracts import RequestContext
+    from energy_agent_diagnosis.providers import build_provider_registry
+    from energy_agent_diagnosis.retrieval.service import retrieve_evidence
+
+    registry = build_provider_registry(ProviderSettings())
+    request = RequestContext.model_validate(
+        {
+            "request_id": "req-ts-rerank",
+            "trace_id": "trace-ts-rerank",
+            "session_id": "session-ts-rerank",
+            "source": "alarm",
+            "device_id": "PCS-10086",
+            "device": {"device_type": "PCS", "device_model": "SC5000"},
+            "alarm": {
+                "alarm_name": "PCS机柜温度持续升高",
+                "trigger_time": "2026-06-26T10:05:00+08:00",
+            },
+            "message": "PCS机柜温度持续升高",
+        }
+    )
+    mock_client = AsyncMock()
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"scores": []}
+    mock_client.post.return_value = mock_response
+
+    await retrieve_evidence(
+        registry,
+        ToolContext(trace_id="t-rerank", source_system="test"),
+        request,
+        RetrievalSettings(
+            score_threshold=0.1,
+            final_top_k=5,
+            reranker_endpoint="http://reranker",
+        ),
+        client=mock_client,
+    )
+
+    reranker_payload = mock_client.post.call_args.kwargs["json"]
+    pair_texts = [pair["text"] for pair in reranker_payload["pairs"]]
+    assert any("cabinet_temperature" in text for text in pair_texts)
+
+
+@pytest.mark.asyncio
+async def test_real_adapters_and_registry_config() -> None:
+    from unittest.mock import AsyncMock
+
+    import httpx
+
+    from energy_agent_diagnosis.contracts import ToolContext, ToolStatus
+    from energy_agent_diagnosis.providers.graph_relation.real import RealGraphRelationProvider
+    from energy_agent_diagnosis.providers.manual_search.real import RealManualSearchProvider
+    from energy_agent_diagnosis.providers.ticket_search.real import RealTicketSearchProvider
+
+    context = ToolContext(trace_id="t", source_system="test")
+
+    mock_client = AsyncMock()
+    mock_resp = AsyncMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "chunks": [{"content": "manual info", "score": 0.88}],
+        "tickets": [{"ticket_id": "T-1", "is_verified": True, "score": 0.9}],
+        "relations": [{"alarm_name": "PCS", "confidence": 0.95, "score": 0.9}],
+    }
+    mock_client.post.return_value = mock_resp
+
+    p_manual = RealManualSearchProvider(endpoint="http://manual", client=mock_client)
+    res_m = await p_manual.search_manual_chunks(context, {"query": "q"})
+    assert res_m.success is True
+    assert res_m.status is ToolStatus.OK
+    assert res_m.data["chunks"][0]["content"] == "manual info"
+
+    p_ticket = RealTicketSearchProvider(endpoint="http://ticket", client=mock_client)
+    res_t = await p_ticket.search_similar_tickets(context, {"query": "q"})
+    assert res_t.success is True
+    assert res_t.data["tickets"][0]["ticket_id"] == "T-1"
+
+    p_graph = RealGraphRelationProvider(endpoint="http://graph", client=mock_client)
+    res_g = await p_graph.query_graph_relations(context, {"alarm_name": "PCS"})
+    assert res_g.success is True
+    assert res_g.data["relations"][0]["alarm_name"] == "PCS"
+
+    mock_client.post.side_effect = httpx.TimeoutException("timeout")
+    res_m_to = await p_manual.search_manual_chunks(context, {"query": "q"})
+    assert res_m_to.success is False
+    assert res_m_to.status is ToolStatus.TIMEOUT
+
+    from energy_agent_diagnosis.core.config import ProviderSettings, RetrievalSettings
+    from energy_agent_diagnosis.providers import build_provider_registry
+
+    prov_settings = ProviderSettings(manual_search="real")
+    ret_settings = RetrievalSettings(manual_search_endpoint="")
+    with pytest.raises(ValueError, match="尚未实现 Real Provider"):
+        build_provider_registry(prov_settings, ret_settings)
+
+    ret_settings_ok = RetrievalSettings(manual_search_endpoint="http://endpoint")
+    reg = build_provider_registry(prov_settings, ret_settings_ok)
+    assert reg.get("manual_search").__class__.__name__ == "RealManualSearchProvider"

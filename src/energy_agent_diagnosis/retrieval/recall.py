@@ -23,7 +23,6 @@ async def recall_candidates(
     candidates: list[RetrievalCandidate] = []
     degraded_sources: list[str] = []
     recall_top_k = _setting(settings, "recall_top_k", 20)
-    threshold = _setting(settings, "score_threshold", 0.45)
 
     manual_keyword = await search_manual_chunks(
         registry,
@@ -90,7 +89,23 @@ async def recall_candidates(
         )
         _collect_graph(candidates, degraded_sources, graph)
 
-    filtered = tuple(candidate for candidate in candidates if _base_score(candidate) >= threshold)
+    filtered_candidates = []
+    for candidate in candidates:
+        score = max(candidate.keyword_score or 0.0, candidate.vector_score or 0.0)
+        if candidate.source_type == "manual":
+            th = _setting(settings, "manual_score_threshold", None)
+            if th is None:
+                th = _setting(settings, "score_threshold", 0.45)
+        elif candidate.source_type == "ticket":
+            th = _setting(settings, "ticket_score_threshold", None)
+            if th is None:
+                th = _setting(settings, "score_threshold", 0.45)
+        else:
+            th = _setting(settings, "score_threshold", 0.45)
+        if score >= th:
+            filtered_candidates.append(candidate)
+
+    filtered = tuple(filtered_candidates)
     return RecallResult(
         candidates=filtered or tuple(candidates),
         degraded_sources=tuple(dict.fromkeys(degraded_sources)),

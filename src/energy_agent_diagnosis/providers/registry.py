@@ -1,5 +1,7 @@
 """注册 Provider 实现，并提供未接入能力的 Null 骨架。"""
 
+from typing import Any
+
 from energy_agent_diagnosis.contracts import (
     ProviderType,
     ToolContext,
@@ -146,35 +148,74 @@ def build_null_registry() -> ProviderRegistry:
     return registry
 
 
-def build_provider_registry(settings: ProviderSettings) -> ProviderRegistry:
+def build_provider_registry(
+    settings: ProviderSettings,
+    retrieval_settings: Any | None = None,
+) -> ProviderRegistry:
     """按配置组装 Provider；未实现 Real 时快速失败，禁止伪装回退。"""
-    configured = {
-        ProviderName.DEVICE_PROFILE: settings.device_profile,
-        ProviderName.ALARM: settings.alarm,
-        ProviderName.TIMESERIES: settings.timeseries,
-        ProviderName.MANUAL_SEARCH: settings.manual_search,
-        ProviderName.TICKET_SEARCH: settings.ticket_search,
-        ProviderName.GRAPH_RELATION: settings.graph_relation,
-        ProviderName.TICKET_WRITE: settings.ticket_write,
-        ProviderName.CASE_REVIEW: settings.case_review,
+    unimplemented_names = {
+        ProviderName.DEVICE_PROFILE,
+        ProviderName.ALARM,
+        ProviderName.TIMESERIES,
+        ProviderName.TICKET_WRITE,
+        ProviderName.CASE_REVIEW,
     }
     unsupported = [
         name.value
-        for name, provider_type in configured.items()
-        if provider_type is ProviderType.REAL
+        for name in unimplemented_names
+        if getattr(settings, name.value) is ProviderType.REAL
     ]
     if unsupported:
-        raise ValueError(f"尚未实现 Real Provider: {', '.join(unsupported)}")
+        raise ValueError(f"尚未实现 Real Provider: {', '.join(sorted(unsupported))}")
+
+    if retrieval_settings is None:
+        try:
+            from energy_agent_diagnosis.core.config import get_settings
+
+            retrieval_settings = get_settings().retrieval
+        except Exception:
+            pass
 
     registry = ProviderRegistry()
     registry.register(ProviderName.DEVICE_PROFILE, MockDeviceProfileProvider())
     registry.register(ProviderName.ALARM, MockAlarmProvider())
     registry.register(ProviderName.TIMESERIES, MockTimeseriesProvider())
-    registry.register(ProviderName.MANUAL_SEARCH, MockManualSearchProvider())
-    registry.register(ProviderName.TICKET_SEARCH, MockTicketSearchProvider())
-    registry.register(ProviderName.GRAPH_RELATION, MockGraphRelationProvider())
     registry.register(ProviderName.TICKET_WRITE, MockTicketWriteProvider())
     registry.register(ProviderName.CASE_REVIEW, MockCaseReviewProvider())
+
+    # Manual search
+    if settings.manual_search is ProviderType.REAL:
+        endpoint = getattr(retrieval_settings, "manual_search_endpoint", "")
+        if not endpoint:
+            raise ValueError("尚未实现 Real Provider: manual_search endpoint is not configured")
+        from energy_agent_diagnosis.providers.manual_search.real import RealManualSearchProvider
+
+        registry.register(ProviderName.MANUAL_SEARCH, RealManualSearchProvider(endpoint=endpoint))
+    else:
+        registry.register(ProviderName.MANUAL_SEARCH, MockManualSearchProvider())
+
+    # Ticket search
+    if settings.ticket_search is ProviderType.REAL:
+        endpoint = getattr(retrieval_settings, "ticket_search_endpoint", "")
+        if not endpoint:
+            raise ValueError("尚未实现 Real Provider: ticket_search endpoint is not configured")
+        from energy_agent_diagnosis.providers.ticket_search.real import RealTicketSearchProvider
+
+        registry.register(ProviderName.TICKET_SEARCH, RealTicketSearchProvider(endpoint=endpoint))
+    else:
+        registry.register(ProviderName.TICKET_SEARCH, MockTicketSearchProvider())
+
+    # Graph relation
+    if settings.graph_relation is ProviderType.REAL:
+        endpoint = getattr(retrieval_settings, "graph_relation_endpoint", "")
+        if not endpoint:
+            raise ValueError("尚未实现 Real Provider: graph_relation endpoint is not configured")
+        from energy_agent_diagnosis.providers.graph_relation.real import RealGraphRelationProvider
+
+        registry.register(ProviderName.GRAPH_RELATION, RealGraphRelationProvider(endpoint=endpoint))
+    else:
+        registry.register(ProviderName.GRAPH_RELATION, MockGraphRelationProvider())
+
     return registry
 
 

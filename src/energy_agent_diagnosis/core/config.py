@@ -88,6 +88,18 @@ class RetrievalSettings(BaseModel):
     min_strong_evidence_count: int = Field(default=1, ge=0, le=10)
     max_quote_chars: int = Field(default=180, ge=40, le=1000)
 
+    # Stage 3 extended configurations
+    manual_search_endpoint: str = ""
+    ticket_search_endpoint: str = ""
+    graph_relation_endpoint: str = ""
+    qwen_rewrite_endpoint: str = ""
+    reranker_endpoint: str = ""
+    manual_score_threshold: float | None = Field(default=None, ge=0, le=1)
+    ticket_score_threshold: float | None = Field(default=None, ge=0, le=1)
+    fallback_keyword_weight: float = Field(default=0.45, ge=0, le=1)
+    fallback_vector_weight: float = Field(default=0.55, ge=0, le=1)
+    dedup_limit: int = Field(default=10, ge=1, le=100)
+
 
 class DependencyEndpoint(BaseModel):
     """描述一个可通过 TCP、HTTP 或 Redis 协议探测的依赖。"""
