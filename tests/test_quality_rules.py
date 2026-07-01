@@ -9,10 +9,13 @@ SOURCE_ROOT = Path(__file__).parents[1] / "src" / "energy_agent_diagnosis"
 LOGIC_PACKAGES = {"agent", "retrieval", "tools", "memory"}
 ALLOWED_LOGIC_IMPORT_PREFIXES = (
     "energy_agent_diagnosis.contracts",
+    "energy_agent_diagnosis.memory",
     "energy_agent_diagnosis.ports",
     "energy_agent_diagnosis.core.module",
+    "energy_agent_diagnosis.retrieval",
     "energy_agent_diagnosis.tools",
 )
+ALLOWED_LOGIC_THIRD_PARTY_ROOTS = {"langgraph"}
 
 
 def python_sources() -> list[Path]:
@@ -70,6 +73,7 @@ def test_logic_modules_do_not_import_infrastructure() -> None:
                     third_party_forbidden = (
                         not name.startswith("energy_agent_diagnosis")
                         and root_name not in sys.stdlib_module_names
+                        and root_name not in ALLOWED_LOGIC_THIRD_PARTY_ROOTS
                         and root_name != "__future__"
                     )
                     if project_import_forbidden or third_party_forbidden:

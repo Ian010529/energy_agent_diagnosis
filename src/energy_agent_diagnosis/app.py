@@ -5,15 +5,22 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from energy_agent_diagnosis.agent import DiagnosisAgentService
 from energy_agent_diagnosis.agent import build_module as build_agent_module
 from energy_agent_diagnosis.api.middleware import MetricsMiddleware, TraceMiddleware
-from energy_agent_diagnosis.api.routers import build_metrics_router, health_router, system_router
+from energy_agent_diagnosis.api.routers import (
+    build_metrics_router,
+    diagnosis_router,
+    health_router,
+    system_router,
+)
 from energy_agent_diagnosis.core.config import Settings, get_settings
 from energy_agent_diagnosis.core.errors import install_exception_handlers
 from energy_agent_diagnosis.core.logging import configure_logging
 from energy_agent_diagnosis.core.metrics import Metrics
 from energy_agent_diagnosis.core.module import LogicalModule
 from energy_agent_diagnosis.infrastructure import ApiKeyAuthAdapter, HealthService
+from energy_agent_diagnosis.memory import InMemoryDiagnosisSessionStore
 from energy_agent_diagnosis.memory import build_module as build_memory_module
 from energy_agent_diagnosis.providers import build_provider_registry
 from energy_agent_diagnosis.retrieval import build_module as build_retrieval_module
@@ -62,6 +69,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.metrics = metrics
     app.state.auth_port = ApiKeyAuthAdapter(resolved.auth)
     app.state.provider_registry = build_provider_registry(resolved.providers)
+    app.state.diagnosis_store = InMemoryDiagnosisSessionStore()
+    app.state.agent_service = DiagnosisAgentService(
+        registry=app.state.provider_registry,
+        settings=resolved,
+        store=app.state.diagnosis_store,
+    )
     app.state.health_service = HealthService(
         resolved.dependencies,
         timeout_seconds=resolved.health.probe_timeout_seconds,
@@ -75,4 +88,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if resolved.metrics.enabled:
         app.include_router(build_metrics_router(resolved.metrics.path))
     app.include_router(system_router)
+    app.include_router(diagnosis_router)
     return app

@@ -1,0 +1,29 @@
+[
+  {
+    "case_id": "rag-eval-pcs-temp",
+    "device_type": "PCS",
+    "device_model": "SC5000",
+    "alarm_name": "PCS机柜温度持续升高",
+    "query": "PCS机柜温度持续升高，风扇转速异常，先查什么？",
+    "expected_sources": ["manual", "ticket"],
+    "expected_terms": ["散热", "风扇", "滤网"]
+  },
+  {
+    "case_id": "rag-eval-inverter-comm",
+    "device_type": "inverter",
+    "device_model": "SUN2000-100KTL",
+    "alarm_name": "逆变器通讯中断",
+    "query": "逆变器通讯中断，采集器和交换机怎么排查？",
+    "expected_sources": ["manual", "ticket"],
+    "expected_terms": ["通讯", "采集器", "交换机"]
+  },
+  {
+    "case_id": "rag-eval-wind-temp",
+    "device_type": "wind_turbine",
+    "device_model": "GW155-3.3MW",
+    "alarm_name": "齿轮箱温度偏高",
+    "query": "风机齿轮箱温度偏高，冷却回路是否异常？",
+    "expected_sources": ["manual", "ticket"],
+    "expected_terms": ["齿轮箱", "冷却", "润滑油"]
+  }
+]

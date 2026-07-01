@@ -4,7 +4,7 @@ import pytest
 
 from energy_agent_diagnosis.contracts import RequestContext, ToolContext
 from energy_agent_diagnosis.core.config import ProviderSettings, RetrievalSettings
-from energy_agent_diagnosis.providers import build_provider_registry
+from energy_agent_diagnosis.providers import ProviderName, build_provider_registry
 from energy_agent_diagnosis.retrieval.service import retrieve_evidence
 
 
@@ -229,7 +229,7 @@ async def test_reranker_success_and_fallback() -> None:
     assert ranked[0].rerank_score == 0.95
 
     mock_client.post.side_effect = Exception("error")
-    degraded = []
+    degraded: list[str] = []
     ranked_fb = await rerank_candidates(
         candidates,
         settings,
@@ -377,16 +377,19 @@ async def test_real_adapters_and_registry_config() -> None:
     res_m = await p_manual.search_manual_chunks(context, {"query": "q"})
     assert res_m.success is True
     assert res_m.status is ToolStatus.OK
+    assert res_m.data is not None
     assert res_m.data["chunks"][0]["content"] == "manual info"
 
     p_ticket = RealTicketSearchProvider(endpoint="http://ticket", client=mock_client)
     res_t = await p_ticket.search_similar_tickets(context, {"query": "q"})
     assert res_t.success is True
+    assert res_t.data is not None
     assert res_t.data["tickets"][0]["ticket_id"] == "T-1"
 
     p_graph = RealGraphRelationProvider(endpoint="http://graph", client=mock_client)
     res_g = await p_graph.query_graph_relations(context, {"alarm_name": "PCS"})
     assert res_g.success is True
+    assert res_g.data is not None
     assert res_g.data["relations"][0]["alarm_name"] == "PCS"
 
     mock_client.post.side_effect = httpx.TimeoutException("timeout")
@@ -404,4 +407,4 @@ async def test_real_adapters_and_registry_config() -> None:
 
     ret_settings_ok = RetrievalSettings(manual_search_endpoint="http://endpoint")
     reg = build_provider_registry(prov_settings, ret_settings_ok)
-    assert reg.get("manual_search").__class__.__name__ == "RealManualSearchProvider"
+    assert reg.get(ProviderName.MANUAL_SEARCH).__class__.__name__ == "RealManualSearchProvider"

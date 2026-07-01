@@ -1,7 +1,9 @@
 """定义入口、工具、证据、诊断和认证共享的数据契约。"""
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
+from uuid import uuid4
 
 from pydantic import AliasChoices, AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -272,6 +274,86 @@ class DiagnosisResult(BaseModel):
     ticket_suggestion: TicketSuggestion | None = None
     evidence_package_id: str | None = None
     generated_at: AwareDatetime | None = None
+
+
+class DiagnosisSessionCreate(BaseModel):
+    """创建阶段 4 诊断会话所需的最小入口请求。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str | None = None
+    request_id: str | None = None
+    source: str = "alarm"
+    alarm_id: str | None = None
+    device_id: str | None = None
+    message: str = ""
+    stream: bool = True
+    debug: bool = False
+
+
+class DiagnosisMessageCreate(BaseModel):
+    """向既有诊断会话追加用户消息或现场补充。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str | None = None
+    message: str
+    alarm_id: str | None = None
+    device_id: str | None = None
+    stream: bool = True
+    debug: bool = False
+
+
+class DiagnosisStateEvent(BaseModel):
+    """前端 SSE 和查询接口共用的诊断状态事件。"""
+
+    event: str
+    session_id: str
+    trace_id: str
+    timestamp: AwareDatetime
+    status: DiagnosisStatus
+    message: str
+    progress: int = Field(ge=0, le=100)
+    data: dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class ToolCallSummary(BaseModel):
+    """记录 Agent 主链路中的工具调用摘要，避免暴露过大原始结果。"""
+
+    tool_name: str
+    status: ToolStatus
+    success: bool
+    error_code: str = ""
+    error_message: str = ""
+    trace_id: str
+    source_system: str | None = None
+    partial_result: bool = False
+
+
+class DiagnosisSessionSnapshot(BaseModel):
+    """返回给 API 调用方的阶段 4 会话快照。"""
+
+    session_id: str
+    trace_id: str
+    status: DiagnosisStatus
+    request_context: RequestContext
+    events: list[DiagnosisStateEvent] = Field(default_factory=list)
+    tool_calls: list[ToolCallSummary] = Field(default_factory=list)
+    evidence_package: EvidencePackage | None = None
+    result: DiagnosisResult | None = None
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+
+
+def new_session_id() -> str:
+    """生成稳定前缀的诊断会话编号，便于日志和测试识别。"""
+    return f"diag_{uuid4().hex[:16]}"
+
+
+def utc_now() -> AwareDatetime:
+    """生成带时区时间戳，避免诊断事件出现 naive datetime。"""
+    return datetime.now().astimezone()
 
 
 class ErrorResponse(BaseModel):

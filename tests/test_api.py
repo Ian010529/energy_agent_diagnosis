@@ -64,14 +64,15 @@ async def test_metrics_are_exposed_without_high_cardinality_labels(client: Async
 
 
 @pytest.mark.asyncio
-async def test_openapi_contains_only_public_stage1_routes(client: AsyncClient) -> None:
+async def test_openapi_contains_stage4_diagnosis_routes(client: AsyncClient) -> None:
     schema = (await client.get("/openapi.json")).json()
 
     assert "/health/live" in schema["paths"]
     assert "/health/ready" in schema["paths"]
     assert "/api/v1/system/ping" in schema["paths"]
+    assert "/api/v1/diagnosis/chat" in schema["paths"]
+    assert "/api/v1/diagnosis/sessions/{session_id}/events" in schema["paths"]
     assert "/metrics" not in schema["paths"]
-    assert not any("diagnosis" in path for path in schema["paths"])
 
 
 @pytest.mark.asyncio
