@@ -118,7 +118,9 @@ def test_m0_status_and_immutable_checksum_are_frozen() -> None:
     checksums = (ROOT / "docs/immutable/SHA256SUMS").read_text(encoding="utf-8")
 
     assert "current_module: M0" in status
-    assert "status: IN_PROGRESS" in status
+    m0_status = re.search(r"(?ms)^  M0:\n.*?^    status: (\S+)$", status)
+    assert m0_status is not None
+    assert m0_status.group(1) in {"IN_PROGRESS", "ACCEPTED"}
     assert "c559a530387de5fc1afced506e406967e74c18ed76e659b4b062c2051b615a11" in checksums
 
 

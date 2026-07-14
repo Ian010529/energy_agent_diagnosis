@@ -543,12 +543,14 @@ class M0Probe:
             )
 
     def _read_neo4j(self) -> str:
-        records, _, _ = self.neo4j().execute_query(
-            "MATCH (run:M0Gate {acceptance_run_id: $run_id})-[:VERIFIED_ON]->(:M0Service) "
-            "RETURN run.payload_hash AS payload_hash",
-            run_id=self.acceptance_run_id,
-            database_="neo4j",
-        )
+        with self.neo4j() as driver:
+            records, _, _ = driver.execute_query(
+                "MATCH (run:M0Gate {acceptance_run_id: $run_id})"
+                "-[:VERIFIED_ON]->(:M0Service) "
+                "RETURN run.payload_hash AS payload_hash",
+                run_id=self.acceptance_run_id,
+                database_="neo4j",
+            )
         if len(records) != 1:
             raise RuntimeError(f"Neo4j expected one readback, got {len(records)}")
         return str(records[0]["payload_hash"])
@@ -821,7 +823,10 @@ def run_gate() -> Path:
     (artifact_dir / "chaos_report.json").write_text(
         json.dumps(
             {
-                "fault": "restart all M0 infrastructure containers without deleting volumes",
+                "fault": (
+                    "restart each M0 infrastructure container sequentially without "
+                    "deleting volumes"
+                ),
                 "services": list(PERSISTENCE_SERVICES),
                 "persistent_readback": "passed",
                 "toxiproxy_note": (
