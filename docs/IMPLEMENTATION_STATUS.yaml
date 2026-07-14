@@ -11,7 +11,7 @@ current_module: M0
 modules:
   M0:
     name: repository-and-real-service-foundation
-    status: NOT_STARTED
+    status: IN_PROGRESS
     owner: main-agent
     gate_command: make gate-m0
     gate_report: null

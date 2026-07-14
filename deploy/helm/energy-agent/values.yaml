@@ -1,0 +1,27 @@
+global:
+  profile: production
+  existingSecret: energy-agent-secrets
+  imagePullPolicy: IfNotPresent
+
+services: {}
+
+infrastructure:
+  external: true
+  mysql: {endpoint: ""}
+  redis: {endpoint: ""}
+  rabbitmq: {endpoint: ""}
+  minio: {endpoint: ""}
+  influxdb: {endpoint: ""}
+  opensearch: {endpoint: ""}
+  milvus: {endpoint: ""}
+  neo4j: {endpoint: ""}
+  keycloak: {endpoint: ""}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile: {type: RuntimeDefault}
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}

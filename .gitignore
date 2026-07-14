@@ -24,6 +24,7 @@ build/
 
 # Runtime and gate output
 artifacts/
+.runtime/
 *.log
 
 # IDE and OS
