@@ -41,6 +41,7 @@ up-dev: prepare-m0-env
 	DEPLOYMENT_PROFILE=dev docker compose --env-file deploy/versions.env --env-file .env.m0 --profile dev up -d --wait
 
 up-full: prepare-m0-env
+	$(UV) run --env-file .env.m0 python scripts/validate_profile.py full
 	DEPLOYMENT_PROFILE=full docker compose --env-file deploy/versions.env --env-file .env.m0 --profile full up -d --wait
 
 up-staging:

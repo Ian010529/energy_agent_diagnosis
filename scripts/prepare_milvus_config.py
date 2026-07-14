@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -23,7 +24,7 @@ def write_config(profile: str, password: str) -> Path:
         "common:\n"
         "  security:\n"
         "    authorizationEnabled: true\n"
-        f"    defaultRootPassword: {password}\n",
+        f"    defaultRootPassword: {json.dumps(password)}\n",
         encoding="utf-8",
     )
     destination.chmod(0o600)

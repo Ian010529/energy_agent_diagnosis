@@ -122,6 +122,7 @@ def test_protected_profiles_generate_their_own_milvus_config() -> None:
     assert "MILVUS_CONFIG_PATH=./.runtime/milvus-staging.yaml" in makefile
     assert "MILVUS_CONFIG_PATH=./.runtime/milvus-production.yaml" in makefile
     assert "${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}" in compose
+    assert "--env-file .env.m0 python scripts/validate_profile.py full" in makefile
 
 
 def test_m0_environment_generator_runs_as_a_package_module() -> None:
