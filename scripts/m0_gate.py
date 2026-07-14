@@ -222,7 +222,9 @@ class M0Probe:
             timeout=10,
         )
 
-    def readiness(self, environment: dict[str, str]) -> None:
+    def readiness(
+        self, environment: dict[str, str], services: tuple[str, ...] | None = None
+    ) -> None:
         def mysql_check() -> None:
             with self.mysql() as connection, connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
@@ -292,13 +294,16 @@ class M0Probe:
             "keycloak": keycloak_check,
             "toxiproxy": toxiproxy_check,
         }
+        selected = set(services) if services is not None else set(checks) | {"etcd"}
         for name, check in checks.items():
-            wait_for(name, check)
+            if name in selected:
+                wait_for(name, check)
 
-        compose(
-            ["exec", "-T", "etcd", "etcdctl", "endpoint", "health"], environment
-        )
-        print("OK: etcd ready (Milvus supporting persistence service)")
+        if "etcd" in selected:
+            compose(
+                ["exec", "-T", "etcd", "etcdctl", "endpoint", "health"], environment
+            )
+            print("OK: etcd ready (Milvus supporting persistence service)")
 
     def write(self) -> None:
         self._write_mysql()
@@ -312,7 +317,7 @@ class M0Probe:
         self._write_keycloak()
         self._write_toxiproxy()
 
-    def readback(self) -> dict[str, str]:
+    def readback(self, services: tuple[str, ...] | None = None) -> dict[str, str]:
         readers = {
             "mysql": self._read_mysql,
             "redis": self._read_redis,
@@ -325,10 +330,12 @@ class M0Probe:
             "keycloak": self._read_keycloak,
             "toxiproxy": self._read_toxiproxy,
         }
+        selected = set(services) if services is not None else set(readers)
         readbacks: dict[str, str] = {}
         for service, reader in readers.items():
-            readbacks[service] = self._read_with_retry(service, reader)
-            print(f"OK: {service} persistent readback verified")
+            if service in selected:
+                readbacks[service] = self._read_with_retry(service, reader)
+                print(f"OK: {service} persistent readback verified")
         return readbacks
 
     def _read_with_retry(self, service: str, reader: Callable[[], str]) -> str:
@@ -748,11 +755,14 @@ def run_gate() -> Path:
         ),
         "in-process M0Probe.readiness using authenticated production protocols",
         "in-process M0Probe.write including RabbitMQ publisher confirm",
-        (
-            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
-            f"--profile full restart {' '.join(PERSISTENCE_SERVICES)}"
-        ),
-        "in-process M0Probe.readback from authoritative persistent stores",
+        *[
+            (
+                "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+                f"--profile full restart {service}"
+            )
+            for service in PERSISTENCE_SERVICES
+        ],
+        "after each restart: protocol readiness and authoritative persistent readback",
     ]
 
     command(["make", "verify-design"])
@@ -766,9 +776,11 @@ def run_gate() -> Path:
     probe = M0Probe(settings, acceptance_run_id)
     probe.readiness(environment)
     probe.write()
-    compose(["restart", *PERSISTENCE_SERVICES], environment)
-    probe.readiness(environment)
-    readbacks = probe.readback()
+    readbacks: dict[str, str] = {}
+    for service in PERSISTENCE_SERVICES:
+        compose(["restart", service], environment)
+        probe.readiness(environment, (service,))
+        readbacks.update(probe.readback((service,)))
     verify()
 
     counts = junit_counts([unit_junit, contract_junit])
