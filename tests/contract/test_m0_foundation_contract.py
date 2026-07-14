@@ -108,6 +108,7 @@ def test_compose_enforces_profile_guard_before_every_real_service() -> None:
 
 def test_protected_profile_fails_closed() -> None:
     environment = {key: "contract-secure-value" for key in REQUIRED}
+    environment["KEYCLOAK_M0_REALM"] = "m0-gate"
     validate("full", environment)
 
     with pytest.raises(RuntimeError, match="invalid"):
