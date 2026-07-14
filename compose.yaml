@@ -163,7 +163,7 @@ services:
       - "127.0.0.1:19091:9091"
     volumes:
       - milvus-data:/var/lib/milvus
-      - ./.runtime/milvus.yaml:/milvus/configs/user.yaml:ro
+      - ${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}:/milvus/configs/user.yaml:ro
     depends_on:
       etcd: {condition: service_healthy}
       minio: {condition: service_healthy}

@@ -104,6 +104,37 @@ def test_protected_profile_fails_closed() -> None:
         validate("production", {**environment, "MYSQL_PASSWORD": "change-me"})
     with pytest.raises(RuntimeError, match="forbidden"):
         validate("staging", {**environment, "RUNTIME_MOCK_PROVIDER": "enabled"})
+    with pytest.raises(RuntimeError, match="forbidden"):
+        validate("production", {**environment, "MODEL_PROVIDER": "mock"})
+    with pytest.raises(RuntimeError, match="forbidden"):
+        validate("production", {**environment, "DATA_SOURCE": "fixture"})
+    with pytest.raises(RuntimeError, match="forbidden"):
+        validate("production", {**environment, "DATABASE_URL": "sqlite:///:memory:"})
+    validate("production", {**environment, "MOCK_ENABLED": "false"})
+
+
+def test_protected_profiles_generate_their_own_milvus_config() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "prepare_milvus_config.py staging" in makefile
+    assert "prepare_milvus_config.py production" in makefile
+    assert "MILVUS_CONFIG_PATH=./.runtime/milvus-staging.yaml" in makefile
+    assert "MILVUS_CONFIG_PATH=./.runtime/milvus-production.yaml" in makefile
+    assert "${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}" in compose
+
+
+def test_ci_requires_real_m0_gate_for_every_trigger() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    full_job = workflow.split("  m0-full:\n", 1)[1]
+
+    assert "workflow_dispatch" in workflow
+    assert "pull_request:" in workflow
+    assert "push:" in workflow
+    assert re.search(r"(?m)^    if:", full_job) is None
+    assert "runs-on: [self-hosted, linux, x64, m0-full]" in full_job
+    assert "environment: m0-full" in full_job
+    assert "make gate-m0" in full_job
 
 
 def test_env_example_contains_names_but_no_values() -> None:

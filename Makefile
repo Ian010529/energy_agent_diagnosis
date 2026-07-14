@@ -45,11 +45,13 @@ up-full: prepare-m0-env
 
 up-staging:
 	$(UV) run --env-file .env python scripts/validate_profile.py staging
-	DEPLOYMENT_PROFILE=staging docker compose --env-file deploy/versions.env --env-file .env --profile staging up -d --wait
+	$(UV) run --env-file .env python scripts/prepare_milvus_config.py staging
+	DEPLOYMENT_PROFILE=staging MILVUS_CONFIG_PATH=./.runtime/milvus-staging.yaml docker compose --env-file deploy/versions.env --env-file .env --profile staging up -d --wait
 
 up-production:
 	$(UV) run --env-file .env python scripts/validate_profile.py production
-	DEPLOYMENT_PROFILE=production docker compose --env-file deploy/versions.env --env-file .env --profile production up -d --wait
+	$(UV) run --env-file .env python scripts/prepare_milvus_config.py production
+	DEPLOYMENT_PROFILE=production MILVUS_CONFIG_PATH=./.runtime/milvus-production.yaml docker compose --env-file deploy/versions.env --env-file .env --profile production up -d --wait
 
 down-full:
 	docker compose --env-file deploy/versions.env --env-file .env.m0 --profile full down

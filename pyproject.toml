@@ -24,6 +24,7 @@ dev = [
   "pytest==8.4.1",
   "redis==6.2.0",
   "ruff==0.12.7",
+  "types-pymysql==1.1.0.20260518",
 ]
 
 [tool.hatch.build.targets.wheel]

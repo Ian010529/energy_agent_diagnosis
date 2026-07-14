@@ -3,7 +3,6 @@ name: CI
 on:
   pull_request:
   push:
-    branches-ignore: [main]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +27,6 @@ jobs:
 
   m0-full:
     needs: quality
-    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, linux, x64, m0-full]
     environment: m0-full
     timeout-minutes: 90

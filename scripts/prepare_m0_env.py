@@ -6,9 +6,10 @@ from __future__ import annotations
 import secrets
 from pathlib import Path
 
+from scripts.prepare_milvus_config import write_config
+
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = ROOT / ".env.m0"
-RUNTIME_DIR = ROOT / ".runtime"
 
 
 def token(length: int = 32) -> str:
@@ -25,16 +26,7 @@ def load_existing() -> dict[str, str]:
 
 
 def write_milvus_config(password: str) -> None:
-    RUNTIME_DIR.mkdir(exist_ok=True)
-    milvus_config = RUNTIME_DIR / "milvus.yaml"
-    milvus_config.write_text(
-        "common:\n"
-        "  security:\n"
-        "    authorizationEnabled: true\n"
-        f"    defaultRootPassword: {password}\n",
-        encoding="utf-8",
-    )
-    milvus_config.chmod(0o600)
+    write_config("full", password)
 
 
 def main() -> int:

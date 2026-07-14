@@ -43,6 +43,32 @@ SECRET_KEYS = {
     "KEYCLOAK_ADMIN_PASSWORD",
     "MILVUS_ROOT_PASSWORD",
 }
+DISABLED_VALUES = {"", "0", "false", "off", "disabled", "none"}
+FORBIDDEN_VALUE_MARKERS = ("mock", "fixture", "gold", "in-memory", "in_memory", ":memory:")
+VALUE_SELECTOR_KEYS = (
+    "ADAPTER",
+    "BACKEND",
+    "DATABASE",
+    "MODE",
+    "PATH",
+    "PROVIDER",
+    "REPOSITORY",
+    "SOURCE",
+    "URL",
+)
+
+
+def selects_forbidden_runtime(key: str, value: str) -> bool:
+    normalized_key = key.upper()
+    normalized_value = value.strip().lower()
+    if normalized_value in DISABLED_VALUES:
+        return False
+    if any(marker in normalized_key for marker in ("MOCK", "FIXTURE", "GOLD")):
+        return True
+    selects_mode = any(marker in normalized_key for marker in VALUE_SELECTOR_KEYS)
+    return selects_mode and any(
+        marker in normalized_value for marker in FORBIDDEN_VALUE_MARKERS
+    )
 
 
 def validate(profile: str, environment: dict[str, str]) -> None:
@@ -60,7 +86,7 @@ def validate(profile: str, environment: dict[str, str]) -> None:
     forbidden = sorted(
         key
         for key, value in environment.items()
-        if value and any(marker in key.upper() for marker in ("MOCK", "FIXTURE", "GOLD_PATH"))
+        if selects_forbidden_runtime(key, value)
     )
     if invalid or forbidden:
         raise RuntimeError(

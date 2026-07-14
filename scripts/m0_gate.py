@@ -20,7 +20,7 @@ from typing import cast
 
 import httpx
 import pika
-import pymysql  # type: ignore[import-untyped]
+import pymysql
 import redis
 from influxdb_client import InfluxDBClient, Point, WriteOptions  # type: ignore[attr-defined]
 from minio import Minio
