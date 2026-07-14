@@ -102,6 +102,8 @@ def test_protected_profile_fails_closed() -> None:
 
     with pytest.raises(RuntimeError, match="invalid"):
         validate("production", {**environment, "MYSQL_PASSWORD": "change-me"})
+    with pytest.raises(RuntimeError, match="invalid"):
+        validate("full", {**environment, "KEYCLOAK_M0_CLIENT_SECRET": ""})
     with pytest.raises(RuntimeError, match="forbidden"):
         validate("staging", {**environment, "RUNTIME_MOCK_PROVIDER": "enabled"})
     with pytest.raises(RuntimeError, match="forbidden"):

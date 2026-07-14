@@ -31,6 +31,7 @@ def write_milvus_config(password: str) -> None:
 
 def main() -> int:
     if ENV_PATH.exists():
+        ENV_PATH.chmod(0o600)
         values = load_existing()
         password = values.get("MILVUS_ROOT_PASSWORD")
         if not password:

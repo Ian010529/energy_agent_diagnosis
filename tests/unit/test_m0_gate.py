@@ -4,7 +4,9 @@ from typing import Any
 
 from pytest import MonkeyPatch
 
-from scripts.m0_gate import M0Probe
+import pytest
+
+from scripts.m0_gate import M0Probe, validate_gate_counts
 
 
 class FakeChannel:
@@ -48,3 +50,10 @@ def test_pika_none_return_is_a_confirmed_publish(monkeypatch: MonkeyPatch) -> No
     assert connection.channel_instance.confirm_enabled
     assert connection.channel_instance.published
     assert connection.closed
+
+
+def test_gate_counts_reject_skips() -> None:
+    with pytest.raises(RuntimeError, match="skipped=1"):
+        validate_gate_counts({"tests": 18, "failures": 0, "errors": 0, "skipped": 1})
+
+    validate_gate_counts({"tests": 18, "failures": 0, "errors": 0, "skipped": 0})

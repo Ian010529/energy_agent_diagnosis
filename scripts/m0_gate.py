@@ -705,6 +705,17 @@ def junit_counts(paths: list[Path]) -> dict[str, int]:
     return counts
 
 
+def validate_gate_counts(counts: dict[str, int]) -> None:
+    if counts["tests"] <= 0:
+        raise RuntimeError("M0 gate collected no tests")
+    if counts["failures"] or counts["errors"] or counts["skipped"]:
+        raise RuntimeError(
+            "M0 gate requires zero failures, errors, and skips; "
+            f"got failures={counts['failures']}, errors={counts['errors']}, "
+            f"skipped={counts['skipped']}"
+        )
+
+
 def service_versions(environment: dict[str, str]) -> list[dict[str, str]]:
     container_ids = compose(["ps", "-q"], environment, capture=True).splitlines()
     versions: list[dict[str, str]] = []
@@ -772,6 +783,8 @@ def run_gate() -> Path:
     command(["make", "typecheck"])
     command(["uv", "run", "pytest", "tests/unit", f"--junitxml={unit_junit}"])
     command(["uv", "run", "pytest", "tests/contract", f"--junitxml={contract_junit}"])
+    counts = junit_counts([unit_junit, contract_junit])
+    validate_gate_counts(counts)
     compose(["config", "--quiet"], environment)
     compose(["up", "-d", "--wait", "--wait-timeout", "600"], environment)
 
@@ -785,7 +798,6 @@ def run_gate() -> Path:
         readbacks.update(probe.readback((service,)))
     verify()
 
-    counts = junit_counts([unit_junit, contract_junit])
     versions = service_versions(environment)
     finished_at = datetime.now(UTC)
     gate = {

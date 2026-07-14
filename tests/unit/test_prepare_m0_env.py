@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.prepare_m0_env import token
+from scripts.prepare_m0_env import main, token
 from scripts.prepare_milvus_config import write_config
 
 
@@ -24,3 +24,16 @@ def test_milvus_config_is_profile_specific(tmp_path: Path, monkeypatch: pytest.M
     assert 'defaultRootPassword: "profile: secure # password"' in staging.read_text(
         encoding="utf-8"
     )
+
+
+def test_existing_m0_environment_is_restricted_to_owner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    environment = tmp_path / ".env.m0"
+    environment.write_text("MILVUS_ROOT_PASSWORD=secure-password\n", encoding="utf-8")
+    environment.chmod(0o644)
+    monkeypatch.setattr("scripts.prepare_m0_env.ENV_PATH", environment)
+    monkeypatch.setattr("scripts.prepare_m0_env.write_milvus_config", lambda _: None)
+
+    assert main() == 0
+    assert environment.stat().st_mode & 0o777 == 0o600

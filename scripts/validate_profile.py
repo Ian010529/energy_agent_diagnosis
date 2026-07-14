@@ -27,6 +27,9 @@ REQUIRED = {
     "NEO4J_PASSWORD",
     "KEYCLOAK_ADMIN",
     "KEYCLOAK_ADMIN_PASSWORD",
+    "KEYCLOAK_M0_REALM",
+    "KEYCLOAK_M0_CLIENT_ID",
+    "KEYCLOAK_M0_CLIENT_SECRET",
     "MILVUS_ROOT_PASSWORD",
 }
 PLACEHOLDERS = {"change-me", "changeme", "example", "placeholder", "todo"}
@@ -41,6 +44,7 @@ SECRET_KEYS = {
     "OPENSEARCH_INITIAL_ADMIN_PASSWORD",
     "NEO4J_PASSWORD",
     "KEYCLOAK_ADMIN_PASSWORD",
+    "KEYCLOAK_M0_CLIENT_SECRET",
     "MILVUS_ROOT_PASSWORD",
 }
 DISABLED_VALUES = {"", "0", "false", "off", "disabled", "none"}
