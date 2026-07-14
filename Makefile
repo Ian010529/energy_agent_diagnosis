@@ -35,7 +35,7 @@ package-check:
 	$(UV) build
 
 prepare-m0-env:
-	$(UV) run python scripts/prepare_m0_env.py
+	$(UV) run python -m scripts.prepare_m0_env
 
 up-dev: prepare-m0-env
 	DEPLOYMENT_PROFILE=dev docker compose --env-file deploy/versions.env --env-file .env.m0 --profile dev up -d --wait

@@ -727,7 +727,7 @@ def service_versions(environment: dict[str, str]) -> list[dict[str, str]]:
 
 
 def run_gate() -> Path:
-    command(["uv", "run", "python", "scripts/prepare_m0_env.py"])
+    command(["uv", "run", "python", "-m", "scripts.prepare_m0_env"])
     settings = load_env_file(ENV_FILE)
     environment = {**os.environ, **load_env_file(VERSIONS_FILE), **settings}
     environment["DEPLOYMENT_PROFILE"] = "full"
@@ -848,7 +848,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("readiness", "gate"))
     arguments = parser.parse_args()
-    command(["uv", "run", "python", "scripts/prepare_m0_env.py"])
+    command(["uv", "run", "python", "-m", "scripts.prepare_m0_env"])
     settings = load_env_file(ENV_FILE)
     environment = {**os.environ, **load_env_file(VERSIONS_FILE), **settings}
     environment["DEPLOYMENT_PROFILE"] = "full"

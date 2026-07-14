@@ -124,6 +124,14 @@ def test_protected_profiles_generate_their_own_milvus_config() -> None:
     assert "${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}" in compose
 
 
+def test_m0_environment_generator_runs_as_a_package_module() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    gate = (ROOT / "scripts/m0_gate.py").read_text(encoding="utf-8")
+
+    assert "python -m scripts.prepare_m0_env" in makefile
+    assert gate.count('["uv", "run", "python", "-m", "scripts.prepare_m0_env"]') == 2
+
+
 def test_ci_requires_real_m0_gate_for_every_trigger() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     full_job = workflow.split("  m0-full:\n", 1)[1]
