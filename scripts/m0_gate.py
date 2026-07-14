@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import hashlib
 import io
 import json
@@ -338,6 +339,9 @@ class M0Probe:
             "toxiproxy": self._read_toxiproxy,
         }
         selected = set(services) if services is not None else set(readers)
+        unknown = selected - set(readers)
+        if unknown:
+            raise RuntimeError(f"no authoritative readback registered for {sorted(unknown)}")
         readbacks: dict[str, str] = {}
         for service, reader in readers.items():
             if service in selected:
@@ -752,6 +756,14 @@ def run_gate() -> Path:
     validate_profile("full", environment)
     verify()
 
+    def cleanup_stack() -> None:
+        try:
+            compose(["down", "--volumes", "--remove-orphans"], environment)
+        except subprocess.CalledProcessError as error:
+            print(f"WARN: failed to clean isolated M0 stack: exit={error.returncode}")
+
+    atexit.register(cleanup_stack)
+
     acceptance_run_id = uuid7()
     artifact_dir = ROOT / "artifacts/gates/M0" / acceptance_run_id
     artifact_dir.mkdir(parents=True)
@@ -807,11 +819,35 @@ def run_gate() -> Path:
     probe = M0Probe(settings, acceptance_run_id)
     probe.readiness(environment)
     probe.write()
+    etcd_key = f"m0/gate/{acceptance_run_id}"
+    compose(
+        ["exec", "-T", "etcd", "etcdctl", "put", etcd_key, probe.payload_hash],
+        environment,
+    )
     readbacks: dict[str, str] = {}
     for service in PERSISTENCE_SERVICES:
         compose(["restart", service], environment)
         probe.readiness(environment, (service,))
-        readbacks.update(probe.readback((service,)))
+        if service == "etcd":
+            etcd_value = compose(
+                [
+                    "exec",
+                    "-T",
+                    "etcd",
+                    "etcdctl",
+                    "get",
+                    etcd_key,
+                    "--print-value-only",
+                ],
+                environment,
+                capture=True,
+            ).strip()
+            if etcd_value != probe.payload_hash:
+                raise RuntimeError("etcd authoritative readback differs from written hash")
+            readbacks["etcd"] = etcd_value
+            print("OK: etcd persistent readback verified")
+        else:
+            readbacks.update(probe.readback((service,)))
     for profile in ("staging", "production"):
         write_config(profile, settings["MILVUS_ROOT_PASSWORD"])
         profile_environment = {

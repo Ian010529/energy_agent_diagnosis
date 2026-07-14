@@ -56,3 +56,10 @@ def test_gate_counts_reject_skips() -> None:
         validate_gate_counts({"tests": 18, "failures": 0, "errors": 0, "skipped": 1})
 
     validate_gate_counts({"tests": 18, "failures": 0, "errors": 0, "skipped": 0})
+
+
+def test_readback_rejects_unregistered_service() -> None:
+    probe = M0Probe({}, "019f6225-98e1-7d7f-b238-774a777a41fd")
+
+    with pytest.raises(RuntimeError, match="no authoritative readback"):
+        probe.readback(("unregistered",))

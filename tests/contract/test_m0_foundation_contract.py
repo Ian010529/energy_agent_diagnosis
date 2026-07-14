@@ -168,6 +168,9 @@ def test_integration_target_runs_the_persistent_m0_gate() -> None:
     assert "test-integration: gate-m0" in makefile
     assert 'for profile in ("staging", "production")' in gate
     assert '"deployment_profiles": ["full", "staging", "production"]' in gate
+    assert 'etcdctl", "put"' in gate
+    assert '"--print-value-only"' in gate
+    assert 'compose(["down", "--volumes", "--remove-orphans"]' in gate
 
 
 def test_required_migrate_target_is_explicitly_deferred() -> None:
