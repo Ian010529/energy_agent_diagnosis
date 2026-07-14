@@ -12,7 +12,7 @@ RUNTIME_DIR = ROOT / ".runtime"
 
 
 def token(length: int = 32) -> str:
-    return secrets.token_urlsafe(length)
+    return "m0_" + secrets.token_urlsafe(length)
 
 
 def load_existing() -> dict[str, str]:
