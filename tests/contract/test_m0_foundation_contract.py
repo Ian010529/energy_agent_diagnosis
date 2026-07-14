@@ -87,6 +87,15 @@ def test_compose_configuration_is_valid_without_starting_services() -> None:
     )
 
 
+def test_healthchecks_do_not_put_credentials_in_process_arguments() -> None:
+    compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "cypher-shell" not in compose
+    assert "redis-cli -a" not in compose
+    assert "-p$$MYSQL_PASSWORD" not in compose
+    assert "curl -fsS -u admin:" not in compose
+
+
 def test_protected_profile_fails_closed() -> None:
     environment = {key: "contract-secure-value" for key in REQUIRED}
     validate("full", environment)
