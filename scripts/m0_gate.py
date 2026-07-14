@@ -369,15 +369,15 @@ class M0Probe:
             channel = connection.channel()
             channel.confirm_delivery()
             channel.queue_declare(queue=self.rabbit_queue, durable=True)
-            confirmed = channel.basic_publish(
+            # In Pika 1.3, confirm mode blocks until Basic.Ack and returns None.
+            # Basic.Nack and mandatory unroutable messages raise exceptions.
+            channel.basic_publish(
                 exchange="",
                 routing_key=self.rabbit_queue,
                 body=self.payload_hash.encode(),
                 properties=pika.BasicProperties(delivery_mode=2, content_type="text/plain"),
                 mandatory=True,
             )
-            if not confirmed:
-                raise RuntimeError("RabbitMQ publisher confirm was not received")
         finally:
             connection.close()
 
