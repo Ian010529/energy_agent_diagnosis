@@ -37,6 +37,8 @@ services:
           full|staging|production) ;;
           *) echo 'protected profile guard rejected unknown profile' >&2; exit 1 ;;
         esac
+        [ "$$KEYCLOAK_M0_REALM" = 'm0-gate' ] || { \
+          echo 'protected profile guard rejected unsupported M0 realm' >&2; exit 1; }
         set -- "$$MYSQL_ROOT_PASSWORD" "$$MYSQL_PASSWORD" "$$REDIS_PASSWORD" \
           "$$RABBITMQ_DEFAULT_PASS" "$$MINIO_ROOT_PASSWORD" "$$INFLUXDB_PASSWORD" \
           "$$INFLUXDB_TOKEN" "$$OPENSEARCH_INITIAL_ADMIN_PASSWORD" "$$NEO4J_PASSWORD" \
@@ -279,7 +281,7 @@ services:
       - "127.0.0.1:18080:8080"
       - "127.0.0.1:19090:9000"
     volumes:
-      - ./deploy/keycloak/m0-realm.json:/opt/keycloak/data/import/m0-realm.json:ro
+      - ./deploy/keycloak/m0-gate-realm.json:/opt/keycloak/data/import/m0-gate-realm.json:ro
     depends_on:
       <<: *profile-guard
       mysql: {condition: service_healthy}

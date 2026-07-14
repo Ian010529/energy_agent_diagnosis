@@ -114,6 +114,8 @@ def test_protected_profile_fails_closed() -> None:
         validate("production", {**environment, "MYSQL_PASSWORD": "change-me"})
     with pytest.raises(RuntimeError, match="invalid"):
         validate("full", {**environment, "KEYCLOAK_M0_CLIENT_SECRET": ""})
+    with pytest.raises(RuntimeError, match="KEYCLOAK_M0_REALM"):
+        validate("full", {**environment, "KEYCLOAK_M0_REALM": "custom"})
     with pytest.raises(RuntimeError, match="forbidden"):
         validate("staging", {**environment, "RUNTIME_MOCK_PROVIDER": "enabled"})
     with pytest.raises(RuntimeError, match="forbidden"):
@@ -176,11 +178,11 @@ def test_required_migrate_target_is_explicitly_deferred() -> None:
 
 def test_keycloak_realm_is_imported_on_normal_startup() -> None:
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
-    realm = (ROOT / "deploy/keycloak/m0-realm.json").read_text(encoding="utf-8")
+    realm = (ROOT / "deploy/keycloak/m0-gate-realm.json").read_text(encoding="utf-8")
 
     assert "--import-realm" in compose
-    assert "m0-realm.json:/opt/keycloak/data/import/m0-realm.json:ro" in compose
-    assert '"realm": "${KEYCLOAK_M0_REALM}"' in realm
+    assert "m0-gate-realm.json:/opt/keycloak/data/import/m0-gate-realm.json:ro" in compose
+    assert '"realm": "m0-gate"' in realm
     assert '"clientId": "${KEYCLOAK_M0_CLIENT_ID}"' in realm
     assert '"secret": "${KEYCLOAK_M0_CLIENT_SECRET}"' in realm
 

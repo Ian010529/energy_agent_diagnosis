@@ -87,6 +87,8 @@ def validate(profile: str, environment: dict[str, str]) -> None:
         or environment[key].strip().lower() in PLACEHOLDERS
         or (key in SECRET_KEYS and len(environment[key].strip()) < 8)
     )
+    if environment.get("KEYCLOAK_M0_REALM") != "m0-gate":
+        invalid.append("KEYCLOAK_M0_REALM")
     forbidden = sorted(
         key
         for key, value in environment.items()
