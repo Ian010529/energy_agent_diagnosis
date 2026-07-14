@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytest import MonkeyPatch
-
 import pytest
+from pytest import MonkeyPatch
 
 from scripts.m0_gate import M0Probe, validate_gate_counts
 
