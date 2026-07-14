@@ -203,7 +203,7 @@ class M0Probe:
             http_auth=("admin", self.settings["OPENSEARCH_INITIAL_ADMIN_PASSWORD"]),
             use_ssl=False,
             verify_certs=False,
-            timeout=10,
+            timeout=30,
         )
 
     def neo4j(self) -> Driver:
@@ -313,21 +313,34 @@ class M0Probe:
         self._write_toxiproxy()
 
     def readback(self) -> dict[str, str]:
-        readbacks = {
-            "mysql": self._read_mysql(),
-            "redis": self._read_redis(),
-            "rabbitmq": self._read_rabbitmq(),
-            "minio": self._read_minio(),
-            "influxdb": self._read_influxdb(),
-            "opensearch": self._read_opensearch(),
-            "milvus": self._read_milvus(),
-            "neo4j": self._read_neo4j(),
-            "keycloak": self._read_keycloak(),
-            "toxiproxy": self._read_toxiproxy(),
+        readers = {
+            "mysql": self._read_mysql,
+            "redis": self._read_redis,
+            "rabbitmq": self._read_rabbitmq,
+            "minio": self._read_minio,
+            "influxdb": self._read_influxdb,
+            "opensearch": self._read_opensearch,
+            "milvus": self._read_milvus,
+            "neo4j": self._read_neo4j,
+            "keycloak": self._read_keycloak,
+            "toxiproxy": self._read_toxiproxy,
         }
-        if set(readbacks.values()) != {self.payload_hash}:
-            raise RuntimeError("one or more service readback hashes differ")
-        for service in readbacks:
+        readbacks: dict[str, str] = {}
+        for service, reader in readers.items():
+            result: str | None = None
+
+            def check() -> None:
+                nonlocal result
+                result = reader()
+                if result != self.payload_hash:
+                    raise RuntimeError(
+                        f"{service} hash differs from the written payload hash"
+                    )
+
+            wait_for(f"{service} persistent readback", check, timeout=180)
+            if result is None:
+                raise RuntimeError(f"{service} readback produced no result")
+            readbacks[service] = result
             print(f"OK: {service} persistent readback verified")
         return readbacks
 
