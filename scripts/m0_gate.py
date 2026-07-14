@@ -729,25 +729,35 @@ def run_gate() -> Path:
     artifact_dir = ROOT / "artifacts/gates/M0" / acceptance_run_id
     artifact_dir.mkdir(parents=True)
     started_at = datetime.now(UTC)
+    unit_junit = artifact_dir / "unit-junit.xml"
+    contract_junit = artifact_dir / "contract-junit.xml"
     commands = [
+        "make gate-m0",
         "make verify-design",
         "make lint",
         "make typecheck",
-        "uv run pytest tests/unit --junitxml=<artifact>/unit-junit.xml",
-        "uv run pytest tests/contract --junitxml=<artifact>/contract-junit.xml",
-        "docker compose ... --profile full config --quiet",
-        "docker compose ... --profile full up -d --wait",
-        "M0 authenticated readiness probes",
-        "M0 real writes with RabbitMQ publisher confirm",
-        "docker compose ... restart <all infrastructure>",
-        "M0 authoritative persistent readback probes",
+        f"uv run pytest tests/unit --junitxml={unit_junit.relative_to(ROOT)}",
+        f"uv run pytest tests/contract --junitxml={contract_junit.relative_to(ROOT)}",
+        (
+            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+            "--profile full config --quiet"
+        ),
+        (
+            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+            "--profile full up -d --wait --wait-timeout 600"
+        ),
+        "in-process M0Probe.readiness using authenticated production protocols",
+        "in-process M0Probe.write including RabbitMQ publisher confirm",
+        (
+            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+            f"--profile full restart {' '.join(PERSISTENCE_SERVICES)}"
+        ),
+        "in-process M0Probe.readback from authoritative persistent stores",
     ]
 
     command(["make", "verify-design"])
     command(["make", "lint"])
     command(["make", "typecheck"])
-    unit_junit = artifact_dir / "unit-junit.xml"
-    contract_junit = artifact_dir / "contract-junit.xml"
     command(["uv", "run", "pytest", "tests/unit", f"--junitxml={unit_junit}"])
     command(["uv", "run", "pytest", "tests/contract", f"--junitxml={contract_junit}"])
     compose(["config", "--quiet"], environment)

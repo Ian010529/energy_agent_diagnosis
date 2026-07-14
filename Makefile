@@ -21,14 +21,11 @@ test-unit:
 test-contract:
 	$(UV) run pytest tests/contract
 
-test-integration:
-	$(UV) run pytest tests/integration
+test-integration: readiness
 
-test-live:
-	$(UV) run pytest tests/live
+test-live: gate-m0
 
-test-chaos:
-	$(UV) run pytest tests/chaos
+test-chaos: gate-m0
 
 validate-data load-data evaluate performance:
 	@echo "$@ belongs to a later module and is not implemented in M0" >&2
