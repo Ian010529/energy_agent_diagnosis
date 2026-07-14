@@ -1,0 +1,29 @@
+# docs/IMPLEMENTATION_STATUS.yaml
+schema_version: 1
+
+project:
+  name: energy_agent_diagnosis
+  immutable_design: docs/immutable/能源设备运维诊断Agent_详细设计.md
+  execution_spec: docs/development/CODEX_EXECUTION_SPEC.md
+
+current_module: M0
+
+modules:
+  M0:
+    name: repository-and-real-service-foundation
+    status: NOT_STARTED
+    owner: main-agent
+    gate_command: make gate-m0
+    gate_report: null
+    accepted_commit: null
+    blockers: []
+
+  M1:
+    name: shared-contracts-canonicalization-and-migrations
+    status: NOT_STARTED
+    owner: null
+    gate_command: make gate-m1
+    gate_report: null
+    accepted_commit: null
+    blockers:
+      - M0
