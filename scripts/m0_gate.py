@@ -327,22 +327,23 @@ class M0Probe:
         }
         readbacks: dict[str, str] = {}
         for service, reader in readers.items():
-            result: str | None = None
-
-            def check() -> None:
-                nonlocal result
-                result = reader()
-                if result != self.payload_hash:
-                    raise RuntimeError(
-                        f"{service} hash differs from the written payload hash"
-                    )
-
-            wait_for(f"{service} persistent readback", check, timeout=180)
-            if result is None:
-                raise RuntimeError(f"{service} readback produced no result")
-            readbacks[service] = result
+            readbacks[service] = self._read_with_retry(service, reader)
             print(f"OK: {service} persistent readback verified")
         return readbacks
+
+    def _read_with_retry(self, service: str, reader: Callable[[], str]) -> str:
+        result: str | None = None
+
+        def check() -> None:
+            nonlocal result
+            result = reader()
+            if result != self.payload_hash:
+                raise RuntimeError(f"{service} hash differs from the written payload hash")
+
+        wait_for(f"{service} persistent readback", check, timeout=180)
+        if result is None:
+            raise RuntimeError(f"{service} readback produced no result")
+        return result
 
     def _write_mysql(self) -> None:
         with self.mysql() as connection, connection.cursor() as cursor:
