@@ -42,7 +42,7 @@ def main() -> int:
         return 0
 
     values = {
-        "COMPOSE_PROJECT_NAME": "energy-agent-m0",
+        "COMPOSE_PROJECT_NAME": f"energy-agent-m0-{secrets.token_hex(6)}",
         "DEPLOYMENT_PROFILE": "full",
         "MYSQL_ROOT_PASSWORD": token(),
         "MYSQL_DATABASE": "energy_agent",

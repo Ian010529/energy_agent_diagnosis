@@ -1,0 +1,14 @@
+{
+  "realm": "${KEYCLOAK_M0_REALM}",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "${KEYCLOAK_M0_CLIENT_ID}",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "secret": "${KEYCLOAK_M0_CLIENT_SECRET}"
+    }
+  ]
+}

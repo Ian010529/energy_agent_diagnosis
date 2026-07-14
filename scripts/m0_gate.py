@@ -847,9 +847,11 @@ def run_gate() -> Path:
         "failure_count": counts["failures"] + counts["errors"],
         "skip_count": counts["skipped"],
         "service_digests": {item["container"]: item["configured"] for item in versions},
+        "dataset_acceptance_run_id": None,
         "real_services_contacted": list(COMPOSE_SERVICES),
         "readback_hashes": readbacks,
-        "result": "PASSED",
+        "result": "TESTS_PASSED_REVIEW_PENDING",
+        "reviewer": "PENDING_INDEPENDENT_REVIEW",
         "started_at": started_at.isoformat(),
         "finished_at": finished_at.isoformat(),
     }

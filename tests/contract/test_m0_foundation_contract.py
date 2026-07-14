@@ -167,6 +167,24 @@ def test_integration_target_runs_the_persistent_m0_gate() -> None:
     assert '"deployment_profiles": ["full", "staging", "production"]' in gate
 
 
+def test_required_migrate_target_is_explicitly_deferred() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert "migrate validate-data load-data evaluate performance:" in makefile
+    assert "belongs to a later module" in makefile
+
+
+def test_keycloak_realm_is_imported_on_normal_startup() -> None:
+    compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+    realm = (ROOT / "deploy/keycloak/m0-realm.json").read_text(encoding="utf-8")
+
+    assert "--import-realm" in compose
+    assert "m0-realm.json:/opt/keycloak/data/import/m0-realm.json:ro" in compose
+    assert '"realm": "${KEYCLOAK_M0_REALM}"' in realm
+    assert '"clientId": "${KEYCLOAK_M0_CLIENT_ID}"' in realm
+    assert '"secret": "${KEYCLOAK_M0_CLIENT_SECRET}"' in realm
+
+
 def test_env_example_contains_names_but_no_values() -> None:
     values = parse_env(ROOT / ".env.example")
 

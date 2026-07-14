@@ -37,3 +37,16 @@ def test_existing_m0_environment_is_restricted_to_owner(
 
     assert main() == 0
     assert environment.stat().st_mode & 0o777 == 0o600
+
+
+def test_new_m0_environment_uses_an_isolated_compose_project(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    environment = tmp_path / ".env.m0"
+    monkeypatch.setattr("scripts.prepare_m0_env.ENV_PATH", environment)
+    monkeypatch.setattr("scripts.prepare_m0_env.write_milvus_config", lambda _: None)
+
+    assert main() == 0
+    values = environment.read_text(encoding="utf-8")
+    assert "COMPOSE_PROJECT_NAME=energy-agent-m0-" in values
+    assert "COMPOSE_PROJECT_NAME=energy-agent-m0\n" not in values

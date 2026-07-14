@@ -262,10 +262,13 @@ services:
   keycloak:
     image: ${KEYCLOAK_IMAGE:?set KEYCLOAK_IMAGE via deploy/versions.env}
     profiles: *profiles
-    command: [start, --http-enabled=true, --hostname-strict=false]
+    command: [start, --http-enabled=true, --hostname-strict=false, --import-realm]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?required}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?required}
+      KEYCLOAK_M0_REALM: ${KEYCLOAK_M0_REALM:?required}
+      KEYCLOAK_M0_CLIENT_ID: ${KEYCLOAK_M0_CLIENT_ID:?required}
+      KEYCLOAK_M0_CLIENT_SECRET: ${KEYCLOAK_M0_CLIENT_SECRET:?required}
       KC_DB: mysql
       KC_DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:?required}
       KC_DB_USERNAME: ${MYSQL_USER:?required}
@@ -275,6 +278,8 @@ services:
     ports:
       - "127.0.0.1:18080:8080"
       - "127.0.0.1:19090:9000"
+    volumes:
+      - ./deploy/keycloak/m0-realm.json:/opt/keycloak/data/import/m0-realm.json:ro
     depends_on:
       <<: *profile-guard
       mysql: {condition: service_healthy}
