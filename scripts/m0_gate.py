@@ -35,6 +35,7 @@ from pymilvus import (
     utility,
 )
 
+from scripts.prepare_milvus_config import write_config
 from scripts.validate_profile import validate as validate_profile
 from scripts.verify_immutable_design import verify
 
@@ -95,7 +96,13 @@ def command(
     )
 
 
-def compose(arguments: list[str], environment: dict[str, str], *, capture: bool = False) -> str:
+def compose(
+    arguments: list[str],
+    environment: dict[str, str],
+    *,
+    capture: bool = False,
+    profile: str = "full",
+) -> str:
     result = command(
         [
             "docker",
@@ -105,7 +112,7 @@ def compose(arguments: list[str], environment: dict[str, str], *, capture: bool 
             "--env-file",
             str(ENV_FILE),
             "--profile",
-            "full",
+            profile,
             *arguments,
         ],
         environment=environment,
@@ -776,6 +783,15 @@ def run_gate() -> Path:
             for service in PERSISTENCE_SERVICES
         ],
         "after each restart: protocol readiness and authoritative persistent readback",
+        "generate profile-specific Milvus configs for staging and production",
+        (
+            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+            "--profile staging up -d --wait --wait-timeout 600; authenticated readiness"
+        ),
+        (
+            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+            "--profile production up -d --wait --wait-timeout 600; authenticated readiness"
+        ),
     ]
 
     command(["make", "verify-design"])
@@ -796,6 +812,20 @@ def run_gate() -> Path:
         compose(["restart", service], environment)
         probe.readiness(environment, (service,))
         readbacks.update(probe.readback((service,)))
+    for profile in ("staging", "production"):
+        write_config(profile, settings["MILVUS_ROOT_PASSWORD"])
+        profile_environment = {
+            **environment,
+            "DEPLOYMENT_PROFILE": profile,
+            "MILVUS_CONFIG_PATH": f"./.runtime/milvus-{profile}.yaml",
+        }
+        validate_profile(profile, profile_environment)
+        compose(
+            ["up", "-d", "--wait", "--wait-timeout", "600"],
+            profile_environment,
+            profile=profile,
+        )
+        probe.readiness(profile_environment)
     verify()
 
     versions = service_versions(environment)
@@ -805,7 +835,7 @@ def run_gate() -> Path:
         "acceptance_run_id": acceptance_run_id,
         "commit_sha": command(["git", "rev-parse", "HEAD"], capture=True).stdout.strip(),
         "environment": {
-            "deployment_profile": "full",
+            "deployment_profiles": ["full", "staging", "production"],
             "platform": command(
                 ["docker", "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"],
                 capture=True,

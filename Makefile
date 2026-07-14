@@ -21,7 +21,7 @@ test-unit:
 test-contract:
 	$(UV) run pytest tests/contract
 
-test-integration: readiness
+test-integration: gate-m0
 
 test-live: gate-m0
 

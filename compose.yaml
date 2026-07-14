@@ -1,8 +1,63 @@
 name: ${COMPOSE_PROJECT_NAME:-energy-agent-m0}
 
 x-profiles: &profiles [dev, full, staging, production]
+x-profile-guard: &profile-guard
+  profile-guard: {condition: service_completed_successfully}
 
 services:
+  profile-guard:
+    image: ${REDIS_IMAGE:?set REDIS_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      DEPLOYMENT_PROFILE: ${DEPLOYMENT_PROFILE:?required}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
+      INFLUXDB_PASSWORD: ${INFLUXDB_PASSWORD:?required}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN:?required}
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?required}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?required}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?required}
+      KEYCLOAK_M0_REALM: ${KEYCLOAK_M0_REALM:?required}
+      KEYCLOAK_M0_CLIENT_ID: ${KEYCLOAK_M0_CLIENT_ID:?required}
+      KEYCLOAK_M0_CLIENT_SECRET: ${KEYCLOAK_M0_CLIENT_SECRET:?required}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD:?required}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-}
+      DATA_SOURCE: ${DATA_SOURCE:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      RUNTIME_MOCK_PROVIDER: ${RUNTIME_MOCK_PROVIDER:-}
+    command:
+      - sh
+      - -ec
+      - |
+        case "$$DEPLOYMENT_PROFILE" in
+          dev) exit 0 ;;
+          full|staging|production) ;;
+          *) echo 'protected profile guard rejected unknown profile' >&2; exit 1 ;;
+        esac
+        set -- "$$MYSQL_ROOT_PASSWORD" "$$MYSQL_PASSWORD" "$$REDIS_PASSWORD" \
+          "$$RABBITMQ_DEFAULT_PASS" "$$MINIO_ROOT_PASSWORD" "$$INFLUXDB_PASSWORD" \
+          "$$INFLUXDB_TOKEN" "$$OPENSEARCH_INITIAL_ADMIN_PASSWORD" "$$NEO4J_PASSWORD" \
+          "$$KEYCLOAK_ADMIN_PASSWORD" "$$KEYCLOAK_M0_CLIENT_SECRET" \
+          "$$MILVUS_ROOT_PASSWORD"
+        for value do
+          normalized="$$(printf '%s' "$$value" | tr '[:upper:]' '[:lower:]')"
+          case "$$normalized" in
+            change-me|changeme|example|placeholder|todo) \
+              echo 'protected profile guard rejected placeholder credential' >&2; exit 1 ;;
+          esac
+          [ "$${#value}" -ge 8 ] || { \
+            echo 'protected profile guard rejected short credential' >&2; exit 1; }
+        done
+        selectors="$$MODEL_PROVIDER $$DATA_SOURCE $$DATABASE_URL $$RUNTIME_MOCK_PROVIDER"
+        normalized="$$(printf '%s' "$$selectors" | tr '[:upper:]' '[:lower:]')"
+        case "$$normalized" in
+          *mock*|*fixture*|*gold*|*in-memory*|*in_memory*|*:memory:*) \
+            echo 'protected profile guard rejected forbidden runtime mode' >&2; exit 1 ;;
+        esac
+
   mysql:
     image: ${MYSQL_IMAGE:?set MYSQL_IMAGE via deploy/versions.env}
     profiles: *profiles
@@ -18,6 +73,7 @@ services:
       - --default-time-zone=+00:00
     ports: ["127.0.0.1:13306:3306"]
     volumes: [mysql-data:/var/lib/mysql]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD-SHELL, "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER --silent"]
       interval: 5s
@@ -41,6 +97,7 @@ services:
       - noeviction
     ports: ["127.0.0.1:16379:6379"]
     volumes: [redis-data:/data]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD-SHELL, "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
       interval: 5s
@@ -60,6 +117,7 @@ services:
       - "127.0.0.1:15673:5672"
       - "127.0.0.1:15672:15672"
     volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, rabbitmq-diagnostics, -q, ping]
       interval: 5s
@@ -79,6 +137,7 @@ services:
       - "127.0.0.1:19000:9000"
       - "127.0.0.1:19001:9001"
     volumes: [minio-data:/data]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, curl, -fsS, http://localhost:9000/minio/health/ready]
       interval: 5s
@@ -98,6 +157,7 @@ services:
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:?required}
     ports: ["127.0.0.1:18086:8086"]
     volumes: [influxdb-data:/var/lib/influxdb2]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, influx, ping, --host, http://localhost:8086]
       interval: 5s
@@ -120,6 +180,7 @@ services:
       nofile: {soft: 65536, hard: 65536}
     ports: ["127.0.0.1:19200:9200"]
     volumes: [opensearch-data:/usr/share/opensearch/data]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/9200"]
       interval: 10s
@@ -141,6 +202,7 @@ services:
       - --listen-client-urls=http://0.0.0.0:2379
       - --data-dir=/etcd
     volumes: [etcd-data:/etcd]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, etcdctl, endpoint, health]
       interval: 5s
@@ -165,6 +227,7 @@ services:
       - milvus-data:/var/lib/milvus
       - ${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}:/milvus/configs/user.yaml:ro
     depends_on:
+      <<: *profile-guard
       etcd: {condition: service_healthy}
       minio: {condition: service_healthy}
     healthcheck:
@@ -187,6 +250,7 @@ services:
       - "127.0.0.1:17474:7474"
       - "127.0.0.1:17687:7687"
     volumes: [neo4j-data:/data]
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/7687"]
       interval: 10s
@@ -212,6 +276,7 @@ services:
       - "127.0.0.1:18080:8080"
       - "127.0.0.1:19090:9000"
     depends_on:
+      <<: *profile-guard
       mysql: {condition: service_healthy}
     healthcheck:
       test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/9000"]
@@ -227,6 +292,7 @@ services:
     ports:
       - "127.0.0.1:18474:8474"
       - "127.0.0.1:26379:26379"
+    depends_on: *profile-guard
     healthcheck:
       test: [CMD, /toxiproxy-cli, -h, localhost:8474, list]
       interval: 5s

@@ -96,6 +96,16 @@ def test_healthchecks_do_not_put_credentials_in_process_arguments() -> None:
     assert "curl -fsS -u admin:" not in compose
 
 
+def test_compose_enforces_profile_guard_before_every_real_service() -> None:
+    compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "profile-guard: {condition: service_completed_successfully}" in compose
+    assert compose.count("depends_on: *profile-guard") == 9
+    assert compose.count("<<: *profile-guard") == 2
+    assert "MODEL_PROVIDER: ${MODEL_PROVIDER:-}" in compose
+    assert "RUNTIME_MOCK_PROVIDER: ${RUNTIME_MOCK_PROVIDER:-}" in compose
+
+
 def test_protected_profile_fails_closed() -> None:
     environment = {key: "contract-secure-value" for key in REQUIRED}
     validate("full", environment)
@@ -146,6 +156,15 @@ def test_ci_requires_real_m0_gate_for_every_trigger() -> None:
     assert "runs-on: [self-hosted, linux, x64, m0-full]" in full_job
     assert "environment: m0-full" in full_job
     assert "make gate-m0" in full_job
+
+
+def test_integration_target_runs_the_persistent_m0_gate() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    gate = (ROOT / "scripts/m0_gate.py").read_text(encoding="utf-8")
+
+    assert "test-integration: gate-m0" in makefile
+    assert 'for profile in ("staging", "production")' in gate
+    assert '"deployment_profiles": ["full", "staging", "production"]' in gate
 
 
 def test_env_example_contains_names_but_no_values() -> None:
