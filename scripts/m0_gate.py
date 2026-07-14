@@ -633,7 +633,13 @@ class M0Probe:
         matches = [group for group in groups.json() if group.get("name") == self.acceptance_run_id]
         if len(matches) != 1:
             raise RuntimeError(f"Keycloak expected one group, got {len(matches)}")
-        return str(matches[0]["attributes"]["payload_hash"][0])
+        group = self.http.get(
+            f"{base}/admin/realms/{realm}/groups/{matches[0]['id']}",
+            headers=headers,
+            timeout=10,
+        )
+        group.raise_for_status()
+        return str(group.json()["attributes"]["payload_hash"][0])
 
     def _ensure_toxiproxy(self) -> None:
         base = "http://127.0.0.1:18474"
