@@ -152,7 +152,7 @@ def create_database(admin: Any, database: str, user: str) -> None:
         cursor.execute(
             f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
         )
-        cursor.execute(f"GRANT ALL PRIVILEGES ON `{database}`.* TO %s@'%'", (user,))
+        cursor.execute(f"GRANT ALL PRIVILEGES ON `{database}`.* TO %s@'%%'", (user,))
 
 
 def mysql_connection(
