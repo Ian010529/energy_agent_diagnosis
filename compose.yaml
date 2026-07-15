@@ -73,7 +73,7 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
       - --default-time-zone=+00:00
-    ports: ["127.0.0.1:13306:3306"]
+    ports: ["127.0.0.1:${MYSQL_HOST_PORT:-13306}:3306"]
     volumes: [mysql-data:/var/lib/mysql]
     depends_on: *profile-guard
     healthcheck:
@@ -97,7 +97,7 @@ services:
       - always
       - --maxmemory-policy
       - noeviction
-    ports: ["127.0.0.1:16379:6379"]
+    ports: ["127.0.0.1:${REDIS_HOST_PORT:-16379}:6379"]
     volumes: [redis-data:/data]
     depends_on: *profile-guard
     healthcheck:

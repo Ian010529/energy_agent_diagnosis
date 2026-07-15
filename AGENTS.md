@@ -185,6 +185,126 @@ After coding:
 
 Prefer one coherent domain fix over a series of test-driven local patches.
 
+## Cross-module regression prevention
+
+### Frozen implementation boundary
+
+Before modifying a module, freeze a concise implementation approach that covers:
+
+1. module scope and explicit non-goals;
+2. authoritative invariants;
+3. service and resource ownership and isolation;
+4. failure, cancellation and cleanup paths;
+5. the test and evidence mapped to each Gate requirement;
+6. the conditions that require rerunning the real-service Gate.
+
+Do not begin with isolated test-driven patches. Audit the complete affected
+lifecycle first and prefer one coherent root-cause fix.
+
+### Necessity filter
+
+Classify every proposed change or review finding as:
+
+- `REQUIRED`: prevents a false-positive Gate, security exposure, data loss,
+  incorrect persistent state, broken recovery or violation of an explicit
+  higher-authority requirement;
+- `DEFERRED`: optional hardening, style preference, speculative extensibility,
+  refactoring or an improvement not required by the current module.
+
+Only `REQUIRED` changes may be added while closing the current module. A review
+severity label alone does not make a change required. Before modifying code,
+state the concrete failure mode and why the fix belongs to the current module.
+
+### Semantic verification
+
+Tests must validate behavior and authoritative effects, not only source text.
+
+- Source-string assertions may enforce a static contract but cannot be the sole
+  evidence for runtime behavior.
+- Profile isolation must be verified using actual project and resource identity.
+- Persistence must be verified by authoritative post-restart readback.
+- Authentication configuration must be verified before a probe may create,
+  repair or update that configuration.
+- A Gate probe must never repair the condition it is intended to validate.
+- Negative-path tests must cover false-positive and self-healing probe risks.
+
+### Source-exact Gate
+
+A real-service Gate may run only when:
+
+1. the worktree is clean;
+2. the tested commit SHA is recorded before execution;
+3. every profile uses a run-specific project and fresh resources;
+4. every executed command and test count is recorded truthfully;
+5. failures and skips cannot be converted into success evidence.
+
+Any implementation or Gate-behavior change after a successful run invalidates
+that run and requires a new real-service Gate. Documentation-only changes to a
+Gate report or implementation status do not invalidate an otherwise
+source-exact run.
+
+### Gate rerun policy
+
+Rerun the complete real-service Gate only when a change affects:
+
+- runtime behavior;
+- service configuration or image;
+- authentication or secret handling;
+- persistence, restart, recovery or cleanup;
+- Gate probes, pass/fail logic or authoritative evidence.
+
+For report wording, status metadata, comments or other non-behavioral changes,
+run only the relevant static and contract checks. Do not rerun a live Gate
+without a concrete affected failure mode.
+
+### Cleanup and cancellation
+
+Every live Gate must:
+
+- use a unique acceptance run ID;
+- use isolated project names, networks and volumes;
+- register resources before starting them;
+- clean resources in `finally`;
+- handle normal failure, `SIGINT` and `SIGTERM`;
+- verify that run-scoped containers, volumes and networks are absent afterward.
+
+CI cancellation must not leave fixed-port services running.
+
+### Independent review boundary
+
+Independent review must run in an enforced read-only sandbox. The reviewer must
+not modify repository files, run Docker or real services, execute the live Gate,
+create acceptance evidence or change Git state.
+
+The reviewer reports only actionable P0/P1/P2 findings. Suggestions, style
+preferences and speculative hardening are non-blocking and must not trigger
+implementation changes while closing the current Gate.
+
+### Review finding closure
+
+For every blocking review finding, record:
+
+1. the concrete failure mode;
+2. why the fix is required for the current module;
+3. the affected files and lifecycle;
+4. the targeted verification;
+5. whether the existing Gate evidence was invalidated.
+
+Do not fix findings one by one without first checking whether they share a
+common root cause.
+
+### Acceptance freeze
+
+After a successful source-exact Gate and clean independent review:
+
+1. do not change implementation code;
+2. write the committed Gate report;
+3. update implementation status;
+4. run final immutable-design and targeted documentation checks;
+5. commit and stop at the current module boundary.
+
+Do not add optional improvements during acceptance finalization.
+
 ## Documentation
 
 When behavior, contracts, deployment, migrations or operational procedures

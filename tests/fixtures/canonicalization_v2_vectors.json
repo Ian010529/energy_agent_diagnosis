@@ -1,0 +1,14 @@
+[
+  {
+    "name": "unicode-key-order-and-nfc",
+    "input": {"é": "café", "a": null, "中": [true, false]},
+    "canonical": "{\"a\":null,\"é\":\"café\",\"中\":[true,false]}",
+    "sha256": "b6ee12f4c56886111f8906f330d1649e6644353978c0dec3e4ba2672421e1be6"
+  },
+  {
+    "name": "compact-nested",
+    "input": {"z": {"b": 2, "a": 1}, "a": []},
+    "canonical": "{\"a\":[],\"z\":{\"a\":1,\"b\":2}}",
+    "sha256": "b36780a102e55932432e64250650c86a1ec30e170bf5384936f87d7499322a4a"
+  }
+]

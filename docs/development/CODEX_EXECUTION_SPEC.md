@@ -393,7 +393,7 @@ flowchart TB
 - InfluxDB 使用 UTC 纳秒时间。
 - 禁止以本地时区字符串参与 hash、幂等或排序。
 
-## 6.2 Canonical JSON v1
+## 6.2 Canonicalization v2
 
 幂等、receipt、Prompt、索引、结果和结算 hash 全部使用同一规范：
 
@@ -406,7 +406,7 @@ flowchart TB
 7. `-0` 规范为 `0`；
 8. 时间统一 UTC 六位微秒 `Z`；
 9. 不允许 NaN/Infinity；
-10. 每个持久 hash 同时保存 `canonicalization_version=1` 和 SHA-256。
+10. 每个持久 hash 同时保存 `canonicalization_version=2` 和 SHA-256。
 
 请求指纹排除 Authorization、trace header、传输重试计数等 transport 字段，但包含全部业务字段。
 
@@ -430,7 +430,7 @@ OK | PARTIAL_SUCCESS | NOT_FOUND | TIMEOUT | DEGRADED | FAILED
 ApprovalState:
 PENDING | APPROVED | REJECTED | CANCELLED
 
-CaseState:
+CaseStatus:
 DRAFT | PENDING_REVIEW | APPROVED | REJECTED |
 DISABLED | SUPERSEDED
 
@@ -542,7 +542,7 @@ PENDING | QUEUED | INDEXED | DEGRADED | FAILED | TOMBSTONED
   "aggregate_type": "manual_document",
   "aggregate_id": "uuid",
   "revision": 1,
-  "idempotency_key_hash": "sha256",
+  "idempotency_key": "stable-event-key",
   "payload": {}
 }
 ```

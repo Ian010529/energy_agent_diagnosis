@@ -178,11 +178,11 @@ def test_integration_target_runs_the_persistent_m0_gate() -> None:
     assert gate.count('["down", "--volumes", "--remove-orphans"]') >= 2
 
 
-def test_required_migrate_target_is_explicitly_deferred() -> None:
+def test_required_migrate_target_is_implemented_by_m1() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
-    assert "migrate validate-data load-data evaluate performance:" in makefile
-    assert "belongs to a later module" in makefile
+    assert "migrate:" in makefile
+    assert "scripts.migrations" in makefile
 
 
 def test_keycloak_realm_is_imported_on_normal_startup() -> None:
@@ -223,14 +223,15 @@ def test_env_example_contains_names_but_no_values() -> None:
     assert all(value == "" for value in values.values())
 
 
-def test_m0_status_and_immutable_checksum_are_frozen() -> None:
+def test_m0_acceptance_facts_and_immutable_checksum_are_frozen() -> None:
     status = (ROOT / "docs/IMPLEMENTATION_STATUS.yaml").read_text(encoding="utf-8")
     checksums = (ROOT / "docs/immutable/SHA256SUMS").read_text(encoding="utf-8")
 
-    assert "current_module: M0" in status
     m0_status = re.search(r"(?ms)^  M0:\n.*?^    status: (\S+)$", status)
     assert m0_status is not None
-    assert m0_status.group(1) in {"IN_PROGRESS", "ACCEPTED"}
+    assert m0_status.group(1) == "ACCEPTED"
+    assert "accepted_commit: 135e9293175502735b8442abdfc5330c035f2254" in status
+    assert "gate_report: docs/gates/M0/019f63f1-f441-70db-aaa0-5e076231fd55.md" in status
     assert "c559a530387de5fc1afced506e406967e74c18ed76e659b4b062c2051b615a11" in checksums
 
 

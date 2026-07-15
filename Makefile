@@ -27,7 +27,15 @@ test-live: gate-m0
 
 test-chaos: gate-m0
 
-migrate validate-data load-data evaluate performance:
+migrate:
+	@test -n "$(CONTROL_DATABASE)" -a -n "$(OPS_DATABASE)" || \
+		{ echo "CONTROL_DATABASE and OPS_DATABASE are required" >&2; exit 2; }
+	$(UV) run python -m scripts.migrations apply control --database "$(CONTROL_DATABASE)"
+	$(UV) run python -m scripts.migrations verify control --database "$(CONTROL_DATABASE)"
+	$(UV) run python -m scripts.migrations apply ops --database "$(OPS_DATABASE)"
+	$(UV) run python -m scripts.migrations verify ops --database "$(OPS_DATABASE)"
+
+validate-data load-data evaluate performance:
 	@echo "$@ belongs to a later module and is not implemented in M0" >&2
 	@exit 2
 
@@ -63,6 +71,9 @@ readiness:
 gate-m0:
 	$(UV) run python -m scripts.m0_gate gate
 
-gate-m1 gate-m2 gate-m3 gate-m4 gate-m5 gate-m6 gate-m7 gate-m8 gate-m9 gate-m10 gate-m11:
-	@echo "$@ cannot run while current_module is M0" >&2
+gate-m1:
+	$(UV) run python -m scripts.m1_gate gate
+
+gate-m2 gate-m3 gate-m4 gate-m5 gate-m6 gate-m7 gate-m8 gate-m9 gate-m10 gate-m11:
+	@echo "$@ cannot run while current_module is M1" >&2
 	@exit 2
