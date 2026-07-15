@@ -1,0 +1,319 @@
+name: ${COMPOSE_PROJECT_NAME:-energy-agent-m0}
+
+x-profiles: &profiles [dev, full, staging, production]
+x-profile-guard: &profile-guard
+  profile-guard: {condition: service_completed_successfully}
+
+services:
+  profile-guard:
+    image: ${REDIS_IMAGE:?set REDIS_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      DEPLOYMENT_PROFILE: ${DEPLOYMENT_PROFILE:?required}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
+      INFLUXDB_PASSWORD: ${INFLUXDB_PASSWORD:?required}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN:?required}
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?required}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?required}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?required}
+      KEYCLOAK_M0_REALM: ${KEYCLOAK_M0_REALM:?required}
+      KEYCLOAK_M0_CLIENT_ID: ${KEYCLOAK_M0_CLIENT_ID:?required}
+      KEYCLOAK_M0_CLIENT_SECRET: ${KEYCLOAK_M0_CLIENT_SECRET:?required}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD:?required}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-}
+      DATA_SOURCE: ${DATA_SOURCE:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      RUNTIME_MOCK_PROVIDER: ${RUNTIME_MOCK_PROVIDER:-}
+    command:
+      - sh
+      - -ec
+      - |
+        case "$$DEPLOYMENT_PROFILE" in
+          dev) exit 0 ;;
+          full|staging|production) ;;
+          *) echo 'protected profile guard rejected unknown profile' >&2; exit 1 ;;
+        esac
+        [ "$$KEYCLOAK_M0_REALM" = 'm0-gate' ] || { \
+          echo 'protected profile guard rejected unsupported M0 realm' >&2; exit 1; }
+        set -- "$$MYSQL_ROOT_PASSWORD" "$$MYSQL_PASSWORD" "$$REDIS_PASSWORD" \
+          "$$RABBITMQ_DEFAULT_PASS" "$$MINIO_ROOT_PASSWORD" "$$INFLUXDB_PASSWORD" \
+          "$$INFLUXDB_TOKEN" "$$OPENSEARCH_INITIAL_ADMIN_PASSWORD" "$$NEO4J_PASSWORD" \
+          "$$KEYCLOAK_ADMIN_PASSWORD" "$$KEYCLOAK_M0_CLIENT_SECRET" \
+          "$$MILVUS_ROOT_PASSWORD"
+        for value do
+          normalized="$$(printf '%s' "$$value" | tr '[:upper:]' '[:lower:]')"
+          case "$$normalized" in
+            change-me|changeme|example|placeholder|todo) \
+              echo 'protected profile guard rejected placeholder credential' >&2; exit 1 ;;
+          esac
+          [ "$${#value}" -ge 8 ] || { \
+            echo 'protected profile guard rejected short credential' >&2; exit 1; }
+        done
+        selectors="$$MODEL_PROVIDER $$DATA_SOURCE $$DATABASE_URL $$RUNTIME_MOCK_PROVIDER"
+        normalized="$$(printf '%s' "$$selectors" | tr '[:upper:]' '[:lower:]')"
+        case "$$normalized" in
+          *mock*|*fixture*|*gold*|*in-memory*|*in_memory*|*:memory:*) \
+            echo 'protected profile guard rejected forbidden runtime mode' >&2; exit 1 ;;
+        esac
+
+  mysql:
+    image: ${MYSQL_IMAGE:?set MYSQL_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?required}
+      MYSQL_USER: ${MYSQL_USER:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    ports: ["127.0.0.1:13306:3306"]
+    volumes: [mysql-data:/var/lib/mysql]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD-SHELL, "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  redis:
+    image: ${REDIS_IMAGE:?set REDIS_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?required}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - always
+      - --maxmemory-policy
+      - noeviction
+    ports: ["127.0.0.1:16379:6379"]
+    volumes: [redis-data:/data]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD-SHELL, "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+    restart: unless-stopped
+
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE:?set RABBITMQ_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?required}
+    ports:
+      - "127.0.0.1:15673:5672"
+      - "127.0.0.1:15672:15672"
+    volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  minio:
+    image: ${MINIO_IMAGE:?set MINIO_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes: [minio-data:/data]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:9000/minio/health/ready]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  influxdb:
+    image: ${INFLUXDB_IMAGE:?set INFLUXDB_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME:?required}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:?required}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:?required}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:?required}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:?required}
+    ports: ["127.0.0.1:18086:8086"]
+    volumes: [influxdb-data:/var/lib/influxdb2]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, influx, ping, --host, http://localhost:8086]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  opensearch:
+    image: ${OPENSEARCH_IMAGE:?set OPENSEARCH_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?required}
+      plugins.security.ssl.http.enabled: "false"
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+      nofile: {soft: 65536, hard: 65536}
+    ports: ["127.0.0.1:19200:9200"]
+    volumes: [opensearch-data:/usr/share/opensearch/data]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/9200"]
+      interval: 10s
+      timeout: 10s
+      retries: 40
+      start_period: 30s
+    restart: unless-stopped
+
+  etcd:
+    image: ${ETCD_IMAGE:?set ETCD_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+    command:
+      - etcd
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --data-dir=/etcd
+    volumes: [etcd-data:/etcd]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, etcdctl, endpoint, health]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  milvus:
+    image: ${MILVUS_IMAGE:?set MILVUS_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    command: [milvus, run, standalone]
+    security_opt: [seccomp:unconfined]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?required}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?required}
+    ports:
+      - "127.0.0.1:19530:19530"
+      - "127.0.0.1:19091:9091"
+    volumes:
+      - milvus-data:/var/lib/milvus
+      - ${MILVUS_CONFIG_PATH:-./.runtime/milvus-full.yaml}:/milvus/configs/user.yaml:ro
+    depends_on:
+      <<: *profile-guard
+      etcd: {condition: service_healthy}
+      minio: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:9091/healthz]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+    restart: unless-stopped
+
+  neo4j:
+    image: ${NEO4J_IMAGE:?set NEO4J_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME:?required}/${NEO4J_PASSWORD:?required}
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "127.0.0.1:17474:7474"
+      - "127.0.0.1:17687:7687"
+    volumes: [neo4j-data:/data]
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/7687"]
+      interval: 10s
+      timeout: 10s
+      retries: 40
+      start_period: 30s
+    restart: unless-stopped
+
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:?set KEYCLOAK_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    command: [start, --http-enabled=true, --hostname-strict=false, --import-realm]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?required}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?required}
+      KEYCLOAK_M0_REALM: ${KEYCLOAK_M0_REALM:?required}
+      KEYCLOAK_M0_CLIENT_ID: ${KEYCLOAK_M0_CLIENT_ID:?required}
+      KEYCLOAK_M0_CLIENT_SECRET: ${KEYCLOAK_M0_CLIENT_SECRET:?required}
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:?required}
+      KC_DB_USERNAME: ${MYSQL_USER:?required}
+      KC_DB_PASSWORD: ${MYSQL_PASSWORD:?required}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:19090:9000"
+    volumes:
+      - ./deploy/keycloak/m0-gate-realm.json:/opt/keycloak/data/import/m0-gate-realm.json:ro
+    depends_on:
+      <<: *profile-guard
+      mysql: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, bash, -c, "exec 3<>/dev/tcp/127.0.0.1/9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+    restart: unless-stopped
+
+  toxiproxy:
+    image: ${TOXIPROXY_IMAGE:?set TOXIPROXY_IMAGE via deploy/versions.env}
+    profiles: *profiles
+    ports:
+      - "127.0.0.1:18474:8474"
+      - "127.0.0.1:26379:26379"
+    depends_on: *profile-guard
+    healthcheck:
+      test: [CMD, /toxiproxy-cli, -h, localhost:8474, list]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
+  minio-data:
+  influxdb-data:
+  opensearch-data:
+  etcd-data:
+  milvus-data:
+  neo4j-data:
