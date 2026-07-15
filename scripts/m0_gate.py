@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import atexit
 import hashlib
 import io
 import json
 import os
 import random
+import signal
 import subprocess
 import time
 import uuid
@@ -749,192 +749,287 @@ def service_versions(environment: dict[str, str]) -> list[dict[str, str]]:
 
 
 def run_gate() -> Path:
-    command(["uv", "run", "python", "-m", "scripts.prepare_m0_env"])
-    settings = load_env_file(ENV_FILE)
-    environment = {**os.environ, **load_env_file(VERSIONS_FILE), **settings}
-    environment["DEPLOYMENT_PROFILE"] = "full"
-    validate_profile("full", environment)
-    verify()
-
-    def cleanup_stack() -> None:
-        try:
-            compose(["down", "--volumes", "--remove-orphans"], environment)
-        except subprocess.CalledProcessError as error:
-            print(f"WARN: failed to clean isolated M0 stack: exit={error.returncode}")
-
-    atexit.register(cleanup_stack)
-
     acceptance_run_id = uuid7()
     artifact_dir = ROOT / "artifacts/gates/M0" / acceptance_run_id
     artifact_dir.mkdir(parents=True)
     started_at = datetime.now(UTC)
     unit_junit = artifact_dir / "unit-junit.xml"
     contract_junit = artifact_dir / "contract-junit.xml"
-    commands = [
-        "make gate-m0",
-        "make verify-design",
-        "make lint",
-        "make typecheck",
-        f"uv run pytest tests/unit --junitxml={unit_junit.relative_to(ROOT)}",
-        f"uv run pytest tests/contract --junitxml={contract_junit.relative_to(ROOT)}",
-        (
+    commit_sha = "NOT_RECORDED"
+    executed_commands = ["make gate-m0"]
+    counts = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
+    cleanup_environments: list[tuple[str, dict[str, str]]] = []
+    current_step = "initialize M0 gate"
+
+    def cleanup_stacks() -> None:
+        seen: set[str] = set()
+        for profile, stack_environment in reversed(cleanup_environments):
+            project = stack_environment.get("COMPOSE_PROJECT_NAME", "")
+            if not project or project in seen:
+                continue
+            seen.add(project)
+            try:
+                compose(
+                    ["down", "--volumes", "--remove-orphans"],
+                    stack_environment,
+                    profile=profile,
+                )
+            except subprocess.CalledProcessError as error:
+                print(f"WARN: failed to clean M0 stack {project}: exit={error.returncode}")
+
+    previous_handlers = {
+        signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)
+    }
+
+    def stop_on_signal(signum: int, _frame: object) -> None:
+        raise SystemExit(128 + signum)
+
+    for signum in previous_handlers:
+        signal.signal(signum, stop_on_signal)
+
+    try:
+        current_step = "verify clean source tree"
+        executed_commands.append("git status --porcelain --untracked-files=all")
+        status = command(
+            ["git", "status", "--porcelain", "--untracked-files=all"], capture=True
+        ).stdout.strip()
+        if status:
+            raise RuntimeError("M0 gate requires a clean source tree")
+        commit_sha = command(["git", "rev-parse", "HEAD"], capture=True).stdout.strip()
+
+        current_step = "prepare ignored M0 environment"
+        executed_commands.append("uv run python -m scripts.prepare_m0_env")
+        command(["uv", "run", "python", "-m", "scripts.prepare_m0_env"])
+        settings = load_env_file(ENV_FILE)
+        environment = {**os.environ, **load_env_file(VERSIONS_FILE), **settings}
+        base_project = settings["COMPOSE_PROJECT_NAME"]
+        environment["COMPOSE_PROJECT_NAME"] = f"{base_project}-full-{acceptance_run_id[:8]}"
+        environment["DEPLOYMENT_PROFILE"] = "full"
+        cleanup_environments.append(("full", environment))
+        validate_profile("full", environment)
+        verify()
+
+        quality_commands = [
+            ("make verify-design", ["make", "verify-design"]),
+            ("make lint", ["make", "lint"]),
+            ("make typecheck", ["make", "typecheck"]),
+            (
+                f"uv run pytest tests/unit --junitxml={unit_junit.relative_to(ROOT)}",
+                ["uv", "run", "pytest", "tests/unit", f"--junitxml={unit_junit}"],
+            ),
+            (
+                f"uv run pytest tests/contract --junitxml={contract_junit.relative_to(ROOT)}",
+                ["uv", "run", "pytest", "tests/contract", f"--junitxml={contract_junit}"],
+            ),
+        ]
+        for label, arguments in quality_commands:
+            current_step = label
+            executed_commands.append(label)
+            command(arguments)
+        counts = junit_counts([unit_junit, contract_junit])
+        validate_gate_counts(counts)
+
+        current_step = "validate full Compose configuration"
+        executed_commands.append(
             "docker compose --env-file deploy/versions.env --env-file .env.m0 "
             "--profile full config --quiet"
-        ),
-        (
+        )
+        compose(["config", "--quiet"], environment)
+        current_step = "start fresh full profile"
+        executed_commands.append(
             "docker compose --env-file deploy/versions.env --env-file .env.m0 "
             "--profile full up -d --wait --wait-timeout 600"
-        ),
-        "in-process M0Probe.readiness using authenticated production protocols",
-        "in-process M0Probe.write including RabbitMQ publisher confirm",
-        *[
-            (
-                "docker compose --env-file deploy/versions.env --env-file .env.m0 "
-                f"--profile full restart {service}"
-            )
-            for service in PERSISTENCE_SERVICES
-        ],
-        "after each restart: protocol readiness and authoritative persistent readback",
-        "generate profile-specific Milvus configs for staging and production",
-        (
-            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
-            "--profile staging up -d --wait --wait-timeout 600; authenticated readiness"
-        ),
-        (
-            "docker compose --env-file deploy/versions.env --env-file .env.m0 "
-            "--profile production up -d --wait --wait-timeout 600; authenticated readiness"
-        ),
-    ]
+        )
+        compose(["up", "-d", "--wait", "--wait-timeout", "600"], environment)
 
-    command(["make", "verify-design"])
-    command(["make", "lint"])
-    command(["make", "typecheck"])
-    command(["uv", "run", "pytest", "tests/unit", f"--junitxml={unit_junit}"])
-    command(["uv", "run", "pytest", "tests/contract", f"--junitxml={contract_junit}"])
-    counts = junit_counts([unit_junit, contract_junit])
-    validate_gate_counts(counts)
-    compose(["config", "--quiet"], environment)
-    compose(["up", "-d", "--wait", "--wait-timeout", "600"], environment)
-
-    probe = M0Probe(settings, acceptance_run_id)
-    probe.readiness(environment)
-    probe.write()
-    etcd_key = f"m0/gate/{acceptance_run_id}"
-    compose(
-        ["exec", "-T", "etcd", "etcdctl", "put", etcd_key, probe.payload_hash],
-        environment,
-    )
-    readbacks: dict[str, str] = {}
-    for service in PERSISTENCE_SERVICES:
-        compose(["restart", service], environment)
-        probe.readiness(environment, (service,))
-        if service == "etcd":
-            etcd_value = compose(
-                [
-                    "exec",
-                    "-T",
-                    "etcd",
-                    "etcdctl",
-                    "get",
-                    etcd_key,
-                    "--print-value-only",
-                ],
-                environment,
-                capture=True,
-            ).strip()
-            if etcd_value != probe.payload_hash:
-                raise RuntimeError("etcd authoritative readback differs from written hash")
-            readbacks["etcd"] = etcd_value
-            print("OK: etcd persistent readback verified")
-        else:
-            readbacks.update(probe.readback((service,)))
-    for profile in ("staging", "production"):
-        write_config(profile, settings["MILVUS_ROOT_PASSWORD"])
-        profile_environment = {
-            **environment,
-            "DEPLOYMENT_PROFILE": profile,
-            "MILVUS_CONFIG_PATH": f"./.runtime/milvus-{profile}.yaml",
-        }
-        validate_profile(profile, profile_environment)
+        probe = M0Probe(settings, acceptance_run_id)
+        current_step = "authenticated full-profile readiness"
+        executed_commands.append(
+            "M0Probe.readiness through authenticated production protocols"
+        )
+        probe.readiness(environment)
+        current_step = "authenticated full-profile writes"
+        executed_commands.append("M0Probe.write including RabbitMQ publisher confirm")
+        probe.write()
+        etcd_key = f"m0/gate/{acceptance_run_id}"
         compose(
-            ["up", "-d", "--wait", "--wait-timeout", "600"],
-            profile_environment,
-            profile=profile,
+            ["exec", "-T", "etcd", "etcdctl", "put", etcd_key, probe.payload_hash],
+            environment,
         )
-        probe.readiness(profile_environment)
-    verify()
+        readbacks: dict[str, str] = {}
+        for service in PERSISTENCE_SERVICES:
+            current_step = f"restart and persistent readback for {service}"
+            executed_commands.append(
+                "docker compose --env-file deploy/versions.env --env-file .env.m0 "
+                f"--profile full restart {service}; authoritative persistent readback"
+            )
+            compose(["restart", service], environment)
+            probe.readiness(environment, (service,))
+            if service == "etcd":
+                value = compose(
+                    [
+                        "exec",
+                        "-T",
+                        "etcd",
+                        "etcdctl",
+                        "get",
+                        etcd_key,
+                        "--print-value-only",
+                    ],
+                    environment,
+                    capture=True,
+                ).strip()
+                if value != probe.payload_hash:
+                    raise RuntimeError("etcd authoritative readback differs from written hash")
+                readbacks["etcd"] = value
+                print("OK: etcd persistent readback verified")
+            else:
+                readbacks.update(probe.readback((service,)))
 
-    versions = service_versions(environment)
-    finished_at = datetime.now(UTC)
-    gate = {
-        "module": "M0",
-        "acceptance_run_id": acceptance_run_id,
-        "commit_sha": command(["git", "rev-parse", "HEAD"], capture=True).stdout.strip(),
-        "environment": {
-            "deployment_profiles": ["full", "staging", "production"],
-            "platform": command(
-                ["docker", "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"],
-                capture=True,
-            ).stdout.strip(),
-            "python": command([".venv/bin/python", "--version"], capture=True).stdout.strip(),
-        },
-        "test_commands": commands,
-        "test_count": counts["tests"],
-        "failure_count": counts["failures"] + counts["errors"],
-        "skip_count": counts["skipped"],
-        "service_digests": {item["container"]: item["configured"] for item in versions},
-        "dataset_acceptance_run_id": None,
-        "real_services_contacted": list(COMPOSE_SERVICES),
-        "readback_hashes": readbacks,
-        "result": "TESTS_PASSED_REVIEW_PENDING",
-        "reviewer": "PENDING_INDEPENDENT_REVIEW",
-        "started_at": started_at.isoformat(),
-        "finished_at": finished_at.isoformat(),
-    }
-    (artifact_dir / "gate.json").write_text(
-        json.dumps(gate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (artifact_dir / "service_versions.json").write_text(
-        json.dumps(versions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (artifact_dir / "readback_hashes.json").write_text(
-        json.dumps(readbacks, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (artifact_dir / "chaos_report.json").write_text(
-        json.dumps(
-            {
-                "fault": (
-                    "restart each M0 infrastructure container sequentially without "
-                    "deleting volumes"
-                ),
-                "services": list(PERSISTENCE_SERVICES),
-                "persistent_readback": "passed",
-                "toxiproxy_note": (
-                    "Redis write/read traversed Toxiproxy before and after its restart"
-                ),
+        versions = service_versions(environment)
+        current_step = "remove full stack before profile isolation checks"
+        compose(["down", "--volumes", "--remove-orphans"], environment)
+
+        verified_profiles = ["full"]
+        profile_projects = {"full": environment["COMPOSE_PROJECT_NAME"]}
+        for profile in ("staging", "production"):
+            current_step = f"fresh isolated {profile} readiness"
+            write_config(profile, settings["MILVUS_ROOT_PASSWORD"])
+            profile_environment = {
+                **environment,
+                "COMPOSE_PROJECT_NAME": f"{base_project}-{profile}-{acceptance_run_id[:8]}",
+                "DEPLOYMENT_PROFILE": profile,
+                "MILVUS_CONFIG_PATH": f"./.runtime/milvus-{profile}.yaml",
+            }
+            cleanup_environments.append((profile, profile_environment))
+            validate_profile(profile, profile_environment)
+            executed_commands.append(
+                "fresh isolated project: docker compose --env-file deploy/versions.env "
+                f"--env-file .env.m0 --profile {profile} up -d --wait --wait-timeout 600; "
+                "authenticated readiness; down --volumes"
+            )
+            compose(
+                ["up", "-d", "--wait", "--wait-timeout", "600"],
+                profile_environment,
+                profile=profile,
+            )
+            probe.readiness(profile_environment)
+            verified_profiles.append(profile)
+            profile_projects[profile] = profile_environment["COMPOSE_PROJECT_NAME"]
+            compose(
+                ["down", "--volumes", "--remove-orphans"],
+                profile_environment,
+                profile=profile,
+            )
+
+        current_step = "final immutable-design verification"
+        executed_commands.append("make verify-design")
+        command(["make", "verify-design"])
+        finished_at = datetime.now(UTC)
+        gate = {
+            "module": "M0",
+            "acceptance_run_id": acceptance_run_id,
+            "commit_sha": commit_sha,
+            "environment": {
+                "deployment_profiles": verified_profiles,
+                "profile_projects": profile_projects,
+                "platform": command(
+                    ["docker", "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"],
+                    capture=True,
+                ).stdout.strip(),
+                "python": command(
+                    [".venv/bin/python", "--version"], capture=True
+                ).stdout.strip(),
             },
-            ensure_ascii=False,
-            indent=2,
+            "test_commands": executed_commands,
+            "test_count": counts["tests"],
+            "failure_count": counts["failures"] + counts["errors"],
+            "skip_count": counts["skipped"],
+            "service_digests": {
+                item["container"]: item["configured"] for item in versions
+            },
+            "dataset_acceptance_run_id": None,
+            "real_services_contacted": list(COMPOSE_SERVICES),
+            "readback_hashes": readbacks,
+            "result": "TESTS_PASSED_REVIEW_PENDING",
+            "reviewer": "PENDING_INDEPENDENT_REVIEW",
+            "unresolved_blockers": [],
+            "started_at": started_at.isoformat(),
+            "finished_at": finished_at.isoformat(),
+        }
+        (artifact_dir / "gate.json").write_text(
+            json.dumps(gate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
-        + "\n",
-        encoding="utf-8",
-    )
-    print(f"OK: M0 gate passed with acceptance_run_id={acceptance_run_id}")
-    print(f"OK: sanitized evidence written to {artifact_dir.relative_to(ROOT)}")
-    return artifact_dir
+        (artifact_dir / "service_versions.json").write_text(
+            json.dumps(versions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        (artifact_dir / "readback_hashes.json").write_text(
+            json.dumps(readbacks, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        (artifact_dir / "chaos_report.json").write_text(
+            json.dumps(
+                {
+                    "fault": (
+                        "restart each M0 infrastructure container sequentially without "
+                        "deleting volumes"
+                    ),
+                    "services": list(PERSISTENCE_SERVICES),
+                    "persistent_readback": "passed",
+                    "toxiproxy_note": (
+                        "Redis write/read traversed Toxiproxy before and after its restart"
+                    ),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print(f"OK: M0 gate passed with acceptance_run_id={acceptance_run_id}")
+        print(f"OK: sanitized evidence written to {artifact_dir.relative_to(ROOT)}")
+        return artifact_dir
+    except BaseException as error:
+        blocked = {
+            "module": "M0",
+            "acceptance_run_id": acceptance_run_id,
+            "commit_sha": commit_sha,
+            "test_commands": executed_commands,
+            "test_count": counts["tests"],
+            "failure_count": counts["failures"] + counts["errors"] + 1,
+            "skip_count": counts["skipped"],
+            "result": "BLOCKED",
+            "reviewer": "NOT_RUN",
+            "failed_step": current_step,
+            "error_type": type(error).__name__,
+            "unresolved_blockers": [f"M0 gate stopped during: {current_step}"],
+            "started_at": started_at.isoformat(),
+            "finished_at": datetime.now(UTC).isoformat(),
+        }
+        (artifact_dir / "gate.json").write_text(
+            json.dumps(blocked, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        print(
+            f"BLOCKED: M0 gate stopped during {current_step}; "
+            f"sanitized evidence written to {artifact_dir.relative_to(ROOT)}"
+        )
+        raise
+    finally:
+        cleanup_stacks()
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("readiness", "gate"))
     arguments = parser.parse_args()
+    if arguments.action == "gate":
+        run_gate()
+        return 0
     command(["uv", "run", "python", "-m", "scripts.prepare_m0_env"])
     settings = load_env_file(ENV_FILE)
     environment = {**os.environ, **load_env_file(VERSIONS_FILE), **settings}
     environment["DEPLOYMENT_PROFILE"] = "full"
-    if arguments.action == "gate":
-        run_gate()
-        return 0
     validate_profile("full", environment)
     M0Probe(settings, uuid7()).readiness(environment)
     return 0

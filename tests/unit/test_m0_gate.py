@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+import subprocess
+from pathlib import Path
 from typing import Any
 
 import pytest
 from pytest import MonkeyPatch
 
-from scripts.m0_gate import M0Probe, validate_gate_counts
+from scripts.m0_gate import M0Probe, run_gate, validate_gate_counts
 
 
 class FakeChannel:
@@ -63,3 +66,29 @@ def test_readback_rejects_unregistered_service() -> None:
 
     with pytest.raises(RuntimeError, match="no authoritative readback"):
         probe.readback(("unregistered",))
+
+
+def test_dirty_gate_is_blocked_before_commit_is_recorded(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    run_id = "019f639e-263c-74ea-ac17-a1c74b5d1957"
+
+    def dirty_status(arguments: list[str], **_: Any) -> subprocess.CompletedProcess[str]:
+        assert arguments[:3] != ["git", "rev-parse", "HEAD"]
+        return subprocess.CompletedProcess(arguments, 0, stdout=" M tracked.py\n")
+
+    monkeypatch.setattr("scripts.m0_gate.ROOT", tmp_path)
+    monkeypatch.setattr("scripts.m0_gate.uuid7", lambda: run_id)
+    monkeypatch.setattr("scripts.m0_gate.command", dirty_status)
+
+    with pytest.raises(RuntimeError, match="clean source tree"):
+        run_gate()
+
+    evidence = json.loads(
+        (tmp_path / "artifacts/gates/M0" / run_id / "gate.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert evidence["result"] == "BLOCKED"
+    assert evidence["commit_sha"] == "NOT_RECORDED"
+    assert evidence["failed_step"] == "verify clean source tree"
