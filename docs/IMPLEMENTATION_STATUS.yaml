@@ -20,9 +20,9 @@ modules:
 
   M1:
     name: shared-contracts-canonicalization-and-migrations
-    status: IN_PROGRESS
+    status: ACCEPTED
     owner: main-agent
     gate_command: make gate-m1
-    gate_report: null
-    accepted_commit: null
+    gate_report: docs/gates/M1/019f64fa-fd66-7c6b-892c-91531e84e01f.md
+    accepted_commit: 465ee9fbf5a8397cb4f363229ac8c566f3f23673
     blockers: []
