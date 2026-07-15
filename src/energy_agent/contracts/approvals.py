@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from energy_agent.contracts.common import ApprovalState, StrictModel, UTCDateTime
+from energy_agent.contracts.common import ApprovalState, StrictModel, UTCDateTime, UUIDv7String
 
 
 class ApprovalRequest(StrictModel):
-    approval_id: str
+    approval_id: UUIDv7String
     tenant_id: str
     target_type: str
     target_id: str
@@ -22,7 +22,7 @@ class ApprovalRequest(StrictModel):
 
 
 class ApprovalDecision(StrictModel):
-    approval_id: str
+    approval_id: UUIDv7String
     expected_revision: int = Field(ge=1)
     decision: ApprovalState
     decision_actor_id: str
@@ -30,4 +30,4 @@ class ApprovalDecision(StrictModel):
     decision_reason: str
     emergency: bool = False
     decided_at: UTCDateTime
-    trace_id: str
+    trace_id: UUIDv7String

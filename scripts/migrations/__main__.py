@@ -234,6 +234,7 @@ def apply_schema(
     try:
         for path in migration_files(schema_name, migrations_root):
             apply_migration(db, schema_name, path)
+        install_manifest(db, schema_name, migrations_root=migrations_root)
     finally:
         with db.cursor() as cursor:
             cursor.execute("SELECT RELEASE_LOCK(%s)", (lock_name,))
@@ -305,17 +306,43 @@ def apply_migration(db: Any, schema_name: str, path: Path) -> None:
         )
 
 
-def verify_schema(
+def _expected_actual_descriptor(
+    db: Any, schema_name: str
+) -> tuple[dict[str, Any], str]:
+    expected = load_expected_descriptor(schema_name)
+    actual = introspect_descriptor(db, schema_name)
+    if actual != expected:
+        raise MigrationError(f"schema drift detected for {schema_name}")
+    return actual, canonical_digest(actual)
+
+
+def _validate_manifest_row(
+    row: dict[str, Any],
+    *,
+    schema_name: str,
+    descriptor: dict[str, Any],
+    descriptor_digest: str,
+    set_digest: str,
+) -> None:
+    stored_descriptor = row["descriptor_json"]
+    if isinstance(stored_descriptor, str):
+        stored_descriptor = json.loads(stored_descriptor)
+    if (
+        row["canonicalization_version"] != 2
+        or row["migration_set_digest"] != set_digest
+        or row["manifest_digest"] != descriptor_digest
+        or stored_descriptor != descriptor
+    ):
+        raise MigrationError(f"stored schema manifest mismatch for {schema_name}")
+
+
+def install_manifest(
     db: Any,
     schema_name: str,
     *,
     migrations_root: Path = MIGRATIONS_ROOT,
 ) -> str:
-    expected = load_expected_descriptor(schema_name)
-    actual = introspect_descriptor(db, schema_name)
-    if actual != expected:
-        raise MigrationError(f"schema drift detected for {schema_name}")
-    descriptor_digest = canonical_digest(actual)
+    actual, descriptor_digest = _expected_actual_descriptor(db, schema_name)
     set_digest = migration_set_digest(schema_name, migrations_root)
     with db.cursor() as cursor:
         cursor.execute("SELECT * FROM schema_manifest WHERE schema_name=%s", (schema_name,))
@@ -327,17 +354,40 @@ def verify_schema(
                 "manifest_digest,descriptor_json,created_at) VALUES (%s,1,2,%s,%s,%s,%s)",
                 (schema_name, set_digest, descriptor_digest, json.dumps(actual), utc_now()),
             )
-        else:
-            stored_descriptor = row["descriptor_json"]
-            if isinstance(stored_descriptor, str):
-                stored_descriptor = json.loads(stored_descriptor)
-            if (
-                row["canonicalization_version"] != 2
-                or row["migration_set_digest"] != set_digest
-                or row["manifest_digest"] != descriptor_digest
-                or stored_descriptor != actual
-            ):
-                raise MigrationError(f"stored schema manifest mismatch for {schema_name}")
+            cursor.execute(
+                "SELECT * FROM schema_manifest WHERE schema_name=%s", (schema_name,)
+            )
+            row = cursor.fetchone()
+    _validate_manifest_row(
+        row,
+        schema_name=schema_name,
+        descriptor=actual,
+        descriptor_digest=descriptor_digest,
+        set_digest=set_digest,
+    )
+    return descriptor_digest
+
+
+def verify_schema(
+    db: Any,
+    schema_name: str,
+    *,
+    migrations_root: Path = MIGRATIONS_ROOT,
+) -> str:
+    actual, descriptor_digest = _expected_actual_descriptor(db, schema_name)
+    set_digest = migration_set_digest(schema_name, migrations_root)
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM schema_manifest WHERE schema_name=%s", (schema_name,))
+        row = cursor.fetchone()
+    if row is None:
+        raise MigrationError(f"schema manifest is missing for {schema_name}")
+    _validate_manifest_row(
+        row,
+        schema_name=schema_name,
+        descriptor=actual,
+        descriptor_digest=descriptor_digest,
+        set_digest=set_digest,
+    )
     return descriptor_digest
 
 

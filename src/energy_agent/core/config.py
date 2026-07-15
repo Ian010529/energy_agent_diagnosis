@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import os
+import re
 from enum import StrEnum
 from typing import Any, Final, Self
 
-from pydantic import Field, HttpUrl, model_validator
+from pydantic import Field, HttpUrl, SecretStr, model_validator
 
 from energy_agent.contracts.common import StrictModel
 
@@ -49,12 +50,18 @@ PLACEHOLDER_REFERENCES: Final = {"", "change-me", "changeme", "example", "placeh
 
 class SecretReference(StrictModel):
     env_name: str = Field(pattern=r"^[A-Z][A-Z0-9_]*$")
-    secret_ref: str
+    secret_ref: SecretStr
 
     @model_validator(mode="after")
     def reject_placeholder(self) -> Self:
-        if self.secret_ref.strip().lower() in PLACEHOLDER_REFERENCES:
+        reference = self.secret_ref.get_secret_value().strip()
+        if reference.lower() in PLACEHOLDER_REFERENCES:
             raise ValueError("secret reference is a placeholder")
+        if not re.fullmatch(
+            r"(?:env|vault|secret-manager|external-secret)://[A-Za-z0-9._/@:-]+",
+            reference,
+        ):
+            raise ValueError("secret_ref must be an approved reference URI")
         return self
 
 
@@ -127,10 +134,18 @@ class RuntimeConfig(StrictModel):
             return self
         selectors = (
             self.app.runtime_source,
+            str(self.app.endpoint),
+            str(self.auth.issuer),
             self.control_mysql.endpoint,
             self.ops_mysql.endpoint,
+            self.redis.endpoint,
+            str(self.storage.endpoint),
             self.model_gateway.provider,
+            str(self.model_gateway.endpoint),
             self.retrieval.provider,
+            str(self.retrieval.endpoint),
+            self.observability.provider,
+            str(self.observability.endpoint),
         )
         forbidden = [
             selector

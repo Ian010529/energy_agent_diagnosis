@@ -7,7 +7,12 @@ from typing import Any
 
 from pydantic import Field, model_validator
 
-from energy_agent.contracts.common import DiagnosisPhase, StrictModel, UTCDateTime
+from energy_agent.contracts.common import (
+    DiagnosisPhase,
+    StrictModel,
+    UTCDateTime,
+    UUIDv7String,
+)
 
 
 class PublicSSEEventType(StrEnum):
@@ -33,14 +38,14 @@ PHASE_EVENT_TYPES: dict[DiagnosisPhase, PublicSSEEventType] = {
 
 
 class PublicSSEEvent(StrictModel):
-    event_id: str
+    event_id: UUIDv7String
     sequence: int = Field(ge=1)
     event_type: PublicSSEEventType
     event_version: int = Field(ge=1)
-    session_id: str
-    run_id: str
-    trace_id: str
-    acceptance_run_id: str
+    session_id: UUIDv7String
+    run_id: UUIDv7String
+    trace_id: UUIDv7String
+    acceptance_run_id: UUIDv7String
     phase: DiagnosisPhase
     occurred_at: UTCDateTime
     message: str
@@ -54,15 +59,15 @@ class PublicSSEEvent(StrictModel):
 
 
 class EventEnvelope(StrictModel):
-    event_id: str
+    event_id: UUIDv7String
     event_type: str
     event_version: int = Field(ge=1)
     occurred_at: UTCDateTime
     tenant_id: str
-    trace_id: str
-    acceptance_run_id: str
+    trace_id: UUIDv7String
+    acceptance_run_id: UUIDv7String
     aggregate_type: str
-    aggregate_id: str
+    aggregate_id: UUIDv7String
     revision: int = Field(ge=1)
     idempotency_key: str
     payload: dict[str, Any] = Field(default_factory=dict)

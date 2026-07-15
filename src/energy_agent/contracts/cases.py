@@ -4,11 +4,17 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from energy_agent.contracts.common import CaseStatus, IndexState, StrictModel, UTCDateTime
+from energy_agent.contracts.common import (
+    CaseStatus,
+    IndexState,
+    StrictModel,
+    UTCDateTime,
+    UUIDv7String,
+)
 
 
 class CaseRecord(StrictModel):
-    case_id: str
+    case_id: UUIDv7String
     tenant_id: str
     status: CaseStatus
     index_state: IndexState

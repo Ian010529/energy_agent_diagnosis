@@ -475,6 +475,18 @@
     {
       "table_name": "diagnosis_approval",
       "ordinal_position": 12,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_approval",
+      "ordinal_position": 13,
       "column_name": "decision_actor_id",
       "column_type": "varchar(255)",
       "is_nullable": "YES",
@@ -486,7 +498,7 @@
     },
     {
       "table_name": "diagnosis_approval",
-      "ordinal_position": 13,
+      "ordinal_position": 14,
       "column_name": "decision_actor_role",
       "column_type": "varchar(32)",
       "is_nullable": "YES",
@@ -498,7 +510,7 @@
     },
     {
       "table_name": "diagnosis_approval",
-      "ordinal_position": 14,
+      "ordinal_position": 15,
       "column_name": "decision_reason",
       "column_type": "text",
       "is_nullable": "YES",
@@ -510,7 +522,7 @@
     },
     {
       "table_name": "diagnosis_approval",
-      "ordinal_position": 15,
+      "ordinal_position": 16,
       "column_name": "emergency",
       "column_type": "tinyint(1)",
       "is_nullable": "NO",
@@ -522,7 +534,7 @@
     },
     {
       "table_name": "diagnosis_approval",
-      "ordinal_position": 16,
+      "ordinal_position": 17,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -534,7 +546,7 @@
     },
     {
       "table_name": "diagnosis_approval",
-      "ordinal_position": 17,
+      "ordinal_position": 18,
       "column_name": "decided_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -715,6 +727,18 @@
     {
       "table_name": "diagnosis_approval_outbox",
       "ordinal_position": 6,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_approval_outbox",
+      "ordinal_position": 7,
       "column_name": "payload_json",
       "column_type": "json",
       "is_nullable": "NO",
@@ -726,7 +750,7 @@
     },
     {
       "table_name": "diagnosis_approval_outbox",
-      "ordinal_position": 7,
+      "ordinal_position": 8,
       "column_name": "publish_state",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -738,7 +762,7 @@
     },
     {
       "table_name": "diagnosis_approval_outbox",
-      "ordinal_position": 8,
+      "ordinal_position": 9,
       "column_name": "attempt_count",
       "column_type": "int unsigned",
       "is_nullable": "NO",
@@ -750,7 +774,7 @@
     },
     {
       "table_name": "diagnosis_approval_outbox",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "available_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -762,7 +786,7 @@
     },
     {
       "table_name": "diagnosis_approval_outbox",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "published_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -774,7 +798,7 @@
     },
     {
       "table_name": "diagnosis_approval_outbox",
-      "ordinal_position": 11,
+      "ordinal_position": 12,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1123,6 +1147,18 @@
     {
       "table_name": "diagnosis_case_outbox",
       "ordinal_position": 7,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_case_outbox",
+      "ordinal_position": 8,
       "column_name": "payload_json",
       "column_type": "json",
       "is_nullable": "NO",
@@ -1134,7 +1170,7 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
-      "ordinal_position": 8,
+      "ordinal_position": 9,
       "column_name": "publish_state",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -1146,7 +1182,7 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "attempt_count",
       "column_type": "int unsigned",
       "is_nullable": "NO",
@@ -1158,7 +1194,7 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "available_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1170,7 +1206,7 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
-      "ordinal_position": 11,
+      "ordinal_position": 12,
       "column_name": "published_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -1182,7 +1218,7 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
-      "ordinal_position": 12,
+      "ordinal_position": 13,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1327,6 +1363,18 @@
     {
       "table_name": "diagnosis_confirmation_token",
       "ordinal_position": 2,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_confirmation_token",
+      "ordinal_position": 3,
       "column_name": "approval_id",
       "column_type": "char(36)",
       "is_nullable": "NO",
@@ -1338,7 +1386,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 3,
+      "ordinal_position": 4,
       "column_name": "target_type",
       "column_type": "varchar(64)",
       "is_nullable": "NO",
@@ -1350,7 +1398,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 4,
+      "ordinal_position": 5,
       "column_name": "target_id",
       "column_type": "varchar(255)",
       "is_nullable": "NO",
@@ -1362,7 +1410,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 5,
+      "ordinal_position": 6,
       "column_name": "action_name",
       "column_type": "varchar(128)",
       "is_nullable": "NO",
@@ -1374,7 +1422,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 6,
+      "ordinal_position": 7,
       "column_name": "actor_id",
       "column_type": "varchar(255)",
       "is_nullable": "NO",
@@ -1386,7 +1434,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 7,
+      "ordinal_position": 8,
       "column_name": "nonce",
       "column_type": "char(36)",
       "is_nullable": "NO",
@@ -1398,7 +1446,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 8,
+      "ordinal_position": 9,
       "column_name": "expires_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1410,7 +1458,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "consumed_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -1422,7 +1470,7 @@
     },
     {
       "table_name": "diagnosis_confirmation_token",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1639,6 +1687,18 @@
     {
       "table_name": "diagnosis_index_release_pointer",
       "ordinal_position": 9,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_index_release_pointer",
+      "ordinal_position": 10,
       "column_name": "activated_by",
       "column_type": "varchar(255)",
       "is_nullable": "NO",
@@ -1650,7 +1710,7 @@
     },
     {
       "table_name": "diagnosis_index_release_pointer",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "activated_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1735,8 +1795,8 @@
     {
       "table_name": "diagnosis_model_call_attempt",
       "ordinal_position": 7,
-      "column_name": "provider",
-      "column_type": "varchar(64)",
+      "column_name": "acceptance_run_id",
+      "column_type": "char(36)",
       "is_nullable": "NO",
       "column_default": null,
       "extra": "",
@@ -1747,7 +1807,7 @@
     {
       "table_name": "diagnosis_model_call_attempt",
       "ordinal_position": 8,
-      "column_name": "model_name",
+      "column_name": "node_name",
       "column_type": "varchar(128)",
       "is_nullable": "NO",
       "column_default": null,
@@ -1759,6 +1819,42 @@
     {
       "table_name": "diagnosis_model_call_attempt",
       "ordinal_position": 9,
+      "column_name": "prompt_version",
+      "column_type": "varchar(128)",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": "utf8mb4",
+      "collation_name": "utf8mb4_0900_ai_ci",
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "ordinal_position": 10,
+      "column_name": "provider",
+      "column_type": "varchar(64)",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": "utf8mb4",
+      "collation_name": "utf8mb4_0900_ai_ci",
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "ordinal_position": 11,
+      "column_name": "model_name",
+      "column_type": "varchar(128)",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": "utf8mb4",
+      "collation_name": "utf8mb4_0900_ai_ci",
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "ordinal_position": 12,
       "column_name": "endpoint_hash",
       "column_type": "char(64)",
       "is_nullable": "NO",
@@ -1770,7 +1866,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 10,
+      "ordinal_position": 13,
       "column_name": "request_hash",
       "column_type": "char(64)",
       "is_nullable": "NO",
@@ -1782,7 +1878,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 11,
+      "ordinal_position": 14,
       "column_name": "prompt_hash",
       "column_type": "char(64)",
       "is_nullable": "NO",
@@ -1794,7 +1890,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 12,
+      "ordinal_position": 15,
       "column_name": "canonicalization_version",
       "column_type": "smallint unsigned",
       "is_nullable": "NO",
@@ -1806,7 +1902,19 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 13,
+      "ordinal_position": 16,
+      "column_name": "fencing_token",
+      "column_type": "bigint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "ordinal_position": 17,
       "column_name": "status",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -1818,7 +1926,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 14,
+      "ordinal_position": 18,
       "column_name": "prompt_tokens",
       "column_type": "bigint unsigned",
       "is_nullable": "YES",
@@ -1830,7 +1938,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 15,
+      "ordinal_position": 19,
       "column_name": "completion_tokens",
       "column_type": "bigint unsigned",
       "is_nullable": "YES",
@@ -1842,7 +1950,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 16,
+      "ordinal_position": 20,
       "column_name": "total_tokens",
       "column_type": "bigint unsigned",
       "is_nullable": "YES",
@@ -1854,7 +1962,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 17,
+      "ordinal_position": 21,
       "column_name": "estimated_cost",
       "column_type": "decimal(20,8)",
       "is_nullable": "YES",
@@ -1866,7 +1974,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 18,
+      "ordinal_position": 22,
       "column_name": "error_code",
       "column_type": "varchar(128)",
       "is_nullable": "YES",
@@ -1878,7 +1986,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 19,
+      "ordinal_position": 23,
       "column_name": "started_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1890,7 +1998,7 @@
     },
     {
       "table_name": "diagnosis_model_call_attempt",
-      "ordinal_position": 20,
+      "ordinal_position": 24,
       "column_name": "finished_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -2947,6 +3055,18 @@
     {
       "table_name": "manual_review_record",
       "ordinal_position": 6,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "manual_review_record",
+      "ordinal_position": 7,
       "column_name": "review_result",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -2958,7 +3078,7 @@
     },
     {
       "table_name": "manual_review_record",
-      "ordinal_position": 7,
+      "ordinal_position": 8,
       "column_name": "reviewer_id",
       "column_type": "varchar(255)",
       "is_nullable": "NO",
@@ -2970,7 +3090,7 @@
     },
     {
       "table_name": "manual_review_record",
-      "ordinal_position": 8,
+      "ordinal_position": 9,
       "column_name": "review_reason",
       "column_type": "text",
       "is_nullable": "NO",
@@ -2982,7 +3102,7 @@
     },
     {
       "table_name": "manual_review_record",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "reviewed_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -3319,6 +3439,18 @@
     {
       "table_name": "trace_outbox",
       "ordinal_position": 7,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "trace_outbox",
+      "ordinal_position": 8,
       "column_name": "payload_json",
       "column_type": "json",
       "is_nullable": "NO",
@@ -3330,7 +3462,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 8,
+      "ordinal_position": 9,
       "column_name": "deterministic_object_id",
       "column_type": "varchar(255)",
       "is_nullable": "NO",
@@ -3342,7 +3474,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "attempt_count",
       "column_type": "int unsigned",
       "is_nullable": "NO",
@@ -3354,7 +3486,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "available_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -3366,7 +3498,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 11,
+      "ordinal_position": 12,
       "column_name": "exported_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -3378,7 +3510,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 12,
+      "ordinal_position": 13,
       "column_name": "verified_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -3390,7 +3522,7 @@
     },
     {
       "table_name": "trace_outbox",
-      "ordinal_position": 13,
+      "ordinal_position": 14,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -5116,6 +5248,11 @@
     },
     {
       "table_name": "diagnosis_approval",
+      "constraint_name": "ck_diagnosis_approval_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "diagnosis_approval",
       "constraint_name": "ck_diagnosis_approval_emergency_reason",
       "constraint_type": "CHECK"
     },
@@ -5153,6 +5290,11 @@
       "table_name": "diagnosis_approval_audit",
       "constraint_name": "uq_diagnosis_approval_audit_revision",
       "constraint_type": "UNIQUE"
+    },
+    {
+      "table_name": "diagnosis_approval_outbox",
+      "constraint_name": "ck_diagnosis_approval_outbox_canonical",
+      "constraint_type": "CHECK"
     },
     {
       "table_name": "diagnosis_approval_outbox",
@@ -5206,6 +5348,11 @@
     },
     {
       "table_name": "diagnosis_case_outbox",
+      "constraint_name": "ck_diagnosis_case_outbox_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "diagnosis_case_outbox",
       "constraint_name": "fk_diagnosis_case_outbox_case",
       "constraint_type": "FOREIGN KEY"
     },
@@ -5238,6 +5385,11 @@
       "table_name": "diagnosis_case_review",
       "constraint_name": "uq_diagnosis_case_review_version",
       "constraint_type": "UNIQUE"
+    },
+    {
+      "table_name": "diagnosis_confirmation_token",
+      "constraint_name": "ck_diagnosis_confirmation_canonical",
+      "constraint_type": "CHECK"
     },
     {
       "table_name": "diagnosis_confirmation_token",
@@ -5281,6 +5433,11 @@
     },
     {
       "table_name": "diagnosis_index_release_pointer",
+      "constraint_name": "ck_diagnosis_index_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "diagnosis_index_release_pointer",
       "constraint_name": "ck_diagnosis_index_revision",
       "constraint_type": "CHECK"
     },
@@ -5297,6 +5454,11 @@
     {
       "table_name": "diagnosis_model_call_attempt",
       "constraint_name": "ck_diagnosis_model_attempt_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "constraint_name": "ck_diagnosis_model_attempt_fence",
       "constraint_type": "CHECK"
     },
     {
@@ -5441,6 +5603,11 @@
     },
     {
       "table_name": "manual_review_record",
+      "constraint_name": "ck_manual_review_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "manual_review_record",
       "constraint_name": "ck_manual_review_result",
       "constraint_type": "CHECK"
     },
@@ -5501,6 +5668,11 @@
     },
     {
       "table_name": "trace_outbox",
+      "constraint_name": "ck_trace_outbox_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "trace_outbox",
       "constraint_name": "ck_trace_outbox_state",
       "constraint_type": "CHECK"
     },
@@ -5538,6 +5710,11 @@
     },
     {
       "table_name": "diagnosis_approval",
+      "constraint_name": "ck_diagnosis_approval_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
+      "table_name": "diagnosis_approval",
       "constraint_name": "ck_diagnosis_approval_emergency_reason",
       "check_clause": "((`emergency` = false) or (`decision_reason` is not null))"
     },
@@ -5550,6 +5727,11 @@
       "table_name": "diagnosis_approval",
       "constraint_name": "ck_diagnosis_approval_state",
       "check_clause": "(`state` in (_utf8mb4\\'PENDING\\',_utf8mb4\\'APPROVED\\',_utf8mb4\\'REJECTED\\',_utf8mb4\\'CANCELLED\\'))"
+    },
+    {
+      "table_name": "diagnosis_approval_outbox",
+      "constraint_name": "ck_diagnosis_approval_outbox_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
     },
     {
       "table_name": "diagnosis_case",
@@ -5567,14 +5749,29 @@
       "check_clause": "(`status` in (_utf8mb4\\'DRAFT\\',_utf8mb4\\'PENDING_REVIEW\\',_utf8mb4\\'APPROVED\\',_utf8mb4\\'REJECTED\\',_utf8mb4\\'DISABLED\\',_utf8mb4\\'SUPERSEDED\\'))"
     },
     {
+      "table_name": "diagnosis_case_outbox",
+      "constraint_name": "ck_diagnosis_case_outbox_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
       "table_name": "diagnosis_case_review",
       "constraint_name": "ck_diagnosis_case_review_result",
       "check_clause": "(`review_result` in (_utf8mb4\\'APPROVED\\',_utf8mb4\\'REJECTED\\',_utf8mb4\\'NEEDS_MORE_INFO\\'))"
     },
     {
+      "table_name": "diagnosis_confirmation_token",
+      "constraint_name": "ck_diagnosis_confirmation_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
       "table_name": "diagnosis_event_history",
       "constraint_name": "ck_diagnosis_event_sequence",
       "check_clause": "(`sequence` >= 1)"
+    },
+    {
+      "table_name": "diagnosis_index_release_pointer",
+      "constraint_name": "ck_diagnosis_index_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
     },
     {
       "table_name": "diagnosis_index_release_pointer",
@@ -5585,6 +5782,11 @@
       "table_name": "diagnosis_model_call_attempt",
       "constraint_name": "ck_diagnosis_model_attempt_canonical",
       "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
+      "table_name": "diagnosis_model_call_attempt",
+      "constraint_name": "ck_diagnosis_model_attempt_fence",
+      "check_clause": "(`fencing_token` >= 1)"
     },
     {
       "table_name": "diagnosis_model_settlement",
@@ -5638,6 +5840,11 @@
     },
     {
       "table_name": "manual_review_record",
+      "constraint_name": "ck_manual_review_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
+      "table_name": "manual_review_record",
       "constraint_name": "ck_manual_review_result",
       "check_clause": "(`review_result` in (_utf8mb4\\'APPROVED\\',_utf8mb4\\'REJECTED\\'))"
     },
@@ -5655,6 +5862,11 @@
       "table_name": "schema_migration",
       "constraint_name": "ck_schema_migration_steps",
       "check_clause": "(`applied_steps` <= `total_steps`)"
+    },
+    {
+      "table_name": "trace_outbox",
+      "constraint_name": "ck_trace_outbox_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
     },
     {
       "table_name": "trace_outbox",

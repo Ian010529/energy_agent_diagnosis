@@ -10,6 +10,7 @@ from energy_agent.contracts.common import (
     IndexState,
     RunStatus,
     ToolStatus,
+    UUIDv7String,
 )
 from energy_agent.contracts.diagnosis import RunAcceptedResponse
 from energy_agent.contracts.errors import ErrorDetail, ErrorEnvelope
@@ -50,5 +51,6 @@ __all__ = [
     "ToolMeta",
     "ToolResult",
     "ToolStatus",
+    "UUIDv7String",
     "normalize_legacy_tool_result",
 ]

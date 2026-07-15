@@ -77,6 +77,15 @@ def test_audit_revision_attempt_and_outbox_fks_never_cascade_delete() -> None:
     assert "DATETIME(6)" in sources
 
 
+def test_every_business_table_with_a_persisted_hash_binds_canonicalization_v2() -> None:
+    for schema in ("control", "ops"):
+        source = (ROOT / f"migrations/{schema}/0001_initial.sql").read_text(encoding="utf-8")
+        for statement in split_statements(source):
+            if "_hash CHAR(64)" in statement:
+                assert "canonicalization_version SMALLINT UNSIGNED NOT NULL" in statement
+                assert "canonicalization_version = 2" in statement
+
+
 def test_redis_lua_checks_every_key_before_first_write() -> None:
     source = (ROOT / "scripts/migrations/atomic_preflight.lua").read_text(encoding="utf-8")
     operations = ('redis.call("HSET"', 'redis.call("ZADD"')

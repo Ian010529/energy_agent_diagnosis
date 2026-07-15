@@ -238,6 +238,23 @@ def verify_checksum_refusal(
     return False
 
 
+def verify_missing_manifest_refusal(
+    environment: dict[str, str], mysql_port: int, schema_name: str, database: str
+) -> bool:
+    with mysql_connection(environment, mysql_port, database) as db:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM schema_manifest WHERE schema_name=%s", (schema_name,))
+        try:
+            verify_schema(db, schema_name)
+        except MigrationError as error:
+            refused = "manifest is missing" in str(error)
+        else:
+            refused = False
+        apply_schema(db, schema_name)
+        verify_schema(db, schema_name)
+    return refused
+
+
 def revision_probe(environment: dict[str, str], mysql_port: int, database: str) -> dict[str, str]:
     session_id = uuid7()
     payload = {"device_id": "device-1", "message": "diagnose"}
@@ -368,7 +385,7 @@ def run_gate() -> Path:
     commands = ["make gate-m1"]
     commit_sha = "NOT_RECORDED"
     current_step = "initialize"
-    stack_started = False
+    stack_registered = False
     cleanup_result: dict[str, int] | None = None
     databases: list[str] = []
     previous_handlers = {
@@ -383,11 +400,13 @@ def run_gate() -> Path:
 
     try:
         current_step = "verify clean source tree"
+        commands.append("git status --porcelain --untracked-files=all")
         status = run(
             ["git", "status", "--porcelain", "--untracked-files=all"], capture=True
         ).stdout.strip()
         if status:
             raise RuntimeError("M1 Gate requires a clean source tree")
+        commands.append("git rev-parse HEAD")
         commit_sha = run(["git", "rev-parse", "HEAD"], capture=True).stdout.strip()
 
         for label, arguments in (
@@ -411,12 +430,12 @@ def run_gate() -> Path:
 
         current_step = "start real MySQL and Redis"
         commands.append("docker compose ... up -d --wait profile-guard mysql redis")
+        stack_registered = True
         compose(
             project,
             environment,
             ["up", "-d", "--wait", "--wait-timeout", "180", "profile-guard", "mysql", "redis"],
         )
-        stack_started = True
         mysql_port = mapped_port(project, environment, "mysql", 3306)
         redis_port = mapped_port(project, environment, "redis", 6379)
 
@@ -432,6 +451,11 @@ def run_gate() -> Path:
         manifests: dict[str, str] = {}
         interruption_evidence: list[dict[str, Any]] = []
         checksum_refusal: dict[str, bool] = {}
+        missing_manifest_refusal: dict[str, bool] = {}
+        commands.append("apply and verify control/ops 0001 from empty databases")
+        commands.append("idempotently reapply and verify control/ops 0001")
+        commands.append("SIGKILL each migration child after DDL step 2 and resume")
+        commands.append("apply mutated temporary migration copies and require checksum refusal")
         for schema_name, database in targets.items():
             with mysql_connection(environment, mysql_port, database) as db:
                 apply_schema(db, schema_name)
@@ -447,10 +471,17 @@ def run_gate() -> Path:
             checksum_refusal[schema_name] = verify_checksum_refusal(
                 environment, mysql_port, schema_name, database
             )
+            missing_manifest_refusal[schema_name] = verify_missing_manifest_refusal(
+                environment, mysql_port, schema_name, interrupted[schema_name]
+            )
         if not all(checksum_refusal.values()):
             raise RuntimeError("migration checksum change was not rejected")
+        if not all(missing_manifest_refusal.values()):
+            raise RuntimeError("missing schema manifest was not rejected")
 
+        commands.append("write/read same revision hash and reject different revision hash")
         revision = revision_probe(environment, mysql_port, targets["control"])
+        commands.append("execute Redis Lua late-key type error and compare full key snapshots")
         redis_evidence = redis_atomicity_probe(environment, redis_port)
 
         current_step = "real-service integration and live tests"
@@ -499,6 +530,8 @@ def run_gate() -> Path:
         write_combined_junit(junit_files, artifact_dir / "junit.xml")
 
         current_step = "authoritative restart readback"
+        commands.append("docker compose ... restart mysql redis")
+        commands.append("authoritative MySQL/Redis readback after restart")
         mysql_before = dict(manifests)
         compose(project, environment, ["restart", "mysql", "redis"])
         compose(
@@ -524,7 +557,8 @@ def run_gate() -> Path:
             raise RuntimeError("Redis authoritative readback missing after restart")
 
         current_step = "drift refusal"
-        drift_refusal: dict[str, bool] = {}
+        commands.append("alter run-scoped schemas and require verify/apply drift refusal")
+        drift_refusal: dict[str, dict[str, bool]] = {}
         for schema_name, database in targets.items():
             with mysql_connection(environment, mysql_port, database) as db:
                 with db.cursor() as cursor:
@@ -534,23 +568,46 @@ def run_gate() -> Path:
                 try:
                     verify_schema(db, schema_name)
                 except MigrationError as error:
-                    drift_refusal[schema_name] = "drift detected" in str(error)
+                    verify_refused = "drift detected" in str(error)
                 else:
-                    drift_refusal[schema_name] = False
-        if not all(drift_refusal.values()):
+                    verify_refused = False
+                try:
+                    apply_schema(db, schema_name)
+                except MigrationError as error:
+                    apply_refused = "drift detected" in str(error)
+                else:
+                    apply_refused = False
+                drift_refusal[schema_name] = {
+                    "verify_refused": verify_refused,
+                    "apply_refused": apply_refused,
+                }
+        if not all(all(result.values()) for result in drift_refusal.values()):
             raise RuntimeError("schema drift was not rejected")
 
-        current_step = "write sanitized evidence"
+        current_step = "collect service evidence and cleanup"
         versions = service_evidence(project, environment)
         with root_connection(environment, mysql_port) as admin, admin.cursor() as cursor:
             cursor.execute("SELECT VERSION() AS version, @@global.time_zone AS time_zone")
             mysql_version = cursor.fetchone()
         redis_version = redis_client.info("server")["redis_version"]
+        commands.append("docker compose ... down --volumes --remove-orphans")
+        commands.append("assert run-scoped containers, volumes, and networks are absent")
+        compose(project, environment, ["down", "--volumes", "--remove-orphans"])
+        cleanup_result = assert_cleanup(project)
+        stack_registered = False
+        commands.append("make verify-design")
+        run(["make", "verify-design"])
+
+        current_step = "write sanitized evidence"
         evidence = {
             "module": "M1",
             "commit_sha": commit_sha,
             "acceptance_run_id": acceptance_run_id,
             "environment": "isolated Docker Compose real MySQL/Redis",
+            "service_digests": versions,
+            "dataset_acceptance_run_id": None,
+            "reviewer": "pending-independent-read-only-review",
+            "unresolved_blockers": [],
             "test_commands": commands,
             "test_count": counts["tests"],
             "failure_count": counts["failures"] + counts["errors"],
@@ -580,8 +637,10 @@ def run_gate() -> Path:
             "redis_atomicity.json": redis_evidence,
             "negative_paths.json": {
                 "checksum_refusal": checksum_refusal,
+                "missing_manifest_refusal": missing_manifest_refusal,
                 "drift_refusal": drift_refusal,
             },
+            "cleanup.json": cleanup_result,
             "review.md": "# M1 independent review\n\nPending source-exact read-only review.\n",
         }
         for filename, value in files.items():
@@ -592,7 +651,6 @@ def run_gate() -> Path:
                 path.write_text(
                     json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
                 )
-        run(["make", "verify-design"])
         print(f"OK: M1 Gate passed with acceptance_run_id={acceptance_run_id}")
         return artifact_dir
     except BaseException as error:
@@ -611,20 +669,23 @@ def run_gate() -> Path:
         )
         raise
     finally:
-        if stack_started:
+        blocking_cleanup_error: Exception | None = None
+        if stack_registered:
             try:
                 compose(project, environment, ["down", "--volumes", "--remove-orphans"])
                 cleanup_result = assert_cleanup(project)
-            except Exception as cleanup_error:  # noqa: BLE001 - preserve original Gate error
-                print(f"ERROR: M1 cleanup failed: {cleanup_error}", file=sys.stderr)
-                if sys.exc_info()[0] is None:
-                    raise
-        if cleanup_result is not None:
-            (artifact_dir / "cleanup.json").write_text(
-                json.dumps(cleanup_result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-            )
+                (artifact_dir / "cleanup.json").write_text(
+                    json.dumps(cleanup_result, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            except Exception as cleanup_error:  # noqa: BLE001 - cleanup failure is blocking
+                blocking_cleanup_error = cleanup_error
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
+        if blocking_cleanup_error is not None:
+            raise RuntimeError(
+                f"M1 cleanup failed: {blocking_cleanup_error}"
+            ) from blocking_cleanup_error
 
 
 def main(argv: list[str] | None = None) -> int:

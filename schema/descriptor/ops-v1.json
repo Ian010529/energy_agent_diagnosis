@@ -324,6 +324,18 @@
     {
       "table_name": "alarm_diagnosis_outbox",
       "ordinal_position": 9,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "alarm_diagnosis_outbox",
+      "ordinal_position": 10,
       "column_name": "payload_json",
       "column_type": "json",
       "is_nullable": "NO",
@@ -335,7 +347,7 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "publish_state",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -347,7 +359,7 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
-      "ordinal_position": 11,
+      "ordinal_position": 12,
       "column_name": "attempt_count",
       "column_type": "int unsigned",
       "is_nullable": "NO",
@@ -359,7 +371,7 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
-      "ordinal_position": 12,
+      "ordinal_position": 13,
       "column_name": "available_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -371,7 +383,7 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
-      "ordinal_position": 13,
+      "ordinal_position": 14,
       "column_name": "published_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -383,7 +395,7 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
-      "ordinal_position": 14,
+      "ordinal_position": 15,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1812,6 +1824,18 @@
     {
       "table_name": "work_order_outbox",
       "ordinal_position": 8,
+      "column_name": "canonicalization_version",
+      "column_type": "smallint unsigned",
+      "is_nullable": "NO",
+      "column_default": null,
+      "extra": "",
+      "character_set_name": null,
+      "collation_name": null,
+      "generation_expression": ""
+    },
+    {
+      "table_name": "work_order_outbox",
+      "ordinal_position": 9,
       "column_name": "payload_json",
       "column_type": "json",
       "is_nullable": "NO",
@@ -1823,7 +1847,7 @@
     },
     {
       "table_name": "work_order_outbox",
-      "ordinal_position": 9,
+      "ordinal_position": 10,
       "column_name": "publish_state",
       "column_type": "varchar(24)",
       "is_nullable": "NO",
@@ -1835,7 +1859,7 @@
     },
     {
       "table_name": "work_order_outbox",
-      "ordinal_position": 10,
+      "ordinal_position": 11,
       "column_name": "attempt_count",
       "column_type": "int unsigned",
       "is_nullable": "NO",
@@ -1847,7 +1871,7 @@
     },
     {
       "table_name": "work_order_outbox",
-      "ordinal_position": 11,
+      "ordinal_position": 12,
       "column_name": "available_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -1859,7 +1883,7 @@
     },
     {
       "table_name": "work_order_outbox",
-      "ordinal_position": 12,
+      "ordinal_position": 13,
       "column_name": "published_at",
       "column_type": "datetime(6)",
       "is_nullable": "YES",
@@ -1871,7 +1895,7 @@
     },
     {
       "table_name": "work_order_outbox",
-      "ordinal_position": 13,
+      "ordinal_position": 14,
       "column_name": "created_at",
       "column_type": "datetime(6)",
       "is_nullable": "NO",
@@ -2958,6 +2982,11 @@
     },
     {
       "table_name": "alarm_diagnosis_outbox",
+      "constraint_name": "ck_alarm_outbox_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "alarm_diagnosis_outbox",
       "constraint_name": "fk_alarm_outbox_event",
       "constraint_type": "FOREIGN KEY"
     },
@@ -3118,6 +3147,11 @@
     },
     {
       "table_name": "work_order_outbox",
+      "constraint_name": "ck_work_order_outbox_canonical",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_name": "work_order_outbox",
       "constraint_name": "fk_work_order_outbox_order",
       "constraint_type": "FOREIGN KEY"
     },
@@ -3133,6 +3167,11 @@
     }
   ],
   "checks": [
+    {
+      "table_name": "alarm_diagnosis_outbox",
+      "constraint_name": "ck_alarm_outbox_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
     {
       "table_name": "alarm_event_version",
       "constraint_name": "ck_alarm_event_canonical",
@@ -3181,6 +3220,11 @@
     {
       "table_name": "work_order",
       "constraint_name": "ck_work_order_canonical",
+      "check_clause": "(`canonicalization_version` = 2)"
+    },
+    {
+      "table_name": "work_order_outbox",
+      "constraint_name": "ck_work_order_outbox_canonical",
       "check_clause": "(`canonicalization_version` = 2)"
     }
   ],

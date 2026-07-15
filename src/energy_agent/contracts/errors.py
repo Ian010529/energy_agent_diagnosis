@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import Field
 
-from energy_agent.contracts.common import StrictModel
+from energy_agent.contracts.common import StrictModel, UUIDv7String
 
 
 class ErrorDetail(StrictModel):
@@ -19,5 +19,5 @@ class ErrorDetail(StrictModel):
 
 class ErrorEnvelope(StrictModel):
     error: ErrorDetail
-    trace_id: str
-    acceptance_run_id: str
+    trace_id: UUIDv7String
+    acceptance_run_id: UUIDv7String

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Any
+from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, PlainSerializer
 
@@ -34,6 +35,21 @@ UTCDateTime = Annotated[
     BeforeValidator(_utc_datetime),
     PlainSerializer(_format_utc_datetime, return_type=str),
 ]
+
+
+def _uuid7_string(value: Any) -> str:
+    if not isinstance(value, str):
+        raise TypeError("UUIDv7 value must be a string")
+    try:
+        parsed = UUID(value)
+    except ValueError as error:
+        raise ValueError("value must be a canonical UUIDv7") from error
+    if parsed.version != 7 or str(parsed) != value:
+        raise ValueError("value must be a lowercase canonical UUIDv7")
+    return value
+
+
+UUIDv7String = Annotated[str, BeforeValidator(_uuid7_string)]
 
 
 class RunStatus(StrEnum):

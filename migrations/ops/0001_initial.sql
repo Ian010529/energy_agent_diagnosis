@@ -114,6 +114,7 @@ CREATE TABLE alarm_diagnosis_outbox (
   event_type VARCHAR(128) NOT NULL,
   event_version INT UNSIGNED NOT NULL,
   idempotency_key_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   payload_json JSON NOT NULL,
   publish_state VARCHAR(24) NOT NULL,
   attempt_count INT UNSIGNED NOT NULL,
@@ -123,6 +124,7 @@ CREATE TABLE alarm_diagnosis_outbox (
   CONSTRAINT pk_alarm_diagnosis_outbox PRIMARY KEY (event_id),
   CONSTRAINT fk_alarm_outbox_event FOREIGN KEY (tenant_id, alarm_id, source_version) REFERENCES alarm_event_version (tenant_id, alarm_id, source_version) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_alarm_outbox_idempotency UNIQUE (idempotency_key_hash),
+  CONSTRAINT ck_alarm_outbox_canonical CHECK (canonicalization_version = 2),
   INDEX ix_alarm_outbox_pending (publish_state, available_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -181,6 +183,7 @@ CREATE TABLE work_order_outbox (
   event_type VARCHAR(128) NOT NULL,
   event_version INT UNSIGNED NOT NULL,
   idempotency_key_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   payload_json JSON NOT NULL,
   publish_state VARCHAR(24) NOT NULL,
   attempt_count INT UNSIGNED NOT NULL,
@@ -190,6 +193,7 @@ CREATE TABLE work_order_outbox (
   CONSTRAINT pk_work_order_outbox PRIMARY KEY (event_id),
   CONSTRAINT fk_work_order_outbox_order FOREIGN KEY (tenant_id, ticket_id) REFERENCES work_order (tenant_id, ticket_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_work_order_outbox_idempotency UNIQUE (idempotency_key_hash),
+  CONSTRAINT ck_work_order_outbox_canonical CHECK (canonicalization_version = 2),
   INDEX ix_work_order_outbox_pending (publish_state, available_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

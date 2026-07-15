@@ -151,6 +151,7 @@ CREATE TABLE diagnosis_approval (
   request_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   idempotency_scope_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   idempotency_key_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   decision_actor_id VARCHAR(255) NULL,
   decision_actor_role VARCHAR(32) NULL,
   decision_reason TEXT NULL,
@@ -162,6 +163,7 @@ CREATE TABLE diagnosis_approval (
   CONSTRAINT ck_diagnosis_approval_state CHECK (state IN ('PENDING','APPROVED','REJECTED','CANCELLED')),
   CONSTRAINT ck_diagnosis_approval_no_self_review CHECK (decision_actor_id IS NULL OR decision_actor_id <> requester_id),
   CONSTRAINT ck_diagnosis_approval_emergency_reason CHECK (emergency = FALSE OR decision_reason IS NOT NULL),
+  CONSTRAINT ck_diagnosis_approval_canonical CHECK (canonicalization_version = 2),
   INDEX ix_diagnosis_approval_target (tenant_id, target_type, target_id),
   INDEX ix_diagnosis_approval_state (tenant_id, state, created_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -188,6 +190,7 @@ CREATE TABLE diagnosis_approval_outbox (
   event_type VARCHAR(128) NOT NULL,
   event_version INT UNSIGNED NOT NULL,
   idempotency_key_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   payload_json JSON NOT NULL,
   publish_state VARCHAR(24) NOT NULL,
   attempt_count INT UNSIGNED NOT NULL,
@@ -197,11 +200,13 @@ CREATE TABLE diagnosis_approval_outbox (
   CONSTRAINT pk_diagnosis_approval_outbox PRIMARY KEY (event_id),
   CONSTRAINT fk_diagnosis_approval_outbox_approval FOREIGN KEY (approval_id) REFERENCES diagnosis_approval (approval_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_diagnosis_approval_outbox_idempotency UNIQUE (idempotency_key_hash),
+  CONSTRAINT ck_diagnosis_approval_outbox_canonical CHECK (canonicalization_version = 2),
   INDEX ix_diagnosis_approval_outbox_pending (publish_state, available_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE diagnosis_confirmation_token (
   token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   approval_id CHAR(36) NOT NULL,
   target_type VARCHAR(64) NOT NULL,
   target_id VARCHAR(255) NOT NULL,
@@ -214,6 +219,7 @@ CREATE TABLE diagnosis_confirmation_token (
   CONSTRAINT pk_diagnosis_confirmation_token PRIMARY KEY (token_hash),
   CONSTRAINT fk_diagnosis_confirmation_approval FOREIGN KEY (approval_id) REFERENCES diagnosis_approval (approval_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_diagnosis_confirmation_nonce UNIQUE (nonce),
+  CONSTRAINT ck_diagnosis_confirmation_canonical CHECK (canonicalization_version = 2),
   INDEX ix_diagnosis_confirmation_target (target_type, target_id, action_name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -276,6 +282,7 @@ CREATE TABLE diagnosis_case_outbox (
   event_type VARCHAR(128) NOT NULL,
   event_version INT UNSIGNED NOT NULL,
   idempotency_key_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   payload_json JSON NOT NULL,
   publish_state VARCHAR(24) NOT NULL,
   attempt_count INT UNSIGNED NOT NULL,
@@ -285,6 +292,7 @@ CREATE TABLE diagnosis_case_outbox (
   CONSTRAINT pk_diagnosis_case_outbox PRIMARY KEY (event_id),
   CONSTRAINT fk_diagnosis_case_outbox_case FOREIGN KEY (case_id) REFERENCES diagnosis_case (case_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_diagnosis_case_outbox_idempotency UNIQUE (idempotency_key_hash),
+  CONSTRAINT ck_diagnosis_case_outbox_canonical CHECK (canonicalization_version = 2),
   INDEX ix_diagnosis_case_outbox_pending (publish_state, available_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -295,12 +303,16 @@ CREATE TABLE diagnosis_model_call_attempt (
   session_id CHAR(36) NOT NULL,
   run_id CHAR(36) NOT NULL,
   trace_id CHAR(36) NOT NULL,
+  acceptance_run_id CHAR(36) NOT NULL,
+  node_name VARCHAR(128) NOT NULL,
+  prompt_version VARCHAR(128) NOT NULL,
   provider VARCHAR(64) NOT NULL,
   model_name VARCHAR(128) NOT NULL,
   endpoint_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   request_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   prompt_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   canonicalization_version SMALLINT UNSIGNED NOT NULL,
+  fencing_token BIGINT UNSIGNED NOT NULL,
   status VARCHAR(24) NOT NULL,
   prompt_tokens BIGINT UNSIGNED NULL,
   completion_tokens BIGINT UNSIGNED NULL,
@@ -313,6 +325,7 @@ CREATE TABLE diagnosis_model_call_attempt (
   CONSTRAINT fk_diagnosis_model_attempt_session FOREIGN KEY (session_id) REFERENCES diagnosis_session_history (session_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT fk_diagnosis_model_attempt_run FOREIGN KEY (run_id) REFERENCES diagnosis_run_history (run_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT ck_diagnosis_model_attempt_canonical CHECK (canonicalization_version = 2),
+  CONSTRAINT ck_diagnosis_model_attempt_fence CHECK (fencing_token >= 1),
   INDEX ix_diagnosis_model_attempt_run (run_id, started_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -344,11 +357,13 @@ CREATE TABLE diagnosis_index_release_pointer (
   opensearch_target VARCHAR(255) NOT NULL,
   milvus_target VARCHAR(255) NOT NULL,
   generation_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   activated_by VARCHAR(255) NOT NULL,
   activated_at DATETIME(6) NOT NULL,
   CONSTRAINT pk_diagnosis_index_pointer PRIMARY KEY (tenant_id, index_group),
   CONSTRAINT uq_diagnosis_index_target UNIQUE (tenant_id, release_id, fencing_token),
-  CONSTRAINT ck_diagnosis_index_revision CHECK (revision >= 1)
+  CONSTRAINT ck_diagnosis_index_revision CHECK (revision >= 1),
+  CONSTRAINT ck_diagnosis_index_canonical CHECK (canonicalization_version = 2)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE expert_template (
@@ -380,6 +395,7 @@ CREATE TABLE manual_review_record (
   document_id VARCHAR(255) NOT NULL,
   document_version VARCHAR(128) NOT NULL,
   source_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   review_result VARCHAR(24) NOT NULL,
   reviewer_id VARCHAR(255) NOT NULL,
   review_reason TEXT NOT NULL,
@@ -387,6 +403,7 @@ CREATE TABLE manual_review_record (
   CONSTRAINT pk_manual_review_record PRIMARY KEY (review_id),
   CONSTRAINT uq_manual_review_identity UNIQUE (tenant_id, document_id, document_version, source_hash),
   CONSTRAINT ck_manual_review_result CHECK (review_result IN ('APPROVED','REJECTED')),
+  CONSTRAINT ck_manual_review_canonical CHECK (canonicalization_version = 2),
   INDEX ix_manual_review_document (tenant_id, document_id, reviewed_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -397,6 +414,7 @@ CREATE TABLE trace_outbox (
   run_id CHAR(36) NOT NULL,
   state VARCHAR(24) NOT NULL,
   payload_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  canonicalization_version SMALLINT UNSIGNED NOT NULL,
   payload_json JSON NOT NULL,
   deterministic_object_id VARCHAR(255) NOT NULL,
   attempt_count INT UNSIGNED NOT NULL,
@@ -409,6 +427,7 @@ CREATE TABLE trace_outbox (
   CONSTRAINT fk_trace_outbox_run FOREIGN KEY (run_id) REFERENCES diagnosis_run_history (run_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT uq_trace_outbox_object UNIQUE (deterministic_object_id),
   CONSTRAINT ck_trace_outbox_state CHECK (state IN ('PENDING_EXPORT','EXPORTED','VERIFIED')),
+  CONSTRAINT ck_trace_outbox_canonical CHECK (canonicalization_version = 2),
   INDEX ix_trace_outbox_pending (state, available_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

@@ -1,7 +1,7 @@
 [
   {
     "name": "unicode-key-order-and-nfc",
-    "input": {"é": "café", "a": null, "中": [true, false]},
+    "input": {"é": "cafe\u0301", "a": null, "中": [true, false]},
     "canonical": "{\"a\":null,\"é\":\"café\",\"中\":[true,false]}",
     "sha256": "b6ee12f4c56886111f8906f330d1649e6644353978c0dec3e4ba2672421e1be6"
   },

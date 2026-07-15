@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import Field
 
-from energy_agent.contracts.common import StrictModel, UTCDateTime
+from energy_agent.contracts.common import StrictModel, UTCDateTime, UUIDv7String
 
 
 class ModelAttemptStatus(StrEnum):
@@ -17,10 +17,19 @@ class ModelAttemptStatus(StrEnum):
 
 
 class ModelAttempt(StrictModel):
-    call_id: str
+    call_id: UUIDv7String
     attempt_no: int = Field(ge=1)
+    fencing_token: int = Field(ge=1)
+    node_name: str
+    prompt_version: str
+    prompt_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     provider: str
     model: str
+    endpoint_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    trace_id: UUIDv7String
+    session_id: UUIDv7String
+    run_id: UUIDv7String
+    acceptance_run_id: UUIDv7String
     status: ModelAttemptStatus
     request_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     canonicalization_version: int = Field(default=2, ge=2, le=2)

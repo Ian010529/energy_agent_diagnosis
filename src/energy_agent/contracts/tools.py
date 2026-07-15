@@ -6,11 +6,11 @@ from typing import Any
 
 from pydantic import Field, model_validator
 
-from energy_agent.contracts.common import StrictModel, ToolStatus
+from energy_agent.contracts.common import StrictModel, ToolStatus, UUIDv7String
 
 
 class ToolMeta(StrictModel):
-    trace_id: str
+    trace_id: UUIDv7String
     source_system: str
     provider_type: str
     partial_result: bool = False

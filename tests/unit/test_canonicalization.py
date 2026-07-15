@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -36,6 +37,14 @@ def test_decimal_negative_zero_and_no_exponent() -> None:
     )
 
 
+def test_nfc_and_nfd_string_values_have_identical_bytes_and_hashes() -> None:
+    nfc = "café"
+    nfd = unicodedata.normalize("NFD", nfc)
+    assert nfc != nfd
+    assert canonicalize({"value": nfc}) == canonicalize({"value": nfd})
+    assert canonical_digest({"value": nfc}) == canonical_digest({"value": nfd})
+
+
 def test_timezone_is_utc_with_six_microseconds() -> None:
     east_eight = timezone(timedelta(hours=8))
     value = datetime(2026, 7, 15, 12, 30, 1, 42, tzinfo=east_eight)
@@ -66,6 +75,11 @@ def test_mapping_insertion_order_does_not_change_hash(value: dict[str, int]) -> 
 @given(st.text())
 def test_business_field_change_changes_hash(value: str) -> None:
     assert canonical_digest({"value": value}) != canonical_digest({"value": value + "!"})
+
+
+@given(st.text())
+def test_string_value_unicode_normalization_is_a_property(value: str) -> None:
+    assert canonicalize(value) == canonicalize(unicodedata.normalize("NFC", value))
 
 
 def test_version_is_frozen_to_two() -> None:
