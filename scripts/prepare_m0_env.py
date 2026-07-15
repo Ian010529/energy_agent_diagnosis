@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import secrets
 from pathlib import Path
 
@@ -70,10 +71,9 @@ def main() -> int:
         "KEYCLOAK_M0_USER_PASSWORD": "M0a!" + token(),
         "MILVUS_ROOT_PASSWORD": "M0a!" + token(),
     }
-    ENV_PATH.write_text(
-        "".join(f"{key}={value}\n" for key, value in values.items()), encoding="utf-8"
-    )
-    ENV_PATH.chmod(0o600)
+    descriptor = os.open(ENV_PATH, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as environment_file:
+        environment_file.write("".join(f"{key}={value}\n" for key, value in values.items()))
     write_milvus_config(values["MILVUS_ROOT_PASSWORD"])
     print("OK: generated ignored M0 environment and runtime config")
     return 0

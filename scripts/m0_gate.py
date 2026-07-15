@@ -280,11 +280,19 @@ class M0Probe:
                 driver.verify_connectivity()
 
         def keycloak_check() -> None:
-            response = self.http.get(
-                "http://127.0.0.1:18080/realms/master/.well-known/openid-configuration",
-                timeout=5,
+            response = self.http.post(
+                "http://127.0.0.1:18080/realms/"
+                f"{self.settings['KEYCLOAK_M0_REALM']}/protocol/openid-connect/token",
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": self.settings["KEYCLOAK_M0_CLIENT_ID"],
+                    "client_secret": self.settings["KEYCLOAK_M0_CLIENT_SECRET"],
+                },
+                timeout=10,
             )
             response.raise_for_status()
+            if not response.json().get("access_token"):
+                raise RuntimeError("Keycloak imported client did not issue a token")
 
         def toxiproxy_check() -> None:
             response = self.http.get("http://127.0.0.1:18474/version", timeout=5)
@@ -587,16 +595,7 @@ class M0Probe:
         realm_response = self.http.get(
             f"{base}/admin/realms/{realm}", headers=headers, timeout=10
         )
-        if realm_response.status_code == 404:
-            response = self.http.post(
-                f"{base}/admin/realms",
-                headers=headers,
-                json={"realm": realm, "enabled": True},
-                timeout=10,
-            )
-            response.raise_for_status()
-        elif realm_response.is_error:
-            realm_response.raise_for_status()
+        realm_response.raise_for_status()
 
         client_id = self.settings["KEYCLOAK_M0_CLIENT_ID"]
         clients = self.http.get(
@@ -606,30 +605,9 @@ class M0Probe:
             timeout=10,
         )
         clients.raise_for_status()
-        representation = {
-            "clientId": client_id,
-            "enabled": True,
-            "publicClient": False,
-            "serviceAccountsEnabled": True,
-            "standardFlowEnabled": False,
-            "secret": self.settings["KEYCLOAK_M0_CLIENT_SECRET"],
-        }
         existing = clients.json()
-        if existing:
-            response = self.http.put(
-                f"{base}/admin/realms/{realm}/clients/{existing[0]['id']}",
-                headers=headers,
-                json={**existing[0], **representation},
-                timeout=10,
-            )
-        else:
-            response = self.http.post(
-                f"{base}/admin/realms/{realm}/clients",
-                headers=headers,
-                json=representation,
-                timeout=10,
-            )
-        response.raise_for_status()
+        if len(existing) != 1:
+            raise RuntimeError(f"Keycloak expected one imported client, got {len(existing)}")
         response = self.http.post(
             f"{base}/admin/realms/{realm}/groups",
             headers=headers,
@@ -725,6 +703,16 @@ def validate_gate_counts(counts: dict[str, int]) -> None:
             f"got failures={counts['failures']}, errors={counts['errors']}, "
             f"skipped={counts['skipped']}"
         )
+
+
+def write_combined_junit(paths: list[Path], destination: Path) -> None:
+    combined = ET.Element("testsuites")
+    for path in paths:
+        root = ET.parse(path).getroot()
+        suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+        for suite in suites:
+            combined.append(suite)
+    ET.ElementTree(combined).write(destination, encoding="utf-8", xml_declaration=True)
 
 
 def service_versions(environment: dict[str, str]) -> list[dict[str, str]]:
@@ -828,6 +816,7 @@ def run_gate() -> Path:
             command(arguments)
         counts = junit_counts([unit_junit, contract_junit])
         validate_gate_counts(counts)
+        write_combined_junit([unit_junit, contract_junit], artifact_dir / "junit.xml")
 
         current_step = "validate full Compose configuration"
         executed_commands.append(
@@ -963,6 +952,21 @@ def run_gate() -> Path:
         (artifact_dir / "service_versions.json").write_text(
             json.dumps(versions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        (artifact_dir / "image_digests.json").write_text(
+            json.dumps(
+                {
+                    item["container"]: {
+                        "configured": item["configured"],
+                        "image_id": item["image_id"],
+                    }
+                    for item in versions
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         (artifact_dir / "readback_hashes.json").write_text(
             json.dumps(readbacks, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
@@ -983,6 +987,38 @@ def run_gate() -> Path:
                 indent=2,
             )
             + "\n",
+            encoding="utf-8",
+        )
+        (artifact_dir / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "gate_duration_seconds": (finished_at - started_at).total_seconds(),
+                    "performance_gate": "NOT_APPLICABLE_TO_M0",
+                    "reason": "M0 validates infrastructure persistence, not application load",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (artifact_dir / "trace_verification.json").write_text(
+            json.dumps(
+                {
+                    "status": "NOT_APPLICABLE_TO_M0",
+                    "reason": "Application tracing is introduced by a later module",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (artifact_dir / "review.md").write_text(
+            "# M0 independent review\n\n"
+            f"- Reviewed commit: `{commit_sha}`\n"
+            f"- Gate run: `{acceptance_run_id}`\n"
+            "- Status: PENDING_INDEPENDENT_REVIEW\n",
             encoding="utf-8",
         )
         print(f"OK: M0 gate passed with acceptance_run_id={acceptance_run_id}")

@@ -188,12 +188,32 @@ def test_required_migrate_target_is_explicitly_deferred() -> None:
 def test_keycloak_realm_is_imported_on_normal_startup() -> None:
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     realm = (ROOT / "deploy/keycloak/m0-gate-realm.json").read_text(encoding="utf-8")
+    gate = (ROOT / "scripts/m0_gate.py").read_text(encoding="utf-8")
 
     assert "--import-realm" in compose
     assert "m0-gate-realm.json:/opt/keycloak/data/import/m0-gate-realm.json:ro" in compose
     assert '"realm": "m0-gate"' in realm
     assert '"clientId": "${KEYCLOAK_M0_CLIENT_ID}"' in realm
     assert '"secret": "${KEYCLOAK_M0_CLIENT_SECRET}"' in realm
+    assert "Keycloak imported client did not issue a token" in gate
+    assert "Keycloak expected one imported client" in gate
+    assert "realm_response.status_code == 404" not in gate
+
+
+def test_gate_emits_the_required_evidence_files() -> None:
+    gate = (ROOT / "scripts/m0_gate.py").read_text(encoding="utf-8")
+
+    for filename in (
+        "junit.xml",
+        "service_versions.json",
+        "image_digests.json",
+        "readback_hashes.json",
+        "metrics.json",
+        "chaos_report.json",
+        "trace_verification.json",
+        "review.md",
+    ):
+        assert f'artifact_dir / "{filename}"' in gate
 
 
 def test_env_example_contains_names_but_no_values() -> None:

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,14 +21,26 @@ def write_config(profile: str, password: str) -> Path:
         raise RuntimeError("MILVUS_ROOT_PASSWORD is missing or too short")
     RUNTIME_DIR.mkdir(exist_ok=True)
     destination = RUNTIME_DIR / f"milvus-{profile}.yaml"
-    destination.write_text(
+    content = (
         "common:\n"
         "  security:\n"
         "    authorizationEnabled: true\n"
-        f"    defaultRootPassword: {json.dumps(password)}\n",
-        encoding="utf-8",
+        f"    defaultRootPassword: {json.dumps(password)}\n"
     )
-    destination.chmod(0o600)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=RUNTIME_DIR, delete=False
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            os.fchmod(temporary.fileno(), 0o600)
+            temporary.write(content)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        temporary_path.replace(destination)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
     return destination
 
 

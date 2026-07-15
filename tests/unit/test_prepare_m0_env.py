@@ -50,3 +50,4 @@ def test_new_m0_environment_uses_an_isolated_compose_project(
     values = environment.read_text(encoding="utf-8")
     assert "COMPOSE_PROJECT_NAME=energy-agent-m0-" in values
     assert "COMPOSE_PROJECT_NAME=energy-agent-m0\n" not in values
+    assert environment.stat().st_mode & 0o777 == 0o600

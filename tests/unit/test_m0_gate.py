@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 import pytest
 from pytest import MonkeyPatch
 
-from scripts.m0_gate import M0Probe, run_gate, validate_gate_counts
+from scripts.m0_gate import M0Probe, run_gate, validate_gate_counts, write_combined_junit
 
 
 class FakeChannel:
@@ -92,3 +93,19 @@ def test_dirty_gate_is_blocked_before_commit_is_recorded(
     assert evidence["result"] == "BLOCKED"
     assert evidence["commit_sha"] == "NOT_RECORDED"
     assert evidence["failed_step"] == "verify clean source tree"
+
+
+def test_combined_junit_contains_all_suites(tmp_path: Path) -> None:
+    unit = tmp_path / "unit.xml"
+    contract = tmp_path / "contract.xml"
+    unit.write_text('<testsuite name="unit" tests="1"/>', encoding="utf-8")
+    contract.write_text(
+        '<testsuites><testsuite name="contract" tests="2"/></testsuites>',
+        encoding="utf-8",
+    )
+    combined = tmp_path / "junit.xml"
+
+    write_combined_junit([unit, contract], combined)
+
+    names = [suite.attrib["name"] for suite in ET.parse(combined).getroot()]
+    assert names == ["unit", "contract"]
