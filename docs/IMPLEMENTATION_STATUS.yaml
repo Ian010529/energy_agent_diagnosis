@@ -11,11 +11,11 @@ current_module: M0
 modules:
   M0:
     name: repository-and-real-service-foundation
-    status: IN_PROGRESS
+    status: ACCEPTED
     owner: main-agent
     gate_command: make gate-m0
-    gate_report: null
-    accepted_commit: null
+    gate_report: docs/gates/M0/019f63f1-f441-70db-aaa0-5e076231fd55.md
+    accepted_commit: 135e9293175502735b8442abdfc5330c035f2254
     blockers: []
 
   M1:
@@ -25,5 +25,4 @@ modules:
     gate_command: make gate-m1
     gate_report: null
     accepted_commit: null
-    blockers:
-      - M0
+    blockers: []
