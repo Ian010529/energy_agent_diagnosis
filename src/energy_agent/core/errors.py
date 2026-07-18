@@ -25,6 +25,90 @@ class ConflictError(DomainError):
     code = "STATE_CONFLICT"
 
 
+class AuthenticationError(DomainError):
+    code = "AUTHENTICATION_FAILED"
+
+
+class PermissionDeniedError(DomainError):
+    code = "ROLE_FORBIDDEN"
+
+
+class InvalidRequestError(DomainError):
+    code = "INVALID_REQUEST"
+
+
+class ActorRequiredError(AuthenticationError):
+    code = "ACTOR_REQUIRED"
+
+
+class ActorRoleInvalidError(AuthenticationError):
+    code = "ACTOR_ROLE_INVALID"
+
+
+class SelfReviewForbiddenError(PermissionDeniedError):
+    code = "SELF_REVIEW_FORBIDDEN"
+
+
+class ClarificationStaleError(ConflictError):
+    code = "CLARIFICATION_STALE"
+
+
+class UnknownClarificationQuestionError(InvalidRequestError):
+    code = "UNKNOWN_CLARIFICATION_QUESTION"
+
+
+class ClarificationAlreadyAnsweredError(ConflictError):
+    code = "CLARIFICATION_ALREADY_ANSWERED"
+
+
+class SessionNotReviewableError(ConflictError):
+    code = "SESSION_NOT_REVIEWABLE"
+
+
+class DiagnosisReviewInvalidError(InvalidRequestError):
+    code = "DIAGNOSIS_REVIEW_INVALID"
+
+
+class InvalidEvidenceReferenceError(InvalidRequestError):
+    code = "INVALID_EVIDENCE_REFERENCE"
+
+
+class RootCauseOverrideReasonRequiredError(InvalidRequestError):
+    code = "ROOT_CAUSE_OVERRIDE_REASON_REQUIRED"
+
+
+class CaseNotFoundError(ResourceNotFoundError):
+    code = "CASE_NOT_FOUND"
+
+
+class CaseNotEditableError(ConflictError):
+    code = "CASE_NOT_EDITABLE"
+
+
+class CaseNotReadyError(InvalidRequestError):
+    code = "CASE_NOT_READY"
+
+
+class CaseStateConflictError(ConflictError):
+    code = "CASE_STATE_CONFLICT"
+
+
+class CaseVersionConflictError(ConflictError):
+    code = "CASE_VERSION_CONFLICT"
+
+
+class CaseReviewConflictError(ConflictError):
+    code = "CASE_REVIEW_CONFLICT"
+
+
+class CaseIndexFailedError(DependencyUnavailableError):
+    code = "CASE_INDEX_FAILED"
+
+
+class CaseNotIndexedError(ConflictError):
+    code = "CASE_NOT_INDEXED"
+
+
 class IdempotencyConflictError(ConflictError):
     code = "IDEMPOTENCY_CONFLICT"
 

@@ -29,7 +29,7 @@ def test_phase2_intent_and_five_tool_schemas_are_frozen() -> None:
     assert ToolResult.model_json_schema()["additionalProperties"] is False
 
 
-def test_openapi_exposes_phase2_read_apis_but_no_review_or_write_api() -> None:
+def test_openapi_preserves_phase2_apis_without_ticket_write_api() -> None:
     app = create_app()
     paths = app.openapi()["paths"]
     assert "/api/v1/diagnosis/sessions" in paths
@@ -37,4 +37,4 @@ def test_openapi_exposes_phase2_read_apis_but_no_review_or_write_api() -> None:
     assert "/api/v1/diagnosis/sessions/{session_id}/messages" in paths
     assert "/api/v1/diagnosis/sessions/{session_id}/messages/stream" in paths
     assert "/api/v1/diagnosis/sessions/{session_id}" in paths
-    assert all("review" not in path and "ticket" not in path for path in paths)
+    assert all("ticket" not in path for path in paths)

@@ -35,6 +35,8 @@ class DiagnosisSessionRepository:
             risk_level=model.risk_level,
             trace_id=model.trace_id,
             run_id=model.run_id,
+            created_by=model.created_by,
+            latest_review_status=model.latest_review_status,
             created_at=ensure_utc(model.created_at),
             updated_at=ensure_utc(model.updated_at),
         )

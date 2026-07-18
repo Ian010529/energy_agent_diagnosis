@@ -11,6 +11,8 @@ from fastapi import FastAPI
 from influxdb_client.client.influxdb_client import InfluxDBClient
 
 from energy_agent.core.config import Settings
+from energy_agent.core.context import get_context
+from energy_agent.core.ids import new_id
 from energy_agent.memory.session_store import RedisSessionStore
 from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.langfuse import LangFuseTracer
@@ -18,6 +20,9 @@ from energy_agent.observability.logging import configure_logging, log_event
 from energy_agent.observability.tracing import LocalTracer, Tracer
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 from energy_agent.persistence.redis import create_redis_client
+from energy_agent.persistence.repositories.audit import AuditRepository
+from energy_agent.persistence.repositories.cases import CaseRepository
+from energy_agent.persistence.repositories.diagnosis_review import DiagnosisReviewRepository
 from energy_agent.persistence.repositories.diagnosis_run import (
     DiagnosisResultRepository,
     DiagnosisRunRepository,
@@ -38,6 +43,7 @@ from energy_agent.retrieval.contracts import QueryRewrite, RetrievalMode
 from energy_agent.retrieval.scoring import ScoreWeights
 from energy_agent.retrieval.service import RetrievalService
 from energy_agent.tools.implementations.read_tools import build_registry
+from energy_agent.tools.implementations.review_tools import register_review_tool
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +149,7 @@ def build_lifespan(
                 token=settings.milvus_token,
                 manual_collection=settings.milvus_manual_collection,
                 ticket_collection=settings.milvus_ticket_collection,
+                case_collection=settings.milvus_case_collection,
                 dimension=settings.milvus_vector_dimension,
                 metric_type=settings.milvus_metric_type,
             )
@@ -167,8 +174,9 @@ def build_lifespan(
         async def model_rewrite(payload: dict[str, object]) -> object:
             if not model_gateway:
                 return payload
+            context = get_context()
             result = await model_gateway.generate(
-                trace_id=str(payload.get("trace_id", "retrieval")),
+                trace_id=context.trace_id if context else new_id(),
                 session_id="retrieval",
                 node_name="query_rewrite",
                 prompt_version="rag.query_rewrite.v1.0",
@@ -226,9 +234,13 @@ def build_lifespan(
         app.state.milvus_provider = milvus_provider
         app.state.reranker_provider = reranker_provider
         app.state.retrieval_service = retrieval_service
+        app.state.audit_repository = AuditRepository(session_factory, tracer)
+        app.state.case_repository = CaseRepository(session_factory)
+        app.state.review_repository = DiagnosisReviewRepository(session_factory)
         app.state.tool_registry = build_registry(
             mysql_provider, timeseries_provider, tracer, retrieval_service
         )
+        register_review_tool(app.state.tool_registry, app.state.review_repository)
         app.state.model_gateway = model_gateway
         app.state.session_store = RedisSessionStore(
             redis, settings.redis_session_ttl_seconds, tracer

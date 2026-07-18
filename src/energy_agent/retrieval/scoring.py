@@ -65,6 +65,8 @@ def final_score(
 def source_reliability(source_type: SourceType, metadata: dict[str, object]) -> float:
     if source_type == SourceType.MANUAL:
         return 1.0 if metadata.get("source_class", "official_manual") == "official_manual" else 0.95
+    if source_type == SourceType.CASE:
+        return 0.95
     return 0.85 if metadata.get("verified") else 0.65
 
 
@@ -143,6 +145,8 @@ def score_candidate(
             "relevance_to_alarm": relevance,
             "retrieval_score": retrieval,
             "final_score": final,
-            "need_manual_confirmation": final < 0.65 or relevance <= 0.20,
+            "need_manual_confirmation": (
+                candidate.source_type == SourceType.CASE or final < 0.65 or relevance <= 0.20
+            ),
         }
     )

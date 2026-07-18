@@ -109,13 +109,22 @@ class RetrievalService:
                     self._rewrites.pop(next(iter(self._rewrites)))
                 self._rewrites[rewrite_key] = rewrite
         typed_rewrite = QueryRewrite.model_validate(rewrite)
-        rows = (
-            await self.mysql.manual_candidates(
+        if source == SourceType.MANUAL:
+            rows = await self.mysql.manual_candidates(
                 filters, strong_only=selected_mode != RetrievalMode.KEYWORD_ONLY
             )
-            if source == SourceType.MANUAL
-            else await self.mysql.ticket_candidates(filters, verified_only=verified_only)
-        )
+        elif source == SourceType.TICKET:
+            rows = await self.mysql.ticket_candidates(filters, verified_only=verified_only)
+        else:
+            case_candidates = getattr(self.mysql, "case_candidates", None)
+            rows = (
+                await case_candidates(
+                    filters,
+                    exclude_session_id=_string(filters.get("exclude_session_id")),
+                )
+                if case_candidates
+                else []
+            )
         keyword_candidates: list[RetrievalCandidate] = []
         vector_candidates: list[RetrievalCandidate] = []
         degraded = list(typed_rewrite.warnings)
@@ -135,10 +144,18 @@ class RetrievalService:
                     "keyword_terms": typed_rewrite.keyword_terms,
                 },
             ) as span:
-                fields = (
+                fields: tuple[str, ...] = (
                     ("alarm_name", "chapter_title", "summary_or_content")
                     if source == SourceType.MANUAL
                     else ("alarm_name", "fault_symptom", "root_cause", "action_taken")
+                    if source == SourceType.TICKET
+                    else (
+                        "alarm_name",
+                        "symptom_summary",
+                        "timeseries_features",
+                        "root_cause",
+                        "embedding_text",
+                    )
                 )
                 ranked = self.keyword.rank(
                     search_query,
@@ -169,17 +186,16 @@ class RetrievalService:
                         metadata={"source": source, "allowed_id_count": len(rows)},
                     ) as span:
                         vector = (await self.embedding.embed([search_query]))[0]
-                        ids = [
-                            str(row["chunk_id" if source == SourceType.MANUAL else "ticket_id"])
-                            for row in rows
-                        ]
+                        id_field = (
+                            "chunk_id"
+                            if source == SourceType.MANUAL
+                            else "ticket_id"
+                            if source == SourceType.TICKET
+                            else "case_id"
+                        )
+                        ids = [str(row[id_field]) for row in rows]
                         hits = await self.milvus.search(source, vector, ids, self.vector_top_n)
-                        by_id = {
-                            str(
-                                row["chunk_id" if source == SourceType.MANUAL else "ticket_id"]
-                            ): row
-                            for row in rows
-                        }
+                        by_id = {str(row[id_field]): row for row in rows}
                         vector_candidates = [
                             _candidate(
                                 source,
@@ -266,7 +282,11 @@ class RetrievalService:
                 warnings=warnings,
             )
             ranked_evidence: Sequence[RankedEvidence] = (
-                package.manual_evidence if source == SourceType.MANUAL else package.ticket_evidence
+                package.manual_evidence
+                if source == SourceType.MANUAL
+                else package.ticket_evidence
+                if source == SourceType.TICKET
+                else package.case_evidence
             )
             span.set_output(
                 {
@@ -341,7 +361,7 @@ def _candidate(
                 "index_generation",
             )
         }
-    else:
+    elif source == SourceType.TICKET:
         source_id = str(row["ticket_id"])
         chunk_id = None
         content = (
@@ -364,6 +384,31 @@ def _candidate(
         }
         metadata["verified"] = row.get("is_verified")
         metadata["closed"] = bool(row.get("close_time"))
+    else:
+        source_id = str(row["case_id"])
+        chunk_id = None
+        steps = row.get("resolution_steps")
+        step_text = "；".join(str(item) for item in steps) if isinstance(steps, list) else ""
+        content = (
+            f"{row.get('symptom_summary', '')}；时序: {row.get('timeseries_features', '')}；"
+            f"根因: {row.get('root_cause', '')}；处理: {step_text}"
+        )[:1200]
+        citation = f"[案例: {source_id} v{row['case_version']}]"
+        metadata = {
+            key: row.get(key)
+            for key in (
+                "device_type",
+                "device_model",
+                "manufacturer",
+                "alarm_name",
+                "case_version",
+                "review_status",
+                "index_status",
+                "is_active",
+            )
+        }
+        metadata["verified"] = True
+        metadata["closed"] = True
     return RetrievalCandidate(
         source_type=source,
         source_id=source_id,

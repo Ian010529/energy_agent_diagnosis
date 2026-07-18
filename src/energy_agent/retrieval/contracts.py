@@ -16,6 +16,7 @@ class RetrievalMode(StrEnum):
 class SourceType(StrEnum):
     MANUAL = "manual"
     TICKET = "ticket"
+    CASE = "case"
 
 
 class QueryRewrite(StrictModel):
@@ -86,6 +87,7 @@ class EvidencePackage(StrictModel):
     device_filters: dict[str, Any]
     manual_evidence: list[RankedEvidence]
     ticket_evidence: list[RankedEvidence]
+    case_evidence: list[RankedEvidence] = Field(default_factory=list)
     timeseries_summary_ref: str | None = None
     candidate_counts: dict[str, int]
     degraded_components: list[str]

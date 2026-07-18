@@ -24,6 +24,8 @@ class DiagnosisSessionCreate(StrictModel):
     risk_level: RiskLevel = RiskLevel.UNKNOWN
     trace_id: str
     run_id: str
+    created_by: str | None = None
+    latest_review_status: str | None = None
 
 
 class DiagnosisSessionRecord(DiagnosisSessionCreate):
@@ -39,6 +41,8 @@ class DiagnosisRunCreate(StrictModel):
     request_hash: str
     phase: DiagnosisPhase = DiagnosisPhase.INIT
     status: str = "running"
+    parent_run_id: str | None = None
+    run_type: str = "diagnosis"
 
 
 class DiagnosisRunRecord(DiagnosisRunCreate):
@@ -101,11 +105,15 @@ class DiagnosisChatRequest(StrictModel):
     session_id: str
     message: str
     clarification_answers: list[ClarificationAnswer] = Field(default_factory=list)
+    expected_memory_revision: int | None = None
+    followup_mode: str | None = None
 
 
 class SessionMessageRequest(StrictModel):
     message: str
     clarification_answers: list[ClarificationAnswer] = Field(default_factory=list)
+    expected_memory_revision: int | None = None
+    followup_mode: str | None = None
 
 
 class DiagnosisResponse(StrictModel):
@@ -119,6 +127,10 @@ class DiagnosisResponse(StrictModel):
     tool_summaries: list[dict[str, object]] = Field(default_factory=list)
     clarification_questions: list[ClarificationQuestion] = Field(default_factory=list)
     degraded_components: list[str] = Field(default_factory=list)
+    memory_revision: int | None = None
+    review_status: str | None = None
+    case_id: str | None = None
+    case_status: str | None = None
 
 
 class DiagnosisSessionUpdate(StrictModel):
@@ -126,6 +138,7 @@ class DiagnosisSessionUpdate(StrictModel):
     final_summary: str | None = None
     risk_level: RiskLevel | None = None
     run_id: str | None = None
+    latest_review_status: str | None = None
 
 
 class StepLogCreate(StrictModel):
@@ -168,3 +181,12 @@ class SessionMemoryPayload(StrictModel):
     prompt_version: str = "diag.response_generator.v1.0"
     final_summary: str | None = None
     risk_level: RiskLevel = RiskLevel.UNKNOWN
+    memory_revision: int = 1
+    parent_run_id: str | None = None
+    time_window: dict[str, object] | None = None
+    pending_question_ids: list[str] = Field(default_factory=list)
+    resolved_question_ids: list[str] = Field(default_factory=list)
+    user_feedback_history: list[ClarificationAnswer] = Field(default_factory=list)
+    evidence_package_ids: list[str] = Field(default_factory=list)
+    last_completed_node: str | None = None
+    state_version: str = "phase4.v1"

@@ -22,6 +22,9 @@ class ToolContext(StrictModel):
     trace_id: str
     operator_id: str | None = None
     source_system: str
+    actor_role: str | None = None
+    explicit_human_action: bool = False
+    session_id: str | None = None
 
 
 class ToolMeta(StrictModel):
@@ -123,3 +126,34 @@ class TicketSearchInput(StrictModel):
 
 ManualSearchFilters = ManualSearchInput.ManualSearchFilters
 TicketSearchFilters = TicketSearchInput.TicketSearchFilters
+
+
+class AppendCaseReviewInput(StrictModel):
+    context: ToolContext
+    session_id: str
+    run_id: str
+    review_id: str
+    review_result: Literal["confirmed", "rejected", "needs_more_info"]
+    reviewer: str
+    root_cause: str | None = None
+    comments: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    review_comment: str | None = None
+    resolution_steps: list[str] = Field(default_factory=list)
+    source_ticket_id: str | None = None
+    override_reason: str | None = None
+    requested_questions: list[str] = Field(default_factory=list)
+    idempotency_key: str | None = None
+    request_hash: str
+
+    @model_validator(mode="after")
+    def require_human_action(self) -> "AppendCaseReviewInput":
+        if (
+            not self.context.explicit_human_action
+            or not self.context.operator_id
+            or self.context.actor_role not in {"operator", "reviewer", "admin"}
+        ):
+            raise ValueError("append_case_review requires an explicit authorized human action")
+        if self.reviewer != self.context.operator_id:
+            raise ValueError("reviewer must match authenticated operator")
+        return self

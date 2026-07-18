@@ -19,9 +19,16 @@ class MilvusVectorProvider:
         ticket_collection: str,
         dimension: int,
         metric_type: str,
+        case_collection: str = "reviewed_cases",
     ) -> None:
         self.manual_collection = manual_collection
         self.ticket_collection = ticket_collection
+        self.case_collection = case_collection
+        self.collections = {
+            "manual": manual_collection,
+            "ticket": ticket_collection,
+            "case": case_collection,
+        }
         self.dimension = dimension
         self.metric_type = metric_type
         try:
@@ -29,7 +36,7 @@ class MilvusVectorProvider:
         except Exception as exc:
             raise MilvusUnavailableError("Milvus connection unavailable") from exc
 
-    def _ensure_collection_sync(self, name: str, *, ticket: bool) -> None:
+    def _ensure_collection_sync(self, name: str, *, source: str) -> None:
         if self.client.has_collection(name):
             description = self.client.describe_collection(name)
             vector = next(
@@ -54,8 +61,10 @@ class MilvusVectorProvider:
             schema.add_field(field_name=field[0], datatype=DataType.VARCHAR, max_length=field[1])
         schema.add_field(field_name="verified", datatype=DataType.BOOL)
         schema.add_field(field_name="effective", datatype=DataType.BOOL)
-        if ticket:
+        if source == "ticket":
             schema.add_field(field_name="close_time", datatype=DataType.INT64)
+        if source == "case":
+            schema.add_field(field_name="case_version", datatype=DataType.INT64)
         schema.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=self.dimension)
         index = self.client.prepare_index_params()
         index.add_index(
@@ -68,10 +77,13 @@ class MilvusVectorProvider:
     async def ensure_collections(self) -> None:
         try:
             await asyncio.to_thread(
-                self._ensure_collection_sync, self.manual_collection, ticket=False
+                self._ensure_collection_sync, self.manual_collection, source="manual"
             )
             await asyncio.to_thread(
-                self._ensure_collection_sync, self.ticket_collection, ticket=True
+                self._ensure_collection_sync, self.ticket_collection, source="ticket"
+            )
+            await asyncio.to_thread(
+                self._ensure_collection_sync, self.case_collection, source="case"
             )
         except MilvusSchemaMismatchError:
             raise
@@ -79,7 +91,7 @@ class MilvusVectorProvider:
             raise MilvusUnavailableError("Milvus collection unavailable") from exc
 
     async def upsert(self, source: str, rows: list[dict[str, Any]]) -> None:
-        collection = self.manual_collection if source == "manual" else self.ticket_collection
+        collection = self.collections[source]
         try:
             await asyncio.to_thread(self.client.upsert, collection, data=rows)
             await asyncio.to_thread(self.client.flush, collection)
@@ -97,7 +109,7 @@ class MilvusVectorProvider:
             raise MilvusSchemaMismatchError("Query vector dimension mismatch")
         if not allowed_ids:
             return []
-        collection = self.manual_collection if source == "manual" else self.ticket_collection
+        collection = self.collections[source]
         escaped = json.dumps(allowed_ids, ensure_ascii=False)
         try:
             result = await asyncio.to_thread(
@@ -122,7 +134,7 @@ class MilvusVectorProvider:
             raise MilvusUnavailableError("Milvus vector search unavailable") from exc
 
     async def delete(self, source: str, ids: list[str]) -> None:
-        collection = self.manual_collection if source == "manual" else self.ticket_collection
+        collection = self.collections[source]
         if ids:
             escaped = json.dumps(ids, ensure_ascii=False)
             await asyncio.to_thread(self.client.delete, collection, filter=f"id in {escaped}")

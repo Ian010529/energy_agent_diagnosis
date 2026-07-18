@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import StreamingResponse
 
 from energy_agent.agent.service import DiagnosisService
+from energy_agent.api.auth import actor_from_request, require_roles
 from energy_agent.contracts.diagnosis import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -13,6 +14,7 @@ from energy_agent.contracts.diagnosis import (
     SessionMessageRequest,
 )
 from energy_agent.contracts.events import SSEEventType
+from energy_agent.core.context import ActorRole
 
 router = APIRouter(prefix="/api/v1/diagnosis", tags=["diagnosis"])
 
@@ -23,7 +25,11 @@ async def create_session(
     request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> CreateSessionResponse:
-    return await DiagnosisService.from_request(request).create_session(payload, idempotency_key)
+    actor = actor_from_request(request)
+    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    return await DiagnosisService.from_request(request).create_session(
+        payload, idempotency_key, actor
+    )
 
 
 @router.post("/chat", response_model=DiagnosisResponse)
@@ -32,7 +38,9 @@ async def chat(
     request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisResponse:
-    return await DiagnosisService.from_request(request).diagnose(payload, idempotency_key)
+    actor = actor_from_request(request)
+    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    return await DiagnosisService.from_request(request).diagnose(payload, idempotency_key, actor)
 
 
 @router.post("/sessions/{session_id}/messages", response_model=DiagnosisResponse)
@@ -42,9 +50,12 @@ async def session_message(
     request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisResponse:
+    actor = actor_from_request(request)
+    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     return await DiagnosisService.from_request(request).diagnose(
         DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
         idempotency_key,
+        actor,
     )
 
 
@@ -59,10 +70,13 @@ async def stream_message(
     request: Request,
 ) -> StreamingResponse:
     async def events() -> AsyncIterator[str]:
+        actor = actor_from_request(request)
+        require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
         yield _sse(SSEEventType.INTENT_IDENTIFIED, {"session_id": session_id})
         yield _sse(SSEEventType.DATA_FETCH_STARTED, {"session_id": session_id})
         result = await DiagnosisService.from_request(request).diagnose(
-            DiagnosisChatRequest(session_id=session_id, **payload.model_dump())
+            DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
+            actor=actor,
         )
         yield _sse(
             SSEEventType.RETRIEVAL_COMPLETED,

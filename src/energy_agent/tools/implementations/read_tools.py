@@ -126,7 +126,7 @@ def build_registry(
             if retrieval_service.default_mode == RetrievalMode.KEYWORD_ONLY
             else RetrievalMode(request.retrieval_mode)
         )
-        result = await retrieval_service.search(
+        ticket_result = await retrieval_service.search(
             SourceType.TICKET,
             request.query,
             request.filters.model_dump(exclude_none=True),
@@ -136,13 +136,33 @@ def build_registry(
             score_threshold=request.score_threshold,
             verified_only=request.verified_only,
         )
-        metadata = result.retrieval_metadata
+        case_filters = request.filters.model_dump(exclude_none=True)
+        if request.context.trace_id:
+            case_filters["exclude_session_id"] = request.context.session_id
+        case_result = await retrieval_service.search(
+            SourceType.CASE,
+            request.query,
+            case_filters,
+            trace_id=request.context.trace_id,
+            mode=mode,
+            top_k=request.top_k,
+            score_threshold=request.score_threshold,
+        )
+        metadata = ticket_result.retrieval_metadata
+        combined = ticket_result.model_dump(mode="json")
+        combined["ranked_evidence"] = [
+            *ticket_result.model_dump(mode="json")["ranked_evidence"],
+            *case_result.model_dump(mode="json")["ranked_evidence"],
+        ][: request.top_k]
+        degraded = sorted(
+            set(metadata.degraded_components + case_result.retrieval_metadata.degraded_components)
+        )
         return _result(
             request.context.trace_id,
-            result.model_dump(mode="json"),
+            combined,
             source_system="retrieval",
-            partial=metadata.partial_result,
-            warnings=metadata.degraded_components,
+            partial=metadata.partial_result or case_result.retrieval_metadata.partial_result,
+            warnings=degraded,
             retrieval_mode=metadata.retrieval_mode,
         )
 

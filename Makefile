@@ -5,7 +5,11 @@
 	up-phase3 down-phase3 test-unit-phase3 test-contract-phase3 \
 	test-integration-minio test-integration-milvus test-integration-rag \
 	smoke-document-ingest smoke-rag smoke-embedding smoke-reranker \
-	smoke-rag-live smoke-langfuse-rag phase3-check
+	smoke-rag-live smoke-langfuse-rag phase3-check \
+	up-phase4 down-phase4 test-unit-phase4 test-contract-phase4 \
+	test-integration-clarification test-integration-roles test-integration-cases \
+	test-integration-case-retrieval smoke-human-clarification smoke-case-lifecycle \
+	smoke-case-index smoke-case-retrieval smoke-langfuse-case phase4-check
 
 LOCAL_TEST_ENV = RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
 	EMBEDDING_MODE=disabled RERANK_MODE=disabled MODEL_MODE=disabled \
@@ -116,3 +120,49 @@ smoke-langfuse-rag:
 phase3-check: verify-design lint typecheck phase2-check test-unit-phase3 \
 	test-contract-phase3 test-integration-minio test-integration-milvus \
 	test-integration-rag smoke-document-ingest smoke-rag
+
+up-phase4:
+	docker compose up -d --wait mysql redis influxdb minio etcd milvus
+
+down-phase4:
+	docker compose down
+
+test-unit-phase4:
+	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase4_human_cases.py
+
+test-contract-phase4:
+	$(LOCAL_TEST_ENV) uv run pytest tests/contract/test_phase4_contracts.py
+
+test-integration-clarification:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration \
+		tests/integration/phase4/test_human_case_lifecycle.py::test_clarification_restore_validation_and_explanation
+
+test-integration-roles:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration \
+		tests/integration/phase4/test_human_case_lifecycle.py::test_roles_review_case_index_retrieval_disable_and_audit
+
+test-integration-cases:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase4
+
+test-integration-case-retrieval:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration \
+		tests/integration/phase4/test_human_case_lifecycle.py::test_roles_review_case_index_retrieval_disable_and_audit
+
+smoke-human-clarification: test-integration-clarification
+
+smoke-case-lifecycle: test-integration-cases
+
+smoke-case-index:
+	PHASE4_LIVE=1 MODEL_MODE=disabled uv run pytest -m integration \
+		tests/integration/phase4/test_human_case_lifecycle.py::test_roles_review_case_index_retrieval_disable_and_audit
+
+smoke-case-retrieval: smoke-case-index
+
+smoke-langfuse-case:
+	PHASE4_LIVE=1 MODEL_MODE=disabled uv run pytest -m integration \
+		tests/integration/phase4/test_human_case_lifecycle.py::test_roles_review_case_index_retrieval_disable_and_audit
+
+phase4-check: verify-design lint typecheck phase3-check test-unit-phase4 \
+	test-contract-phase4 test-integration-clarification test-integration-roles \
+	test-integration-cases test-integration-case-retrieval \
+	smoke-human-clarification smoke-case-lifecycle

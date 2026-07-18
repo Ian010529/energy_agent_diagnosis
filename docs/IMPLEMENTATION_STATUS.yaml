@@ -11,12 +11,12 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_3_COMPLETE_RAG
+  id: PHASE_4_HUMAN_COLLABORATION_AND_CASE_LIFECYCLE
   status: COMPLETED
   objective: >
-    完成手册与工单知识入库、MinIO 原件存储、查询重写、关键词和
-    Milvus 向量召回、reranker、多维证据评分、去重、多样性控制、
-    标准证据包和完整 RAG 降级链路。
+    完成人工补充上下文恢复、人工根因确认、角色边界、审计、
+    案例草稿与审核状态机、案例版本管理、审核案例 Milvus 索引
+    及高可信案例召回。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -56,15 +56,16 @@ last_completed:
   - phase_1_observability
   - phase_2_first_diagnosis_vertical_slice
   - phase_3_complete_rag
+  - phase_4_human_collaboration_and_case_lifecycle
 
 current_task: []
 
 next_phase:
-  id: PHASE_4_HUMAN_COLLABORATION_AND_CASE_LIFECYCLE
+  id: PHASE_5_ASYNC_INDEX_GRAPH_AND_SCENARIO_EXPANSION
   status: NOT_STARTED
 
 next_task:
-  - wait_for_phase_4_prompt
+  - wait_for_phase_5_prompt
 
 blockers: []
 
@@ -81,5 +82,11 @@ external_validation:
   reranker:
     status: PASSED
     reason: siliconflow_bge_reranker_v2_m3_scores_aligned
+  case_index:
+    status: PASSED
+    reason: confirmed_case_approved_embedded_and_upserted_to_reviewed_cases
+  case_retrieval:
+    status: PASSED
+    reason: new_session_recalled_approved_indexed_active_case_with_versioned_citation
 
-updated_at: "2026-07-18T15:13:09Z"
+updated_at: "2026-07-18T16:16:19Z"

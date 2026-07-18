@@ -101,6 +101,9 @@ class DiagnosisState(StrictModel):
     phase: DiagnosisPhase = DiagnosisPhase.INIT
     source: SessionSource
     user_message: str | None = None
+    followup_mode: str | None = None
+    memory_revision: int = 1
+    parent_run_id: str | None = None
     intent: DiagnosisIntent | None = None
     diagnosis_template_id: str | None = None
     device_context: DeviceContext | None = None

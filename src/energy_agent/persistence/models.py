@@ -22,6 +22,8 @@ class DiagnosisSessionModel(Base):
     risk_level: Mapped[str] = mapped_column(String(16), nullable=False)
     trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
     run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(128))
+    latest_review_status: Mapped[str | None] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
 
@@ -62,6 +64,8 @@ class DiagnosisRunModel(Base):
     ended_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    parent_run_id: Mapped[str | None] = mapped_column(String(64))
+    run_type: Mapped[str] = mapped_column(String(32), nullable=False, default="diagnosis")
 
 
 class DiagnosisResultModel(Base):
@@ -191,3 +195,103 @@ class ManualDocumentModel(Base):
     chunk_count: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class DiagnosisReviewModel(Base):
+    __tablename__ = "diagnosis_review"
+    __table_args__ = (
+        UniqueConstraint("session_id", "idempotency_key", name="uq_review_session_idempotency"),
+    )
+
+    review_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_session.id"), nullable=False, index=True
+    )
+    run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    actor_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    review_result: Mapped[str] = mapped_column(String(32), nullable=False)
+    root_cause: Mapped[str | None] = mapped_column(Text)
+    resolution_steps: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    comments: Mapped[str | None] = mapped_column(Text)
+    evidence_refs: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    source_ticket_id: Mapped[str | None] = mapped_column(String(128))
+    override_reason: Mapped[str | None] = mapped_column(Text)
+    requested_questions: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class DiagnosisCaseModel(Base):
+    __tablename__ = "diagnosis_case"
+    __table_args__ = (
+        UniqueConstraint("source_session_id", "case_version", name="uq_case_session_version"),
+        Index("ix_case_retrieval", "review_status", "index_status", "is_active"),
+    )
+
+    case_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_session_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_review_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_ticket_id: Mapped[str | None] = mapped_column(String(128))
+    device_type: Mapped[str | None] = mapped_column(String(64))
+    device_model: Mapped[str | None] = mapped_column(String(128))
+    manufacturer: Mapped[str | None] = mapped_column(String(128))
+    alarm_name: Mapped[str | None] = mapped_column(String(255))
+    symptom_summary: Mapped[str | None] = mapped_column(Text)
+    timeseries_features: Mapped[str | None] = mapped_column(Text)
+    root_cause: Mapped[str] = mapped_column(Text, nullable=False)
+    resolution_steps: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    safety_notes: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    evidence_refs: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    reviewer: Mapped[str | None] = mapped_column(String(128))
+    review_comment: Mapped[str | None] = mapped_column(Text)
+    case_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    embedding_text: Mapped[str | None] = mapped_column(Text)
+    index_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    index_error_code: Mapped[str | None] = mapped_column(String(64))
+    is_active: Mapped[bool] = mapped_column(nullable=False)
+    supersedes_case_id: Mapped[str | None] = mapped_column(String(64))
+    created_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class CaseReviewEventModel(Base):
+    __tablename__ = "case_review_event"
+    __table_args__ = (
+        UniqueConstraint("case_id", "idempotency_key", name="uq_case_event_idempotency"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    case_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    actor_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    from_status: Mapped[str | None] = mapped_column(String(32))
+    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class AuditEventModel(Base):
+    __tablename__ = "audit_event"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    actor_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    actor_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    resource_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    resource_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_id: Mapped[str | None] = mapped_column(String(64))
+    case_id: Mapped[str | None] = mapped_column(String(64))
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(32), nullable=False)
+    safe_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)

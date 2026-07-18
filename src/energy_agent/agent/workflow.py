@@ -45,6 +45,7 @@ def _context(state: DiagnosisState) -> dict[str, object]:
         "trace_id": state.trace_id,
         "source_system": "energy-agent",
         "site_id": site_id,
+        "session_id": state.session_id,
     }
 
 
@@ -95,6 +96,13 @@ def build_diagnosis_graph(
                 "errors": ["设备或告警实体缺失"],
             }
         return {}
+
+    async def clarification_applier(state: DiagnosisState) -> dict[str, object]:
+        return {
+            "phase": DiagnosisPhase.EVIDENCE_READY,
+            "clarification_questions": [],
+            "errors": [],
+        }
 
     async def plan_builder(state: DiagnosisState) -> dict[str, object]:
         return {
@@ -268,6 +276,11 @@ def build_diagnosis_graph(
                     verified=True,
                     reliability=1,
                     relevance=1,
+                    metadata={
+                        "device_type": data["device_type"],
+                        "device_model": data["device_model"],
+                        "manufacturer": data["manufacturer"],
+                    },
                 )
             )
         if alarm and alarm.success:
@@ -303,9 +316,9 @@ def build_diagnosis_graph(
                     metadata={"metrics": ts.data},
                 )
             )
-        for name, source_type in (
-            ("search_manual_chunks", "manual"),
-            ("search_similar_tickets", "ticket"),
+        for name in (
+            "search_manual_chunks",
+            "search_similar_tickets",
         ):
             result = tool_data.get(name)
             if not result or not result.success:
@@ -319,6 +332,9 @@ def build_diagnosis_graph(
             for row in ranked:
                 if not isinstance(row, dict):
                     continue
+                source_type = str(
+                    row.get("source_type", "manual" if name == "search_manual_chunks" else "ticket")
+                )
                 source_id = str(row["source_id"])
                 citation = str(row["citation"])
                 summary = str(row["content_summary"])[:500]
@@ -370,7 +386,7 @@ def build_diagnosis_graph(
             gaps.append("告警详情缺失")
         if "timeseries" not in types and not state.user_feedback:
             gaps.append("关键时序不可用")
-        if not types.intersection({"manual", "ticket"}):
+        if not types.intersection({"manual", "ticket", "case"}):
             gaps.append("手册和已审核工单证据缺失")
         return {"errors": gaps}
 
@@ -572,6 +588,7 @@ def build_diagnosis_graph(
     nodes = {
         "intent_router": intent_router,
         "entity_parser": entity_parser,
+        "clarification_applier": clarification_applier,
         "plan_builder": plan_builder,
         "tool_dispatcher": tool_dispatcher,
         "timeseries_fetcher": timeseries_fetcher,
@@ -589,7 +606,16 @@ def build_diagnosis_graph(
     for name, node in nodes.items():
         graph.add_node(name, cast(Any, traced_node(name, tracer, node, step_logger)))
     graph.add_edge(START, "intent_router")
-    graph.add_edge("intent_router", "entity_parser")
+    graph.add_conditional_edges(
+        "intent_router",
+        lambda state: (
+            "followup"
+            if state.followup_mode == "answer_clarification" and bool(state.evidence)
+            else "initial"
+        ),
+        {"followup": "clarification_applier", "initial": "entity_parser"},
+    )
+    graph.add_edge("clarification_applier", "gap_detector")
     graph.add_conditional_edges(
         "entity_parser",
         lambda state: "clarify" if state.phase == DiagnosisPhase.NEED_USER_INPUT else "plan",

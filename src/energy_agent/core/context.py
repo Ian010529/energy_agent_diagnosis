@@ -1,5 +1,20 @@
 from contextvars import ContextVar, Token
 from dataclasses import asdict, dataclass
+from enum import StrEnum
+
+
+class ActorRole(StrEnum):
+    VIEWER = "viewer"
+    OPERATOR = "operator"
+    REVIEWER = "reviewer"
+    ADMIN = "admin"
+
+
+@dataclass(frozen=True, slots=True)
+class ActorContext:
+    actor_id: str
+    actor_role: ActorRole
+    authentication_mode: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -9,6 +24,7 @@ class RequestContext:
     session_id: str | None = None
     run_id: str | None = None
     actor_id: str | None = None
+    actor_role: ActorRole | None = None
 
 
 _context: ContextVar[RequestContext | None] = ContextVar("request_context", default=None)

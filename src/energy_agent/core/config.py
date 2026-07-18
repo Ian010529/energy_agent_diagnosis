@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     app_name: str = "energy-agent"
     app_env: str = "local"
+    auth_mode: Literal["development_headers", "trusted_headers"] = "development_headers"
+    internal_api_key: str | None = None
     log_level: str = "INFO"
     log_format: Literal["console", "json"] = "console"
     mysql_dsn: str = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
@@ -50,6 +52,7 @@ class Settings(BaseSettings):
     milvus_token: str | None = None
     milvus_manual_collection: str = "manual_chunks"
     milvus_ticket_collection: str = "ticket_cases"
+    milvus_case_collection: str = "reviewed_cases"
     milvus_vector_dimension: int = 1024
     milvus_metric_type: Literal["COSINE"] = "COSINE"
     embedding_mode: Literal["disabled", "openai_compatible"] = "disabled"
@@ -74,6 +77,8 @@ class Settings(BaseSettings):
     ticket_final_top_k: int = Field(default=5, ge=1)
     manual_similarity_threshold: float = Field(default=0.45, ge=0, le=1)
     ticket_similarity_threshold: float = Field(default=0.50, ge=0, le=1)
+    case_similarity_threshold: float = Field(default=0.50, ge=0, le=1)
+    case_source_reliability: float = Field(default=0.95, ge=0, le=1)
     semantic_dedup_threshold: float = Field(default=0.92, ge=0, le=1)
     max_chunks_per_document: int = Field(default=2, ge=1)
     max_results_per_ticket: int = Field(default=1, ge=1)
@@ -89,6 +94,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_dependencies_and_weights(self) -> "Settings":
+        if self.auth_mode == "development_headers" and self.app_env not in {"local", "test"}:
+            raise ValueError("development_headers authentication is limited to local and test")
+        if self.auth_mode == "trusted_headers" and not self.internal_api_key:
+            raise ValueError("INTERNAL_API_KEY is required for trusted_headers authentication")
         if self.observability_mode == "langfuse" and not (
             self.langfuse_public_key and self.langfuse_secret_key
         ):

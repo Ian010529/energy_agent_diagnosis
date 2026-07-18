@@ -28,6 +28,8 @@ class DiagnosisRunRepository:
             request_hash=model.request_hash,
             phase=model.phase,
             status=model.status,
+            parent_run_id=model.parent_run_id,
+            run_type=model.run_type,
             started_at=ensure_utc(model.started_at),
             ended_at=ensure_utc(model.ended_at) if model.ended_at else None,
             created_at=ensure_utc(model.created_at),

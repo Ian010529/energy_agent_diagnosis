@@ -5,6 +5,7 @@ from energy_agent.core.time import ensure_utc
 from energy_agent.persistence.models import (
     AlarmEventModel,
     DeviceProfileModel,
+    DiagnosisCaseModel,
     MaintenanceTicketModel,
     ManualChunkModel,
     ManualDocumentModel,
@@ -100,6 +101,30 @@ class MySQLDiagnosisProvider:
             {
                 column.name: getattr(row, column.name)
                 for column in MaintenanceTicketModel.__table__.columns
+            }
+            for row in rows
+        ]
+
+    async def case_candidates(
+        self, filters: dict[str, object], *, exclude_session_id: str | None = None
+    ) -> list[dict[str, object]]:
+        query = select(DiagnosisCaseModel).where(
+            DiagnosisCaseModel.review_status == "APPROVED",
+            DiagnosisCaseModel.index_status == "INDEXED",
+            DiagnosisCaseModel.is_active.is_(True),
+        )
+        for name in ("device_type", "device_model", "manufacturer", "alarm_name"):
+            value = filters.get(name)
+            if value:
+                query = query.where(getattr(DiagnosisCaseModel, name) == value)
+        if exclude_session_id:
+            query = query.where(DiagnosisCaseModel.source_session_id != exclude_session_id)
+        async with self.session_factory() as session:
+            rows = (await session.execute(query)).scalars().all()
+        return [
+            {
+                column.name: getattr(row, column.name)
+                for column in DiagnosisCaseModel.__table__.columns
             }
             for row in rows
         ]

@@ -5,11 +5,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from starlette.middleware.base import RequestResponseEndpoint
 
+from energy_agent.api.cases import router as cases_router
 from energy_agent.api.diagnosis import router as diagnosis_router
 from energy_agent.api.errors import install_error_handlers
 from energy_agent.api.health import router as health_router
 from energy_agent.core.config import Settings, get_settings
-from energy_agent.core.context import RequestContext, bind_context, reset_context
+from energy_agent.core.context import ActorRole, RequestContext, bind_context, reset_context
 from energy_agent.core.ids import trusted_or_new_id
 from energy_agent.core.lifecycle import build_lifespan
 from energy_agent.observability.logging import log_event
@@ -31,7 +32,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ) -> Response:
         trace_id = trusted_or_new_id(request.headers.get("X-Trace-ID"))
         request_id = trusted_or_new_id(request.headers.get("X-Request-ID"))
-        token = bind_context(RequestContext(trace_id=trace_id, request_id=request_id))
+        actor_id = request.headers.get("X-Actor-ID")
+        role_value = request.headers.get("X-Actor-Role")
+        try:
+            actor_role = ActorRole(role_value) if role_value else None
+        except ValueError:
+            actor_role = None
+        if (
+            not actor_id
+            and selected_settings.auth_mode == "development_headers"
+            and selected_settings.app_env in {"local", "test"}
+        ):
+            actor_id = "local-operator"
+            actor_role = ActorRole.OPERATOR
+        token = bind_context(
+            RequestContext(
+                trace_id=trace_id,
+                request_id=request_id,
+                actor_id=actor_id,
+                actor_role=actor_role,
+            )
+        )
         started = monotonic()
         try:
             with request.app.state.tracer.start_trace(
@@ -62,6 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_error_handlers(app)
     app.include_router(health_router)
     app.include_router(diagnosis_router)
+    app.include_router(cases_router)
     return app
 
 
