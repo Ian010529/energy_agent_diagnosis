@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: energy_agent
+      MYSQL_USER: energy
+      MYSQL_PASSWORD: energy_dev
+      MYSQL_ROOT_PASSWORD: root_dev
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - energy_mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  energy_mysql_data:

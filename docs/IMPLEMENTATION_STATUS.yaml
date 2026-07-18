@@ -11,10 +11,11 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_0_GOVERNANCE_RESET
+  id: PHASE_1_BACKEND_FOUNDATION_AND_OBSERVABILITY
   status: COMPLETED
   objective: >
-    重置开发治理规则，停止生产平台优先和 M0-M11 串行阻塞模式。
+    建立模块化单体后端基础、MySQL/Redis 持久化、结构化日志、
+    敏感信息脱敏和 LangFuse tracing 适配。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -49,16 +50,24 @@ deferred_not_deleted:
 
 last_completed:
   - phase_0_governance_reset
+  - phase_1_backend_foundation
+  - phase_1_core_persistence
+  - phase_1_observability
 
 current_task: []
 
 next_phase:
-  id: PHASE_1_BACKEND_FOUNDATION_AND_OBSERVABILITY
+  id: PHASE_2_FIRST_DIAGNOSIS_VERTICAL_SLICE
   status: NOT_STARTED
 
 next_task:
-  - wait_for_phase_1_prompt
+  - wait_for_phase_2_prompt
 
 blockers: []
 
-updated_at: "2026-07-18T07:59:16Z"
+external_validation:
+  langfuse:
+    status: BLOCKED
+    reason: missing_credentials
+
+updated_at: "2026-07-18T08:31:00Z"
