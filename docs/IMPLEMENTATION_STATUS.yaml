@@ -1,0 +1,64 @@
+schema_version: 1
+
+project_goal:
+  id: ENERGY_DIAGNOSIS_BACKEND_V1
+  description: >
+    以模块化单体和纵向主链路优先的方式，快速实现符合不可变详细设计的一期诊断后端。
+
+development_mode:
+  team_size: 1
+  architecture: modular_monolith
+  priority: vertical_slice_first
+
+current_phase:
+  id: PHASE_0_GOVERNANCE_RESET
+  status: COMPLETED
+  objective: >
+    重置开发治理规则，停止生产平台优先和 M0-M11 串行阻塞模式。
+
+must_preserve:
+  - langgraph_explicit_workflow
+  - tool_contracts
+  - hybrid_rag
+  - evidence_citations
+  - guardrails
+  - human_clarification
+  - human_review
+  - session_memory
+  - reviewed_case_lifecycle
+  - sse_progress
+  - langfuse_tracing
+  - structured_logging
+  - audit
+  - timeout_retry_degradation
+
+deferred_not_deleted:
+  - multi_replica_runtime
+  - durable_accept
+  - lease_and_fencing
+  - distributed_worker_recovery
+  - high_concurrency_hardening
+  - chaos_testing
+  - large_scale_performance_testing
+  - kubernetes_and_helm
+  - disaster_recovery_drills
+  - independent_trace_exporter
+  - trace_outbox
+  - exact_cost_settlement
+  - production_observability_platform
+
+last_completed:
+  - phase_0_governance_reset
+
+current_task: []
+
+next_phase:
+  id: PHASE_1_BACKEND_FOUNDATION_AND_OBSERVABILITY
+  status: NOT_STARTED
+
+next_task:
+  - wait_for_phase_1_prompt
+
+blockers: []
+
+updated_at: "2026-07-18T07:59:16Z"

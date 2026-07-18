@@ -1,194 +1,80 @@
 # AGENTS.md
 
-## Project mission
+## 项目目标
 
-Build the Energy Equipment Operations Diagnosis Agent as a production-grade,
-deployable and recoverable service.
+- 当前按单人开发推进，目标是快速实现符合不可变详细设计的一期后端。
+- 开发顺序采用纵向主链路优先，初始物理形态采用模块化单体。
+- gateway、agent、retrieval、tool、memory 的逻辑边界必须保留，便于后续拆分。
 
-This is a greenfield repository. Do not assume that historical implementation
-paths or completion records represent existing code.
+## 权威顺序
 
-## Mandatory reading order
+冲突依次按以下来源裁决：
 
-Before modifying code, read these files in order:
+1. 用户最新明确指令；
+2. `docs/immutable/能源设备运维诊断Agent_详细设计.md`；
+3. 根目录 `AGENTS.md`；
+4. `docs/IMPLEMENTATION_STATUS.yaml`；
+5. 当前阶段 Prompt；
+6. 测试、代码注释和其他文档。
 
-1. `docs/immutable/能源设备运维诊断Agent_详细设计.md`
-2. `docs/development/CODEX_EXECUTION_SPEC.md`
-3. `docs/IMPLEMENTATION_STATUS.yaml`
-4. The gate definition and latest reports under `docs/gates/<module>/`
-5. Any closer `AGENTS.md` applicable to the target directory
+不可修改、重命名、重排或重新格式化不可变详细设计。
 
-Do not begin implementation before identifying the current module and its gate.
+## 不可削减的核心能力
 
-## Authority order
+一期必须保留：LangGraph 显式工作流、Tool Schema、混合 RAG、证据引用、Guardrail、
+人工补充、人工审核、会话记忆、案例状态机、SSE、LangFuse、结构化日志、审计，以及超时、有限重试和降级。
 
-Resolve conflicts in this order:
+## 当前允许简化的工程形态
 
-1. The user's latest explicit instruction
-2. The immutable detailed design
-3. `docs/development/CODEX_EXECUTION_SPEC.md`
-4. Accepted ADRs
-5. Module documentation
-6. Tests and code comments
+- gateway、agent、retrieval、tool、memory 可在一个 FastAPI 应用中运行。
+- LangGraph 第一版可在应用进程内同步或异步执行。
+- retrieval、tool、memory 必须保持独立代码和接口边界。
+- Neo4j 是增强能力，失败不得阻塞诊断主链路。
+- RabbitMQ 可在异步索引和案例回写阶段接入。
+- 关键词检索可先使用兼容的轻量实现。
+- Docker 只启动当前目标所需依赖。
 
-Lower-priority documents must not weaken higher-priority requirements.
+## deferred_not_deleted
 
-## Immutable design
+以下能力后置但未删除：多副本、durable accept、lease、fencing、worker crash recovery、大规模并发控制、
+chaos、性能压测、Helm、灾备、独立 trace exporter、trace outbox、精确成本结算系统、完整生产监控平台。
 
-Never edit:
+## 上下文恢复
 
-`docs/immutable/能源设备运维诊断Agent_详细设计.md`
+新任务、上下文压缩、会话恢复或中断继续时，优先只读取：
 
-Before and after every module, run:
+1. `AGENTS.md`
+2. `docs/IMPLEMENTATION_STATUS.yaml`
+3. 当前阶段 Prompt
+4. 当前阶段引用的详细设计章节
+5. 目标代码和对应测试
 
-`make verify-design`
+不要默认重读完整生产硬化规范、全部 Gate 报告或整个仓库。对话记忆、旧 TODO、历史 Gate 和测试名称不是当前开发状态的权威来源。
 
-Any checksum mismatch is a blocking failure.
+## Bug 修复边界
 
-Do not replace, reformat, rename, normalize line endings, or regenerate the
-immutable design file.
+修复前先写明：
 
-## Module execution rule
+```text
+问题：
+违反的详细设计要求：
+根因：
+本次只修改：
+```
 
-Only implement the module marked as `current_module` in
-`docs/IMPLEMENTATION_STATUS.yaml`.
+根因未明确前不得大范围修改；不改无关模块，不顺便重构，不删除或弱化测试。
+只运行目标模块所需测试；仅阶段验收运行完整纵向集成测试。
 
-Do not start a dependent module until the current module:
+## Docker、测试与验收
 
-1. passes its unit and contract tests;
-2. passes its real-service integration gate;
-3. has a committed gate report;
-4. has an independent review with no unresolved P0/P1/P2 issue;
-5. is marked `ACCEPTED`.
+- 纯逻辑、状态机、Prompt、Guardrail、评分修改默认不启动 Docker。
+- 修改 MySQL、Redis、InfluxDB、Milvus 等适配器时只启动对应依赖。
+- 普通 Bug 修复不默认启动全量容器。
+- 完整依赖仅在纵向切片验收或试点验收时启动。
+- 容器启动或健康检查成功不等于业务验收通过。
 
-A blocked live gate must be reported as `BLOCKED`. Never bypass it with a mock,
-skip, fixture adapter, in-memory implementation, or health-check-only evidence.
+## LangFuse 边界
 
-Independent modules in the same approved wave may run concurrently only when
-their file ownership is disjoint.
-
-## Main-agent ownership
-
-Only the main agent may modify shared files, including:
-
-- `AGENTS.md`
-- `docs/IMPLEMENTATION_STATUS.yaml`
-- shared contracts
-- shared configuration
-- migrations
-- application assembly
-- `compose.yaml`
-- `Makefile`
-- `pyproject.toml`
-- `.github/**`
-- shared fixtures
-- cross-domain integration and live tests
-
-Subagents must work in isolated worktrees and only modify explicitly assigned
-paths. Subagents must not commit, push, rebase, revert, or modify another
-agent's files unless the main agent explicitly assigns that action.
-
-When a shared contract is insufficient, report the required change to the main
-agent instead of editing it.
-
-## Non-negotiable engineering constraints
-
-- No runtime Mock Provider in `full`, `staging`, `production`, or `RUN_LIVE_*`.
-- Runtime services must not read fixture, generator output, or Gold files.
-- Unit and contract tests may use hermetic test doubles.
-- Durable requests must use Redis atomic accept, durable jobs, lease and fencing.
-- Do not use in-process background tasks as reliable job acceptance.
-- Do not silently switch model provider after a request failure.
-- High-risk actions require persisted approval.
-- Requesters, including administrators, must never approve their own requests.
-- Weak tickets, unreviewed cases and graph relations are not confirmed facts.
-- Public SSE must use the six frozen event types from the execution spec.
-- Secrets must never enter Git, logs, documentation, snapshots or image layers.
-- Do not add a production dependency without recording the reason in an ADR.
-- Do not weaken a test or delete a failing test to make a gate pass.
-
-## Real-service completion rule
-
-A module is not complete merely because:
-
-- code compiles;
-- unit tests pass;
-- containers start;
-- health checks pass;
-- a mock or fixture test passes;
-- a live test is skipped;
-- a manual screenshot exists.
-
-A real-service gate must call the service through its production protocol,
-perform authenticated reads or writes, and read back the final persistent
-effect from the authoritative service.
-
-## Required verification
-
-Use the Make targets defined by the execution specification:
-
-- `make verify-design`
-- `make lint`
-- `make typecheck`
-- `make test-unit`
-- `make test-contract`
-- `make test-integration`
-- `make test-live`
-- `make test-chaos`
-- `make validate-data`
-- `make load-data`
-- `make evaluate`
-- `make performance`
-- `make package-check`
-- `make gate-m0` through `make gate-m11`
-
-M0 is responsible for creating missing targets. Once created, do not bypass
-them with undocumented command variants.
-
-## Gate evidence
-
-For every module, write a gate report under:
-
-`docs/gates/<module>/<acceptance_run_id>.md`
-
-The report must contain:
-
-- commit SHA;
-- environment and service versions;
-- commands actually executed;
-- passed, failed and skipped test counts;
-- real services contacted;
-- persistent readback evidence;
-- performance or fault-injection results where applicable;
-- unresolved blockers;
-- independent reviewer result.
-
-Never claim that an unexecuted command passed.
-
-## Change discipline
-
-Before coding:
-
-1. inspect Git status;
-2. identify the current module;
-3. identify owned files;
-4. audit the complete affected domain;
-5. state the frozen implementation approach and gate.
-
-After coding:
-
-1. review the full diff;
-2. run the required gate;
-3. record evidence;
-4. run an independent review;
-5. update implementation status only after acceptance.
-
-Prefer one coherent domain fix over a series of test-driven local patches.
-
-## Documentation
-
-When behavior, contracts, deployment, migrations or operational procedures
-change, update the corresponding execution documentation, ADR, API document or
-runbook.
-
-Never modify the immutable detailed design.
+LangFuse 是第一条诊断主链路的核心可观测能力。第一版必须追踪 LangGraph 节点、Tool、RAG、LLM、
+Guardrail 和最终状态。LangFuse 不可用时不得阻断本地诊断，应降级到结构化日志。独立 exporter、
+outbox 和生产级可靠投递后置。不得向 Trace 发送密钥、大段原始工单、完整原始时序或敏感内容。
