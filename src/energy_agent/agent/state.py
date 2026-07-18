@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import Field, model_validator
 
 from energy_agent.contracts.common import (
+    DiagnosisIntent,
     DiagnosisPhase,
     RiskLevel,
     SessionSource,
@@ -37,8 +38,11 @@ class TimeWindow(StrictModel):
 
 
 class PlanStep(StrictModel):
-    name: str
-    purpose: str
+    step_id: str
+    goal: str
+    tool: str | None = None
+    required: bool = True
+    parameters: dict[str, object] = Field(default_factory=dict)
 
 
 class ToolResultSummary(StrictModel):
@@ -48,20 +52,36 @@ class ToolResultSummary(StrictModel):
     summary: str | None = None
 
 
-class EvidenceSummary(StrictModel):
+class Evidence(StrictModel):
     evidence_id: str
     source_type: str
+    source_id: str
     summary: str
+    citation: str
+    verified: bool = False
+    reliability: float = Field(ge=0, le=1)
+    relevance: float = Field(ge=0, le=1)
+    metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class CandidateCause(StrictModel):
     cause: str
     confidence: float = Field(ge=0, le=1)
-    evidence_refs: list[str] = Field(default_factory=list)
+    supporting_evidence: list[str] = Field(default_factory=list)
+    contradicting_evidence: list[str] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
+    need_manual_confirmation: bool = True
+
+
+class ClarificationQuestion(StrictModel):
+    question_id: str
+    question: str
+    reason: str
+    expected_answer_type: str = "text"
 
 
 class UserFeedback(StrictModel):
-    question: str
+    question_id: str
     answer: str
 
 
@@ -72,20 +92,24 @@ class DiagnosisState(StrictModel):
     phase: DiagnosisPhase = DiagnosisPhase.INIT
     source: SessionSource
     user_message: str | None = None
+    intent: DiagnosisIntent | None = None
+    diagnosis_template_id: str | None = None
     device_context: DeviceContext | None = None
     alarm_context: AlarmContext | None = None
     time_window: TimeWindow | None = None
     plan: list[PlanStep] = Field(default_factory=list)
     tool_results: list[ToolResultSummary] = Field(default_factory=list)
-    evidence: list[EvidenceSummary] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
     candidate_causes: list[CandidateCause] = Field(default_factory=list)
-    clarification_questions: list[str] = Field(default_factory=list)
+    clarification_questions: list[ClarificationQuestion] = Field(default_factory=list)
     user_feedback: list[UserFeedback] = Field(default_factory=list)
     risk_level: RiskLevel = RiskLevel.UNKNOWN
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
-    final_response: str | None = None
+    degraded_components: list[str] = Field(default_factory=list)
+    final_response: dict[str, object] | None = None
+    prompt_version: str = "diag.response_generator.v1.0"
     started_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
@@ -110,7 +134,12 @@ _ALLOWED_TRANSITIONS: dict[DiagnosisPhase, frozenset[DiagnosisPhase]] = {
         {DiagnosisPhase.NEED_USER_INPUT, DiagnosisPhase.DRAFT_READY, DiagnosisPhase.FAILED}
     ),
     DiagnosisPhase.NEED_USER_INPUT: frozenset(
-        {DiagnosisPhase.DATA_FETCHING, DiagnosisPhase.EVIDENCE_READY, DiagnosisPhase.FAILED}
+        {
+            DiagnosisPhase.PLAN_READY,
+            DiagnosisPhase.DATA_FETCHING,
+            DiagnosisPhase.EVIDENCE_READY,
+            DiagnosisPhase.FAILED,
+        }
     ),
     DiagnosisPhase.DRAFT_READY: frozenset({DiagnosisPhase.REVIEWING, DiagnosisPhase.FAILED}),
     DiagnosisPhase.REVIEWING: frozenset(

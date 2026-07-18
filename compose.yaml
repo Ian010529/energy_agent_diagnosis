@@ -26,5 +26,43 @@ services:
       timeout: 3s
       retries: 30
 
+  influxdb:
+    image: influxdb:2.7-alpine
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: energy
+      DOCKER_INFLUXDB_INIT_PASSWORD: energy_dev_password
+      DOCKER_INFLUXDB_INIT_ORG: energy
+      DOCKER_INFLUXDB_INIT_BUCKET: energy_metrics
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: energy-token
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - energy_influx_data:/var/lib/influxdb2
+
+  backend:
+    profiles: ["phase2"]
+    build: .
+    environment:
+      MYSQL_DSN: mysql+asyncmy://energy:energy_dev@mysql:3306/energy_agent
+      REDIS_URL: redis://redis:6379/0
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: energy-token
+      INFLUXDB_ORG: energy
+      INFLUXDB_BUCKET: energy_metrics
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+
 volumes:
   energy_mysql_data:
+  energy_influx_data:

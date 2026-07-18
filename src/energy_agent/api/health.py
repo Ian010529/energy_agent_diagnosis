@@ -20,6 +20,7 @@ class LiveResponse(StrictModel):
 class ReadyDependencies(StrictModel):
     mysql: Literal["up", "down"]
     redis: Literal["up", "down"]
+    influxdb: Literal["up", "down"]
     langfuse: Literal["optional"] = "optional"
 
 
@@ -47,17 +48,24 @@ async def _dependency_status(check: Awaitable[object]) -> str:
 
 @router.get("/ready", response_model=ReadyResponse)
 async def ready(request: Request, response: Response) -> ReadyResponse:
-    mysql, redis = await asyncio.gather(
+    async def influx_status() -> object:
+        healthy = await asyncio.to_thread(request.app.state.influx_client.ping)
+        if not healthy:
+            raise ConnectionError("InfluxDB ping failed")
+        return healthy
+
+    mysql, redis, influxdb = await asyncio.gather(
         _dependency_status(mysql_ping(request.app.state.mysql_engine)),
         _dependency_status(redis_ping(request.app.state.redis)),
+        _dependency_status(influx_status()),
     )
-    status = "ready" if mysql == redis == "up" else "not_ready"
+    status = "ready" if mysql == redis == influxdb == "up" else "not_ready"
     if status == "not_ready":
         response.status_code = 503
     context = get_context()
     assert context is not None
     return ReadyResponse(
         status=status,
-        dependencies=ReadyDependencies(mysql=mysql, redis=redis),
+        dependencies=ReadyDependencies(mysql=mysql, redis=redis, influxdb=influxdb),
         trace_id=context.trace_id,
     )

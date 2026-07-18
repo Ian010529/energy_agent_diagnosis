@@ -1,6 +1,9 @@
 import hashlib
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Any
+
+from pydantic import BaseModel
 
 
 class ContentMode(StrEnum):
@@ -63,6 +66,19 @@ def redact(
     selected_mode = ContentMode(mode)
     if _depth >= max_depth:
         return {"truncated": True, "reason": "max_depth"}
+    if isinstance(value, BaseModel):
+        return redact(
+            value.model_dump(mode="json"),
+            mode=selected_mode,
+            max_string_length=max_string_length,
+            max_list_items=max_list_items,
+            max_depth=max_depth,
+            _depth=_depth,
+        )
+    if isinstance(value, datetime | date):
+        return value.isoformat()
+    if isinstance(value, StrEnum):
+        return value.value
     if isinstance(value, dict):
         output: dict[str, object] = {}
         for raw_key, item in value.items():

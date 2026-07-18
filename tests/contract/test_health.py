@@ -21,6 +21,7 @@ def test_readiness_contract_when_dependencies_are_down() -> None:
         app_env="test",
         mysql_dsn="mysql+asyncmy://energy:energy_dev@127.0.0.1:1/energy_agent",
         redis_url="redis://127.0.0.1:1/0",
+        influxdb_url="http://127.0.0.1:1",
     )
     with TestClient(create_app(settings)) as client:
         response = client.get("/health/ready")
@@ -30,5 +31,6 @@ def test_readiness_contract_when_dependencies_are_down() -> None:
     assert body["dependencies"] == {
         "mysql": "down",
         "redis": "down",
+        "influxdb": "down",
         "langfuse": "optional",
     }

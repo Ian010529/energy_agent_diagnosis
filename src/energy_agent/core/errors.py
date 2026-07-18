@@ -19,3 +19,20 @@ class ResourceNotFoundError(DomainError):
 class DependencyUnavailableError(DomainError):
     code = "DEPENDENCY_UNAVAILABLE"
     retryable = True
+
+
+class ConflictError(DomainError):
+    code = "STATE_CONFLICT"
+
+
+class IdempotencyConflictError(ConflictError):
+    code = "IDEMPOTENCY_CONFLICT"
+
+
+class DependencyTimeoutError(DomainError):
+    code = "DEPENDENCY_TIMEOUT"
+    retryable = True
+
+
+class UnsupportedIntentError(DomainError):
+    code = "UNSUPPORTED_INTENT"

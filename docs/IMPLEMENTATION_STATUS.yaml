@@ -11,11 +11,11 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_1_BACKEND_FOUNDATION_AND_OBSERVABILITY
+  id: PHASE_2_FIRST_DIAGNOSIS_VERTICAL_SLICE
   status: COMPLETED
   objective: >
-    建立模块化单体后端基础、MySQL/Redis 持久化、结构化日志、
-    敏感信息脱敏和 LangFuse tracing 适配。
+    跑通 PCS 温度异常的第一条诊断纵向链路，包括 API、LangGraph、
+    五个读工具、时序和轻量关键词证据、Guardrail、SSE、持久化和全链路可观测。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -53,15 +53,16 @@ last_completed:
   - phase_1_backend_foundation
   - phase_1_core_persistence
   - phase_1_observability
+  - phase_2_first_diagnosis_vertical_slice
 
 current_task: []
 
 next_phase:
-  id: PHASE_2_FIRST_DIAGNOSIS_VERTICAL_SLICE
+  id: PHASE_3_COMPLETE_RAG
   status: NOT_STARTED
 
 next_task:
-  - wait_for_phase_2_prompt
+  - wait_for_phase_3_prompt
 
 blockers: []
 
@@ -69,5 +70,8 @@ external_validation:
   langfuse:
     status: BLOCKED
     reason: missing_credentials
+  model_gateway:
+    status: BLOCKED
+    reason: missing_credentials
 
-updated_at: "2026-07-18T08:31:00Z"
+updated_at: "2026-07-18T09:25:00Z"

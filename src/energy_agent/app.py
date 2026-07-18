@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from starlette.middleware.base import RequestResponseEndpoint
 
+from energy_agent.api.diagnosis import router as diagnosis_router
 from energy_agent.api.errors import install_error_handlers
 from energy_agent.api.health import router as health_router
 from energy_agent.core.config import Settings, get_settings
@@ -60,6 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     install_error_handlers(app)
     app.include_router(health_router)
+    app.include_router(diagnosis_router)
     return app
 
 

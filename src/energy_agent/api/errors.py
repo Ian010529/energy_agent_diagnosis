@@ -6,7 +6,12 @@ from fastapi.responses import JSONResponse
 
 from energy_agent.contracts.errors import ErrorBody, ErrorEnvelope
 from energy_agent.core.context import get_context
-from energy_agent.core.errors import DomainError, ResourceNotFoundError
+from energy_agent.core.errors import (
+    ConflictError,
+    DependencyTimeoutError,
+    DomainError,
+    ResourceNotFoundError,
+)
 from energy_agent.core.ids import new_id
 from energy_agent.observability.logging import log_event
 
@@ -42,7 +47,17 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def handle_domain_error(request: Request, exc: DomainError) -> JSONResponse:
         log_event(logger, logging.WARNING, "domain_error", error_code=exc.code)
-        status = 404 if isinstance(exc, ResourceNotFoundError) else 503 if exc.retryable else 400
+        status = (
+            404
+            if isinstance(exc, ResourceNotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 504
+            if isinstance(exc, DependencyTimeoutError)
+            else 503
+            if exc.retryable
+            else 400
+        )
         return error_response(
             code=exc.code,
             message=exc.safe_message,

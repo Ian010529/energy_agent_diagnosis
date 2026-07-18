@@ -29,3 +29,10 @@ class RiskLevel(StrEnum):
     MEDIUM = "medium"
     HIGH = "high"
     UNKNOWN = "unknown"
+
+
+class DiagnosisIntent(StrEnum):
+    FAULT_DIAGNOSIS = "fault_diagnosis"
+    KNOWLEDGE_QA = "knowledge_qa"
+    HISTORY_TICKET_QUERY = "history_ticket_query"
+    FOLLOWUP_CLARIFICATION = "followup_clarification"

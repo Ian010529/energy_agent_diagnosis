@@ -44,3 +44,104 @@ class DiagnosisStepLogModel(Base):
     started_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     ended_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
     duration_ms: Mapped[int | None] = mapped_column(Integer)
+
+
+class DiagnosisRunModel(Base):
+    __tablename__ = "diagnosis_run"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_session.id"), nullable=False, index=True
+    )
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    phase: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class DiagnosisResultModel(Base):
+    __tablename__ = "diagnosis_result"
+
+    run_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_run.id"), primary_key=True
+    )
+    session_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_session.id"), nullable=False, index=True
+    )
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_causes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    evidence: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    inspection_steps: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    safety_notes: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    missing_information: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    recommend_ticket: Mapped[bool] = mapped_column(nullable=False)
+    risk_level: Mapped[str] = mapped_column(String(16), nullable=False)
+    warnings: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    degraded_components: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class DeviceProfileModel(Base):
+    __tablename__ = "device_profile"
+
+    device_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    device_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_model: Mapped[str] = mapped_column(String(128), nullable=False)
+    manufacturer: Mapped[str] = mapped_column(String(128), nullable=False)
+    commission_time: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    location: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    rated_power: Mapped[float | None] = mapped_column()
+
+
+class AlarmEventModel(Base):
+    __tablename__ = "alarm_event"
+
+    alarm_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    site_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    alarm_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    alarm_level: Mapped[str] = mapped_column(String(32), nullable=False)
+    trigger_time: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_system: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class ManualChunkModel(Base):
+    __tablename__ = "manual_chunk"
+
+    chunk_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    doc_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    device_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_model: Mapped[str | None] = mapped_column(String(128))
+    manufacturer: Mapped[str | None] = mapped_column(String(128))
+    alarm_name: Mapped[str | None] = mapped_column(String(255))
+    chapter_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    page_no: Mapped[int | None] = mapped_column(Integer)
+    section_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    summary_or_content: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[str] = mapped_column(String(64), nullable=False)
+    verified: Mapped[bool] = mapped_column(nullable=False)
+    effective: Mapped[bool] = mapped_column(nullable=False)
+
+
+class MaintenanceTicketModel(Base):
+    __tablename__ = "maintenance_ticket"
+
+    ticket_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    site_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    device_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    device_model: Mapped[str] = mapped_column(String(128), nullable=False)
+    alarm_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    fault_symptom: Mapped[str] = mapped_column(Text, nullable=False)
+    root_cause: Mapped[str] = mapped_column(Text, nullable=False)
+    action_taken: Mapped[str] = mapped_column(Text, nullable=False)
+    is_verified: Mapped[bool] = mapped_column(nullable=False, index=True)
+    close_time: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
