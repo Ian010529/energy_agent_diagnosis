@@ -1,0 +1,1 @@
+"""Synchronous knowledge ingestion boundary."""

@@ -17,6 +17,10 @@ async def main() -> int:
         host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com"),
         environment=os.getenv("APP_ENV", "local"),
     )
+    if not await asyncio.to_thread(tracer.client.auth_check):
+        print("LANGFUSE_LIVE_VALIDATION=FAILED_AUTH")
+        await tracer.shutdown()
+        return 1
     trace_id = new_id()
     with tracer.start_trace(
         "phase1.foundation.observability_smoke",
@@ -27,7 +31,7 @@ async def main() -> int:
         span.set_output({"status": "sent"})
     await tracer.flush()
     await tracer.shutdown()
-    print(f"LANGFUSE_LIVE_VALIDATION=ATTEMPTED trace_id={trace_id}")
+    print(f"LANGFUSE_LIVE_VALIDATION=PASSED trace_id={trace_id}")
     return 0
 
 

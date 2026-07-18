@@ -237,7 +237,7 @@ def test_completed_readback_sse_and_step_logs(phase2_data: None) -> None:
             for cause in body["result"]["candidate_causes"]
         )
         assert "ticket:TICKET-PHASE2-UNVERIFIED" not in evidence_ids
-        assert "vector_retrieval" in body["degraded_components"]
+        assert "vector_retrieval" not in body["degraded_components"]
         replay = client.post(
             "/api/v1/diagnosis/chat",
             headers={"Idempotency-Key": "phase2-completed"},

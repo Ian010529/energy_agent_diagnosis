@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
@@ -83,19 +83,43 @@ class TimeseriesWindowInput(StrictModel):
 
 
 class ManualSearchInput(StrictModel):
+    class ManualSearchFilters(StrictModel):
+        device_type: str | None = None
+        device_model: str | None = None
+        manufacturer: str | None = None
+        alarm_name: str | None = None
+        doc_version: str | None = None
+        section_type: list[Literal["正文", "表格", "告警定义", "维护步骤", "注意事项"]] = Field(
+            default_factory=list
+        )
+        effective_only: bool = True
+
     context: ToolContext
     query: str
-    filters: dict[str, object] = Field(default_factory=dict)
-    retrieval_mode: str = "keyword_only"
-    score_threshold: float = Field(default=0.0, ge=0, le=1)
+    filters: ManualSearchFilters = Field(default_factory=ManualSearchFilters)
+    retrieval_mode: Literal["hybrid", "keyword_only", "vector_only"] = "hybrid"
+    score_threshold: float = Field(default=0.45, ge=0, le=1)
     top_k: int = Field(default=5, ge=1, le=20)
 
 
 class TicketSearchInput(StrictModel):
+    class TicketSearchFilters(StrictModel):
+        device_type: str | None = None
+        device_model: str | None = None
+        manufacturer: str | None = None
+        alarm_name: str | None = None
+        site_id: str | None = None
+        exclude_ticket_ids: list[str] = Field(default_factory=list)
+
     context: ToolContext
     query: str
-    filters: dict[str, object] = Field(default_factory=dict)
+    filters: TicketSearchFilters = Field(default_factory=TicketSearchFilters)
+    retrieval_mode: Literal["hybrid", "keyword_only", "vector_only"] = "hybrid"
     top_k: int = Field(default=5, ge=1, le=20)
     verified_only: bool = True
     time_range_months: int = Field(default=12, ge=1)
-    score_threshold: float = Field(default=0.0, ge=0, le=1)
+    score_threshold: float = Field(default=0.50, ge=0, le=1)
+
+
+ManualSearchFilters = ManualSearchInput.ManualSearchFilters
+TicketSearchFilters = TicketSearchInput.TicketSearchFilters

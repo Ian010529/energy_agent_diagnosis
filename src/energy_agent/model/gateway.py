@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from typing import Any
 
 import httpx
@@ -27,6 +28,7 @@ class ModelGateway:
         timeout_seconds: float,
         temperature: float,
         tracer: Tracer,
+        api_mode: str = "chat_completions",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
@@ -34,6 +36,7 @@ class ModelGateway:
         self.timeout_seconds = timeout_seconds
         self.temperature = temperature
         self.tracer = tracer
+        self.api_mode = api_mode
 
     async def generate(
         self,
@@ -54,15 +57,25 @@ class ModelGateway:
         ) as generation:
             try:
                 async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-                    response = await client.post(
-                        f"{self.base_url}/v1/chat/completions",
-                        headers={
-                            "Authorization": f"Bearer {self.api_key}",
-                            "X-Trace-Id": trace_id,
-                            "X-Session-Id": session_id,
-                            "X-Prompt-Version": prompt_version,
-                        },
-                        json={
+                    schema = _openai_strict_schema(output_schema.model_json_schema())
+                    payload = (
+                        {
+                            "model": self.model,
+                            "instructions": system_prompt,
+                            "input": json.dumps(evidence_package, ensure_ascii=False, default=str),
+                            "text": {
+                                "format": {
+                                    "type": "json_schema",
+                                    "name": output_schema.__name__,
+                                    "strict": True,
+                                    "schema": schema,
+                                }
+                            },
+                            "reasoning": {"effort": "low"},
+                            "max_output_tokens": 2048,
+                        }
+                        if self.api_mode == "responses"
+                        else {
                             "model": self.model,
                             "messages": [
                                 {"role": "system", "content": system_prompt},
@@ -75,15 +88,41 @@ class ModelGateway:
                             ],
                             "temperature": self.temperature,
                             "response_format": {"type": "json_object"},
+                        }
+                    )
+                    endpoint = (
+                        "/v1/responses" if self.api_mode == "responses" else "/v1/chat/completions"
+                    )
+                    response = await client.post(
+                        f"{self.base_url}{endpoint}",
+                        headers={
+                            "Authorization": f"Bearer {self.api_key}",
+                            "X-Trace-Id": trace_id,
+                            "X-Session-Id": session_id,
+                            "X-Prompt-Version": prompt_version,
                         },
+                        json=payload,
                     )
                     response.raise_for_status()
                 body: dict[str, Any] = response.json()
-                content = body["choices"][0]["message"]["content"]
+                if self.api_mode == "responses":
+                    output_texts = [
+                        item["text"]
+                        for output in body["output"]
+                        for item in output.get("content", [])
+                        if item.get("type") == "output_text"
+                    ]
+                    if not output_texts:
+                        raise ValueError("OpenAI Responses payload has no output_text")
+                    content = output_texts[0]
+                    finish_reason = body.get("status")
+                else:
+                    content = body["choices"][0]["message"]["content"]
+                    finish_reason = body["choices"][0].get("finish_reason")
                 validated = output_schema.model_validate_json(content)
                 generation.set_output(
                     {
-                        "finish_reason": body["choices"][0].get("finish_reason"),
+                        "finish_reason": finish_reason,
                         "usage": body.get("usage", {}),
                         "validated": True,
                     }
@@ -95,3 +134,24 @@ class ModelGateway:
                     {"error_code": type(exc).__name__, "prompt_version": prompt_version},
                 )
                 return None
+
+
+def _openai_strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Convert a Pydantic schema to the strict object shape required by Responses."""
+    strict = deepcopy(schema)
+
+    def visit(node: object) -> None:
+        if isinstance(node, dict):
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                node["required"] = list(properties)
+                node["additionalProperties"] = False
+            node.pop("default", None)
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(strict)
+    return strict

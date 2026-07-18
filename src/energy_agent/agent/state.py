@@ -18,6 +18,7 @@ class DeviceContext(StrictModel):
     device_id: str
     device_type: str | None = None
     device_model: str | None = None
+    manufacturer: str | None = None
 
 
 class AlarmContext(StrictModel):
@@ -61,6 +62,14 @@ class Evidence(StrictModel):
     verified: bool = False
     reliability: float = Field(ge=0, le=1)
     relevance: float = Field(ge=0, le=1)
+    retrieval_score: float | None = Field(default=None, ge=0, le=1)
+    source_reliability: float | None = Field(default=None, ge=0, le=1)
+    verification_score: float | None = Field(default=None, ge=0, le=1)
+    freshness_score: float | None = Field(default=None, ge=0, le=1)
+    relevance_to_alarm: float | None = Field(default=None, ge=0, le=1)
+    final_score: float | None = Field(default=None, ge=0, le=1)
+    chunk_id: str | None = None
+    package_id: str | None = None
     metadata: dict[str, object] = Field(default_factory=dict)
 
 

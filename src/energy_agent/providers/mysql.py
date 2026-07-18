@@ -7,6 +7,7 @@ from energy_agent.persistence.models import (
     DeviceProfileModel,
     MaintenanceTicketModel,
     ManualChunkModel,
+    ManualDocumentModel,
 )
 
 
@@ -42,7 +43,11 @@ class MySQLDiagnosisProvider:
             return data
 
     async def manual_candidates(
-        self, filters: dict[str, object], *, effective_only: bool = True
+        self,
+        filters: dict[str, object],
+        *,
+        effective_only: bool = True,
+        strong_only: bool = False,
     ) -> list[dict[str, object]]:
         query = select(ManualChunkModel)
         for name in ("device_type", "device_model", "manufacturer", "alarm_name"):
@@ -51,6 +56,21 @@ class MySQLDiagnosisProvider:
                 query = query.where(getattr(ManualChunkModel, name) == value)
         if effective_only:
             query = query.where(ManualChunkModel.effective.is_(True))
+        if filters.get("doc_version"):
+            query = query.where(ManualChunkModel.version == filters["doc_version"])
+        section_types = filters.get("section_type")
+        if isinstance(section_types, list) and section_types:
+            query = query.where(ManualChunkModel.section_type.in_(section_types))
+        if strong_only:
+            query = query.join(
+                ManualDocumentModel,
+                (ManualDocumentModel.doc_id == ManualChunkModel.doc_id)
+                & (ManualDocumentModel.version == ManualChunkModel.version),
+            ).where(
+                ManualDocumentModel.review_status == "APPROVED",
+                ManualDocumentModel.effective.is_(True),
+                ManualDocumentModel.index_status == "INDEXED",
+            )
         async with self.session_factory() as session:
             rows = (await session.execute(query)).scalars().all()
         return [
@@ -71,6 +91,9 @@ class MySQLDiagnosisProvider:
                 query = query.where(getattr(MaintenanceTicketModel, name) == value)
         if verified_only:
             query = query.where(MaintenanceTicketModel.is_verified.is_(True))
+        excluded = filters.get("exclude_ticket_ids")
+        if isinstance(excluded, list) and excluded:
+            query = query.where(MaintenanceTicketModel.ticket_id.not_in(excluded))
         async with self.session_factory() as session:
             rows = (await session.execute(query)).scalars().all()
         return [

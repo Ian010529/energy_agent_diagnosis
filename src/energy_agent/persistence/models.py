@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -130,6 +130,16 @@ class ManualChunkModel(Base):
     version: Mapped[str] = mapped_column(String(64), nullable=False)
     verified: Mapped[bool] = mapped_column(nullable=False)
     effective: Mapped[bool] = mapped_column(nullable=False)
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    chunk_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    keywords: Mapped[list[str] | None] = mapped_column(JSON)
+    embedding_text: Mapped[str | None] = mapped_column(Text)
+    index_generation: Mapped[str | None] = mapped_column(String(64))
+    embedding_model: Mapped[str | None] = mapped_column(String(128))
+    embedding_dimension: Mapped[int | None] = mapped_column(Integer)
+    indexed_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    created_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
 
 
 class MaintenanceTicketModel(Base):
@@ -145,3 +155,39 @@ class MaintenanceTicketModel(Base):
     action_taken: Mapped[str] = mapped_column(Text, nullable=False)
     is_verified: Mapped[bool] = mapped_column(nullable=False, index=True)
     close_time: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    manufacturer: Mapped[str | None] = mapped_column(String(128))
+    embedding_text: Mapped[str | None] = mapped_column(Text)
+    index_status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING")
+    index_error_code: Mapped[str | None] = mapped_column(String(64))
+    embedding_model: Mapped[str | None] = mapped_column(String(128))
+    embedding_dimension: Mapped[int | None] = mapped_column(Integer)
+    indexed_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+
+
+class ManualDocumentModel(Base):
+    __tablename__ = "manual_document"
+    __table_args__ = (UniqueConstraint("doc_id", "version", name="uq_manual_document_version"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    doc_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    document_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    object_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    file_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_model: Mapped[str | None] = mapped_column(String(128))
+    manufacturer: Mapped[str | None] = mapped_column(String(128))
+    version: Mapped[str] = mapped_column(String(64), nullable=False)
+    review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    effective: Mapped[bool] = mapped_column(nullable=False)
+    parser_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    chunking_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    embedding_model: Mapped[str | None] = mapped_column(String(128))
+    embedding_dimension: Mapped[int | None] = mapped_column(Integer)
+    index_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    index_error_code: Mapped[str | None] = mapped_column(String(64))
+    index_generation: Mapped[str | None] = mapped_column(String(64))
+    chunk_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)

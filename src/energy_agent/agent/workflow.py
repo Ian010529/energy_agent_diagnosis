@@ -146,6 +146,7 @@ def build_diagnosis_graph(
                 device_id=str(data["device_id"]),
                 device_type=str(data["device_type"]),
                 device_model=str(data["device_model"]),
+                manufacturer=str(data["manufacturer"]),
             )
         if alarm.success:
             data = alarm.data
@@ -189,13 +190,16 @@ def build_diagnosis_graph(
 
     async def ticket_fetcher(state: DiagnosisState) -> dict[str, object]:
         assert state.device_context and state.alarm_context
+        retrieval_query = state.user_message or state.alarm_context.alarm_name
         result = await executor.execute(
             "search_similar_tickets",
             {
                 "context": _context(state),
-                "query": f"{state.alarm_context.alarm_name} 散热 风扇 滤网 温度",
+                "query": retrieval_query,
                 "filters": {
+                    "device_type": state.device_context.device_type,
                     "device_model": state.device_context.device_model,
+                    "manufacturer": state.device_context.manufacturer,
                     "alarm_name": state.alarm_context.alarm_name,
                 },
                 "verified_only": True,
@@ -203,35 +207,48 @@ def build_diagnosis_graph(
             state.trace_id,
         )
         tool_data["search_similar_tickets"] = result
+        degraded = list(state.degraded_components)
+        if isinstance(result.data, dict):
+            metadata = result.data.get("retrieval_metadata", {})
+            if isinstance(metadata, dict):
+                degraded.extend(str(item) for item in metadata.get("degraded_components", []))
         return {
             "tool_results": [
                 *state.tool_results,
                 _tool_summary("search_similar_tickets", result),
             ],
-            "degraded_components": [*state.degraded_components, "vector_retrieval"],
+            "degraded_components": sorted(set(degraded)),
         }
 
     async def doc_retriever(state: DiagnosisState) -> dict[str, object]:
         assert state.device_context and state.alarm_context
+        retrieval_query = state.user_message or state.alarm_context.alarm_name
         result = await executor.execute(
             "search_manual_chunks",
             {
                 "context": _context(state),
-                "query": f"{state.alarm_context.alarm_name} 散热 风扇 滤网 排查",
+                "query": retrieval_query,
                 "filters": {
                     "device_type": state.device_context.device_type,
                     "device_model": state.device_context.device_model,
+                    "manufacturer": state.device_context.manufacturer,
                     "alarm_name": state.alarm_context.alarm_name,
                 },
             },
             state.trace_id,
         )
         tool_data["search_manual_chunks"] = result
+        degraded = list(state.degraded_components)
+        if isinstance(result.data, dict):
+            metadata = result.data.get("retrieval_metadata", {})
+            if isinstance(metadata, dict):
+                degraded.extend(str(item) for item in metadata.get("degraded_components", []))
         return {
             "tool_results": [
                 *state.tool_results,
                 _tool_summary("search_manual_chunks", result),
-            ]
+            ],
+            "degraded_components": sorted(set(degraded)),
         }
 
     async def evidence_aggregator(state: DiagnosisState) -> dict[str, object]:
@@ -293,33 +310,47 @@ def build_diagnosis_graph(
             result = tool_data.get(name)
             if not result or not result.success:
                 continue
-            for row in result.data:
-                if source_type == "manual":
-                    source_id = str(row["doc_id"])
-                    citation = f"[手册: {source_id} {row['chapter_title']}/page={row['page_no']}]"
-                    summary = str(row["summary_or_content"])[:500]
-                    verified = bool(row["verified"])
-                    reliability = 1.0 if verified else 0.6
-                else:
-                    source_id = str(row["ticket_id"])
-                    citation = f"[工单: {source_id}]"
-                    summary = (
-                        f"{row['fault_symptom']}；根因: {row['root_cause']}；"
-                        f"处理: {row['action_taken']}"
-                    )[:500]
-                    verified = bool(row["is_verified"])
-                    reliability = 0.85 if verified else 0.4
+            if not isinstance(result.data, dict):
+                continue
+            package = result.data
+            ranked = package.get("ranked_evidence", [])
+            if not isinstance(ranked, list):
+                continue
+            for row in ranked:
+                if not isinstance(row, dict):
+                    continue
+                source_id = str(row["source_id"])
+                citation = str(row["citation"])
+                summary = str(row["content_summary"])[:500]
+                metadata = row.get("metadata", {})
+                verified = bool(isinstance(metadata, dict) and metadata.get("verified"))
+                reliability = float(row["source_reliability"])
                 evidence.append(
                     Evidence(
-                        evidence_id=f"{source_type}:{source_id}",
+                        evidence_id=(
+                            f"{source_type}:{source_id}:{row.get('chunk_id')}"
+                            if row.get("chunk_id")
+                            else f"{source_type}:{source_id}"
+                        ),
                         source_type=source_type,
                         source_id=source_id,
                         summary=summary,
                         citation=citation,
                         verified=verified,
                         reliability=reliability,
-                        relevance=float(row["keyword_score"]),
-                        metadata={"retrieval_mode": "keyword_only"},
+                        relevance=float(row["relevance_to_alarm"]),
+                        retrieval_score=float(row["retrieval_score"]),
+                        source_reliability=reliability,
+                        verification_score=float(row["verification_score"]),
+                        freshness_score=float(row["freshness_score"]),
+                        relevance_to_alarm=float(row["relevance_to_alarm"]),
+                        final_score=float(row["final_score"]),
+                        chunk_id=(str(row["chunk_id"]) if row.get("chunk_id") else None),
+                        package_id=(str(row["package_id"]) if row.get("package_id") else None),
+                        metadata={
+                            "retrieval_mode": result.meta.retrieval_mode,
+                            **(metadata if isinstance(metadata, dict) else {}),
+                        },
                     )
                 )
         deduped = {item.evidence_id: item for item in evidence}

@@ -11,7 +11,11 @@ def test_local_settings_do_not_require_langfuse_credentials() -> None:
 
 def test_langfuse_mode_requires_credentials() -> None:
     with pytest.raises(ValidationError, match="LANGFUSE_PUBLIC_KEY"):
-        Settings(observability_mode="langfuse")
+        Settings(
+            observability_mode="langfuse",
+            langfuse_public_key=None,
+            langfuse_secret_key=None,
+        )
 
 
 def test_settings_reject_invalid_ttl() -> None:

@@ -32,5 +32,9 @@ def test_readiness_contract_when_dependencies_are_down() -> None:
         "mysql": "down",
         "redis": "down",
         "influxdb": "down",
+        "minio": "optional",
+        "milvus": "optional",
+        "embedding": "optional",
+        "reranker": "optional",
         "langfuse": "optional",
     }

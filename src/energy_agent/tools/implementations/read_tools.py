@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from energy_agent.observability.tracing import Tracer
 from energy_agent.providers.influxdb import InfluxTimeseriesProvider
 from energy_agent.providers.mysql import MySQLDiagnosisProvider
-from energy_agent.retrieval.keyword import rank_rows
+from energy_agent.retrieval.contracts import RetrievalMode, SourceType
+from energy_agent.retrieval.service import RetrievalService
 from energy_agent.tools.contracts import (
     AlarmDetailInput,
     DeviceProfileInput,
@@ -26,21 +27,24 @@ def _result(
     source_system: str,
     partial: bool = False,
     warnings: list[str] | None = None,
+    retrieval_mode: str | None = None,
 ) -> ToolResult:
     empty = data is None or data == [] or data == {}
     return ToolResult(
         success=not empty,
-        status=ToolStatus.NOT_FOUND
-        if empty
-        else ToolStatus.PARTIAL_SUCCESS
-        if partial
-        else ToolStatus.OK,
+        status=(
+            ToolStatus.NOT_FOUND
+            if empty
+            else ToolStatus.PARTIAL_SUCCESS
+            if partial
+            else ToolStatus.OK
+        ),
         data=data,
         meta=ToolMeta(
             trace_id=trace_id,
             source_system=source_system,
             partial_result=partial,
-            retrieval_mode="keyword_only" if partial else None,
+            retrieval_mode=retrieval_mode,
         ),
         error_code="NOT_FOUND" if empty else "",
         error_message="No matching data" if empty else "",
@@ -52,22 +56,30 @@ def build_registry(
     mysql: MySQLDiagnosisProvider,
     influx: InfluxTimeseriesProvider,
     tracer: Tracer | None = None,
+    retrieval: RetrievalService | None = None,
 ) -> ToolRegistry:
     registry = ToolRegistry()
+    retrieval_service = retrieval or RetrievalService(mysql=mysql, tracer=cast(Tracer, tracer))
 
     async def device(payload: BaseModel) -> ToolResult:
         request = cast(DeviceProfileInput, payload)
-        data = await mysql.get_device(request.device_id)
-        return _result(request.context.trace_id, data, source_system="mysql")
+        return _result(
+            request.context.trace_id,
+            await mysql.get_device(request.device_id),
+            source_system="mysql",
+        )
 
     async def alarm(payload: BaseModel) -> ToolResult:
         request = cast(AlarmDetailInput, payload)
-        data = await mysql.get_alarm(request.alarm_id, request.device_id)
-        return _result(request.context.trace_id, data, source_system="mysql")
+        return _result(
+            request.context.trace_id,
+            await mysql.get_alarm(request.alarm_id, request.device_id),
+            source_system="mysql",
+        )
 
     async def timeseries(payload: BaseModel) -> ToolResult:
         request = cast(TimeseriesWindowInput, payload)
-        data: dict[str, dict[str, Any]] = cast(
+        data = cast(
             dict[str, dict[str, Any]],
             await influx.query(
                 request.device_id,
@@ -83,84 +95,55 @@ def build_registry(
 
     async def manual(payload: BaseModel) -> ToolResult:
         request = cast(ManualSearchInput, payload)
-        manager = (
-            tracer.start_span(
-                "retrieval.keyword_search",
-                trace_id=request.context.trace_id,
-                metadata={"source": "manual", "filters": request.filters},
-            )
-            if tracer
-            else None
+        mode = (
+            RetrievalMode.KEYWORD_ONLY
+            if retrieval_service.default_mode == RetrievalMode.KEYWORD_ONLY
+            else RetrievalMode(request.retrieval_mode)
         )
-        if manager:
-            with manager as span:
-                rows = await mysql.manual_candidates(request.filters)
-                ranked = rank_rows(
-                    request.query,
-                    rows,
-                    ("alarm_name", "chapter_title", "summary_or_content"),
-                    request.top_k,
-                )
-                span.set_output({"candidate_count": len(rows), "result_count": len(ranked)})
-        else:
-            rows = await mysql.manual_candidates(request.filters)
-            ranked = rank_rows(
-                request.query,
-                rows,
-                ("alarm_name", "chapter_title", "summary_or_content"),
-                request.top_k,
-            )
+        result = await retrieval_service.search(
+            SourceType.MANUAL,
+            request.query,
+            request.filters.model_dump(exclude_none=True),
+            trace_id=request.context.trace_id,
+            mode=mode,
+            top_k=request.top_k,
+            score_threshold=request.score_threshold,
+        )
+        metadata = result.retrieval_metadata
         return _result(
             request.context.trace_id,
-            ranked,
-            source_system="mysql",
-            partial=True,
-            warnings=["VECTOR_RETRIEVAL_NOT_ENABLED"],
+            result.model_dump(mode="json"),
+            source_system="retrieval",
+            partial=metadata.partial_result,
+            warnings=metadata.degraded_components,
+            retrieval_mode=metadata.retrieval_mode,
         )
 
     async def tickets(payload: BaseModel) -> ToolResult:
         request = cast(TicketSearchInput, payload)
-        manager = (
-            tracer.start_span(
-                "retrieval.keyword_search",
-                trace_id=request.context.trace_id,
-                metadata={
-                    "source": "ticket",
-                    "filters": request.filters,
-                    "verified_only": request.verified_only,
-                },
-            )
-            if tracer
-            else None
+        mode = (
+            RetrievalMode.KEYWORD_ONLY
+            if retrieval_service.default_mode == RetrievalMode.KEYWORD_ONLY
+            else RetrievalMode(request.retrieval_mode)
         )
-        if manager:
-            with manager as span:
-                rows = await mysql.ticket_candidates(
-                    request.filters, verified_only=request.verified_only
-                )
-                ranked = rank_rows(
-                    request.query,
-                    rows,
-                    ("alarm_name", "fault_symptom", "root_cause", "action_taken"),
-                    request.top_k,
-                )
-                span.set_output({"candidate_count": len(rows), "result_count": len(ranked)})
-        else:
-            rows = await mysql.ticket_candidates(
-                request.filters, verified_only=request.verified_only
-            )
-            ranked = rank_rows(
-                request.query,
-                rows,
-                ("alarm_name", "fault_symptom", "root_cause", "action_taken"),
-                request.top_k,
-            )
+        result = await retrieval_service.search(
+            SourceType.TICKET,
+            request.query,
+            request.filters.model_dump(exclude_none=True),
+            trace_id=request.context.trace_id,
+            mode=mode,
+            top_k=request.top_k,
+            score_threshold=request.score_threshold,
+            verified_only=request.verified_only,
+        )
+        metadata = result.retrieval_metadata
         return _result(
             request.context.trace_id,
-            ranked,
-            source_system="mysql",
-            partial=True,
-            warnings=["VECTOR_RETRIEVAL_NOT_ENABLED"],
+            result.model_dump(mode="json"),
+            source_system="retrieval",
+            partial=metadata.partial_result,
+            warnings=metadata.degraded_components,
+            retrieval_mode=metadata.retrieval_mode,
         )
 
     registry.register("get_device_profile", DeviceProfileInput, device)
