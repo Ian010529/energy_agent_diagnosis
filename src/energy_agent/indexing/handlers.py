@@ -86,6 +86,25 @@ class IndexHandlers:
                 return await self._dispatch(event)
         return await self._dispatch(event)
 
+    async def handle_batch(self, events: list[IndexJobMessage]) -> dict[str, HandlerResult]:
+        """Process homogeneous UPSERT batches without changing per-entity state semantics."""
+        if not events:
+            return {}
+        entity_types = {event.entity_type for event in events}
+        operations = {event.operation for event in events}
+        if (
+            len(entity_types) != 1
+            or len(operations) != 1
+            or not operations.issubset({IndexOperation.UPSERT, IndexOperation.REINDEX})
+        ):
+            return {event.job_id: await self.handle(event) for event in events}
+        entity_type = events[0].entity_type
+        if entity_type == EntityType.MAINTENANCE_TICKET:
+            return await self._ticket_batch(events)
+        if entity_type == EntityType.DIAGNOSIS_CASE:
+            return await self._case_batch(events)
+        return {event.job_id: await self.handle(event) for event in events}
+
     async def _dispatch(self, event: IndexJobMessage) -> HandlerResult:
         if event.entity_type == EntityType.MANUAL_DOCUMENT:
             return await self._manual(event)
@@ -220,6 +239,84 @@ class IndexHandlers:
             )
         return HandlerResult(IndexJobStatus.INDEXED)
 
+    async def _ticket_batch(self, events: list[IndexJobMessage]) -> dict[str, HandlerResult]:
+        async with self.session_factory() as session:
+            rows = (
+                (
+                    await session.execute(
+                        select(MaintenanceTicketModel).where(
+                            MaintenanceTicketModel.ticket_id.in_(
+                                [event.entity_id for event in events]
+                            )
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        tickets = {row.ticket_id: row for row in rows}
+        ordered: list[tuple[IndexJobMessage, MaintenanceTicketModel, str]] = []
+        for event in events:
+            ticket = tickets.get(event.entity_id)
+            if not ticket:
+                raise PermanentIndexError("INDEX_ENTITY_NOT_FOUND")
+            if ticket.index_generation != event.entity_version or not ticket.is_verified:
+                raise StaleIndexEventError("INDEX_EVENT_STALE")
+            text = re.sub(
+                r"\s+",
+                " ",
+                " ".join(
+                    str(value)
+                    for value in (
+                        ticket.device_model,
+                        ticket.alarm_name,
+                        ticket.fault_symptom,
+                        ticket.root_cause,
+                        ticket.action_taken,
+                    )
+                    if value
+                ),
+            ).strip()
+            ordered.append((event, ticket, text))
+        vectors = await self.embedding.embed([item[2] for item in ordered])
+        await self.milvus.upsert(
+            "ticket",
+            [
+                {
+                    "id": ticket.ticket_id,
+                    "source_id": ticket.ticket_id,
+                    "device_type": "",
+                    "device_model": ticket.device_model,
+                    "manufacturer": ticket.manufacturer or "",
+                    "alarm_name": ticket.alarm_name,
+                    "index_generation": event.entity_version,
+                    "verified": True,
+                    "effective": True,
+                    "close_time": int(ticket.close_time.timestamp()) if ticket.close_time else 0,
+                    "embedding": vector,
+                }
+                for (event, ticket, _), vector in zip(ordered, vectors, strict=True)
+            ],
+        )
+        now = utc_now()
+        async with self.session_factory.begin() as session:
+            for event, _, text in ordered:
+                await session.execute(
+                    update(MaintenanceTicketModel)
+                    .where(
+                        MaintenanceTicketModel.ticket_id == event.entity_id,
+                        MaintenanceTicketModel.is_verified.is_(True),
+                    )
+                    .values(
+                        embedding_text=text,
+                        index_status="INDEXED",
+                        index_error_code=None,
+                        indexed_at=now,
+                        updated_at=now,
+                    )
+                )
+        return {event.job_id: HandlerResult(IndexJobStatus.INDEXED) for event, _, _ in ordered}
+
     async def _case(self, event: IndexJobMessage) -> HandlerResult:
         async with self.session_factory() as session:
             case = await session.get(DiagnosisCaseModel, event.entity_id)
@@ -301,17 +398,9 @@ class IndexHandlers:
                             "case_version": case.case_version,
                         },
                     ):
-                        await self.graph.provider.project_case(
-                            case_id=case.case_id,
-                            case_version=case.case_version,
-                            fault_cause=case.root_cause,
-                        )
+                        await self._project_case_graph(case)
                 else:
-                    await self.graph.provider.project_case(
-                        case_id=case.case_id,
-                        case_version=case.case_version,
-                        fault_cause=case.root_cause,
-                    )
+                    await self._project_case_graph(case)
                 await self._projection(event, GraphProjectionStatus.PROJECTED)
             else:
                 await self._projection(event, GraphProjectionStatus.DEGRADED, "GRAPH_DISABLED")
@@ -330,6 +419,108 @@ class IndexHandlers:
         return HandlerResult(
             IndexJobStatus.DEGRADED if graph_degraded else IndexJobStatus.INDEXED,
             graph_degraded=graph_degraded,
+        )
+
+    async def _case_batch(self, events: list[IndexJobMessage]) -> dict[str, HandlerResult]:
+        async with self.session_factory() as session:
+            rows = (
+                (
+                    await session.execute(
+                        select(DiagnosisCaseModel).where(
+                            DiagnosisCaseModel.case_id.in_([event.entity_id for event in events])
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        cases = {row.case_id: row for row in rows}
+        ordered: list[tuple[IndexJobMessage, DiagnosisCaseModel, str]] = []
+        for event in events:
+            case = cases.get(event.entity_id)
+            if not case:
+                raise PermanentIndexError("INDEX_ENTITY_NOT_FOUND")
+            if str(case.case_version) != event.entity_version or case.review_status != "APPROVED":
+                raise StaleIndexEventError("INDEX_EVENT_STALE")
+            text = case.embedding_text or "\n".join(
+                str(value)
+                for value in (
+                    case.device_type,
+                    case.device_model,
+                    case.alarm_name,
+                    case.symptom_summary,
+                    case.timeseries_features,
+                    case.root_cause,
+                    "；".join(case.resolution_steps),
+                )
+                if value
+            )
+            ordered.append((event, case, text))
+        vectors = await self.embedding.embed([item[2] for item in ordered])
+        await self.milvus.upsert(
+            "case",
+            [
+                {
+                    "id": case.case_id,
+                    "source_id": case.case_id,
+                    "device_type": case.device_type or "",
+                    "device_model": case.device_model or "",
+                    "manufacturer": case.manufacturer or "",
+                    "alarm_name": case.alarm_name or "",
+                    "case_version": case.case_version,
+                    "verified": True,
+                    "effective": True,
+                    "index_generation": f"case-v{case.case_version}",
+                    "embedding": vector,
+                }
+                for (_, case, _), vector in zip(ordered, vectors, strict=True)
+            ],
+        )
+        results: dict[str, HandlerResult] = {}
+        for event, case, text in ordered:
+            graph_degraded = False
+            try:
+                if self.graph.provider:
+                    await self._project_case_graph(case)
+                    await self._projection(event, GraphProjectionStatus.PROJECTED)
+                else:
+                    await self._projection(event, GraphProjectionStatus.DEGRADED, "GRAPH_DISABLED")
+                    graph_degraded = True
+            except Exception:
+                await self._projection(
+                    event, GraphProjectionStatus.DEGRADED, "GRAPH_PROJECTION_FAILED"
+                )
+                graph_degraded = True
+            await self._set_case_index(
+                event.entity_id,
+                "DEGRADED" if graph_degraded else "INDEXED",
+                active=True,
+                embedding_text=text,
+            )
+            results[event.job_id] = HandlerResult(
+                IndexJobStatus.DEGRADED if graph_degraded else IndexJobStatus.INDEXED,
+                graph_degraded=graph_degraded,
+            )
+        return results
+
+    async def _project_case_graph(self, case: DiagnosisCaseModel) -> None:
+        if not self.graph.provider:
+            raise RuntimeError("GRAPH_DISABLED")
+        device_type = (case.device_type or "").strip()
+        alarm_name = (case.alarm_name or "").strip()
+        resolution_action = next(
+            (str(step).strip() for step in reversed(case.resolution_steps) if str(step).strip()),
+            "",
+        )
+        if not device_type or not alarm_name or not resolution_action:
+            raise ValueError("CASE_GRAPH_FIELDS_REQUIRED")
+        await self.graph.provider.project_case(
+            case_id=case.case_id,
+            case_version=case.case_version,
+            device_type=device_type,
+            alarm_name=alarm_name,
+            fault_cause=case.root_cause,
+            resolution_action=resolution_action,
         )
 
     async def _queue_superseded_case(self, event: IndexJobMessage, old_case_id: str) -> None:
