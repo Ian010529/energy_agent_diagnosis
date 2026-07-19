@@ -1,0 +1,1 @@
+This package was generated deterministically with seed 20260719. Manuals use domain/model/alarm blueprints, section-specific facts, tables, warnings and maintenance steps. Common safety boilerplate is intentionally allowed; tiny shuffled sentence-pool generation is prohibited.

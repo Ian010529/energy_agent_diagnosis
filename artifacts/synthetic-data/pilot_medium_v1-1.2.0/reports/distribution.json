@@ -1,0 +1,60 @@
+{
+  "case_statuses": {
+    "APPROVED": 200,
+    "DISABLED": 35,
+    "DRAFT": 50,
+    "PENDING_REVIEW": 50,
+    "REJECTED": 35,
+    "SUPERSEDED": 30
+  },
+  "device_types": {
+    "PCS": 120,
+    "PV_INVERTER": 280
+  },
+  "evaluation_splits": {
+    "calibration": 100,
+    "holdout": 50,
+    "regression": 100
+  },
+  "evaluation_templates": {
+    "pcs_fan_abnormal_v1": 50,
+    "pcs_temperature_abnormal_v1": 50,
+    "pcs_temperature_sensor_abnormal_v1": 50,
+    "pv_inverter_communication_abnormal_v1": 50,
+    "pv_inverter_power_abnormal_v1": 50
+  },
+  "manufacturers": {
+    "华曜能源": 96,
+    "启衡电气": 97,
+    "昇维动力": 95,
+    "澜峰科技": 112
+  },
+  "models": {
+    "HY-PCS-500": 40,
+    "HY-PV-320": 56,
+    "LF-PV-110": 56,
+    "LF-PV-250": 56,
+    "QH-PCS-630": 41,
+    "QH-PV-500": 56,
+    "SW-PCS-1000": 39,
+    "SW-PV-625": 56
+  },
+  "passed": true,
+  "scenario_kinds": {
+    "complete": 200,
+    "conflicting_evidence": 30,
+    "missing_evidence": 20
+  },
+  "sites": {
+    "SITE-BG-02": 140,
+    "SITE-BG-03": 140,
+    "SITE-PILOT-01": 120
+  },
+  "ticket_classes": {
+    "closed_reviewed": 1800,
+    "closed_unreviewed": 600,
+    "corrected": 150,
+    "low_information": 300,
+    "recurring": 150
+  }
+}

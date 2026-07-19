@@ -1,0 +1,32 @@
+{
+  "metric_counts": {
+    "active_power": 126880,
+    "ambient_temperature": 29040,
+    "auxiliary_power": 9680,
+    "cabinet_temperature": 88640,
+    "communication_status": 117200,
+    "control_signal": 9680,
+    "dc_current": 167120,
+    "dc_voltage": 126880,
+    "fan_current": 19360,
+    "fan_speed": 78960,
+    "fan_status": 19360,
+    "grid_frequency": 9680,
+    "heartbeat_age": 9680,
+    "irradiance": 9680,
+    "output_power": 69280,
+    "packet_loss": 9680,
+    "redundant_temperature": 9680,
+    "sensor_quality": 9680
+  },
+  "passed": true,
+  "point_count": 920160,
+  "quality_bad_points": 216,
+  "rules": {
+    "communication_metrics_change": true,
+    "fan_failure_precedes_heat": true,
+    "power_basis_present": true,
+    "recovery_trajectory_present": true,
+    "sensor_cross_measurement": true
+  }
+}

@@ -61,6 +61,19 @@ last_completed:
 
 current_task: []
 
+data_assets:
+  pilot_medium_v1:
+    status: BLOCKED
+    dataset_version: 1.2.0
+    generator_version: 1.2.0
+    seed: 20260719
+    validation: FAILED_INDEPENDENT_REVIEW
+    phase6_eligible: false
+    manifest_path: artifacts/synthetic-data/pilot_medium_v1-1.2.0/manifest.json
+    independent_review_path: artifacts/synthetic-data/pilot_medium_v1-1.2.0/reports/independent_repository_review.md
+    blockers:
+      - "BGE-M3 nearest-neighbor similarity >0.95 is 1715/3510 (48.86%), above the accepted limit."
+
 next_phase:
   id: PHASE_6_EVALUATION_RISK_AND_PILOT_HARDENING
   status: NOT_STARTED
@@ -102,4 +115,4 @@ external_validation:
     status: PASSED
     reason: five_templates_across_pcs_and_pv_inverter_completed_with_shared_langgraph
 
-updated_at: "2026-07-18T17:42:53Z"
+updated_at: "2026-07-19T07:18:48Z"

@@ -1,0 +1,74 @@
+{
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.2.0",
+  "status": "BLOCKED",
+  "phase6_eligible": false,
+  "immutable_design_unchanged": true,
+  "phase5_check": "PASSED",
+  "checksums_before_repository_reports": {
+    "checked": 62,
+    "mismatches": 0
+  },
+  "chunk_rebuild": {
+    "chunks": 4266,
+    "ocr_required": 2
+  },
+  "independent_case_evidence": {
+    "facts": 24,
+    "required_cases_per_fact": 2,
+    "minimum_cases_per_fact": 5,
+    "passed": true
+  },
+  "duplication": {
+    "model": "BAAI/bge-m3",
+    "dimension": 1024,
+    "noncontrolled_chunks": 3510,
+    "normalized_exact_duplicates": 777,
+    "normalized_exact_rate": 0.22136752136752136,
+    "nearest_neighbor_over_0_90": 3222,
+    "nearest_neighbor_over_0_90_rate": 0.9179487179487179,
+    "nearest_neighbor_over_0_95": 1715,
+    "nearest_neighbor_over_0_95_rate": 0.4886039886039886,
+    "nearest_neighbor_over_0_98": 1123,
+    "nearest_neighbor_over_0_98_rate": 0.31994301994301994,
+    "exact_duplicate_tickets": 0,
+    "passed": false
+  },
+  "holdout": {
+    "device_count": 10,
+    "verified_tickets_on_holdout_devices": 0,
+    "approved_cases_from_those_tickets": 0,
+    "replaced_ticket_count": 24,
+    "passed": true
+  },
+  "rabbitmq": {
+    "jobs_created": 2022,
+    "outbox_created": 2022,
+    "published_confirmed": 2022,
+    "worker_consumed": 2022,
+    "worker_acked": 2022,
+    "indexed": 2016,
+    "stale": 6,
+    "retried": 0,
+    "dead_lettered": 0,
+    "failed": 0,
+    "passed": true
+  },
+  "milvus": {
+    "manual": 3510,
+    "ticket": 1800,
+    "case": 200,
+    "passed": true
+  },
+  "neo4j": {
+    "nodes": 237,
+    "relations": 823,
+    "case_sources": 200,
+    "case_relations": 800,
+    "minimum_independent_cases_per_fact": 5,
+    "accepted_deviation": "Node count is below 250; random nodes or relations were not added."
+  },
+  "blockers": [
+    "BGE-M3 nearest-neighbor similarity above 0.95 is 1715/3510 (48.86%)."
+  ]
+}

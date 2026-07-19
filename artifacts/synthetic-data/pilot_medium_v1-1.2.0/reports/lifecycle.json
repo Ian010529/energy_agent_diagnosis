@@ -1,0 +1,32 @@
+{
+  "approved_queued": 200,
+  "audit_event_count": 465,
+  "case_count": 400,
+  "disabled_without_event_case_ids": [],
+  "facts_without_multiple_independent_cases": [],
+  "fake_approval_case_ids": [],
+  "independently_supported_facts": 24,
+  "invalid_strong_case_ids": [],
+  "invalid_superseded_case_ids": [],
+  "minimum_independent_cases_per_fact": 5,
+  "missing_approved_reviewer_case_ids": [],
+  "orphan_case_ids": [],
+  "passed": true,
+  "rejected_without_comment_case_ids": [],
+  "required_independent_cases_per_fact": 2,
+  "review_count": 400,
+  "review_event_count": 465,
+  "run_count": 400,
+  "runs_without_result": [],
+  "self_review_case_ids": [],
+  "session_count": 400,
+  "status_distribution": {
+    "APPROVED": 200,
+    "DISABLED": 35,
+    "DRAFT": 50,
+    "PENDING_REVIEW": 50,
+    "REJECTED": 35,
+    "SUPERSEDED": 30
+  },
+  "version_chains": 30
+}

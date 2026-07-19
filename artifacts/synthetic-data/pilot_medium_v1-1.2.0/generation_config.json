@@ -1,0 +1,11 @@
+{
+  "base_time": "2026-06-01T00:00:00+08:00",
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.2.0",
+  "generator_version": "1.2.0",
+  "manual_content_version": "manual-content.v1.2",
+  "manual_repetition_policy": "boilerplate-aware-v1.2",
+  "ontology_version": "pilot-ontology.v1",
+  "profile": "pilot_medium_v1",
+  "seed": 20260719
+}

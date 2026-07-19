@@ -1,0 +1,59 @@
+{
+  "audit_action_counts": {
+    "index.acked": 2022,
+    "index.started": 2022,
+    "index.succeeded": 2016
+  },
+  "case_graph_reindex_queued": 0,
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.2.0",
+  "index": {
+    "dead_lettered": 0,
+    "degraded": 0,
+    "failed": 0,
+    "indexed": 2016,
+    "jobs_created": 2022,
+    "outbox_created": 2022,
+    "passed": true,
+    "publish_failed": 0,
+    "publish_pending": 0,
+    "published_confirmed": 2022,
+    "retried": 0,
+    "stale": 6,
+    "worker_acked": 2022,
+    "worker_consumed": 2022
+  },
+  "job_status_counts": {
+    "INDEXED": 2016,
+    "STALE": 6
+  },
+  "milvus_readback": {
+    "case": 200,
+    "manual": 3510,
+    "ticket": 1800
+  },
+  "neo4j_readback": {
+    "case_relations": 800,
+    "case_relations_per_source_max": 4,
+    "case_relations_per_source_min": 4,
+    "case_sources": 200,
+    "nodes": 237,
+    "relation_types": [
+      "CONFIRMS",
+      "HAS_ALARM",
+      "MAY_BE_CAUSED_BY",
+      "MITIGATED_BY",
+      "RELATES_TO"
+    ],
+    "relations": 823,
+    "template_relations": 23
+  },
+  "outbox_status_counts": {
+    "PUBLISHED": 2022
+  },
+  "passed": true,
+  "runtime_observations": {
+    "consumed": 2022,
+    "published": 2022
+  }
+}

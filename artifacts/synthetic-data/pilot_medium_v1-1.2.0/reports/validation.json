@@ -1,0 +1,329 @@
+{
+  "checks": {
+    "causality": {
+      "metric_counts": {
+        "active_power": 126880,
+        "ambient_temperature": 29040,
+        "auxiliary_power": 9680,
+        "cabinet_temperature": 88640,
+        "communication_status": 117200,
+        "control_signal": 9680,
+        "dc_current": 167120,
+        "dc_voltage": 126880,
+        "fan_current": 19360,
+        "fan_speed": 78960,
+        "fan_status": 19360,
+        "grid_frequency": 9680,
+        "heartbeat_age": 9680,
+        "irradiance": 9680,
+        "output_power": 69280,
+        "packet_loss": 9680,
+        "redundant_temperature": 9680,
+        "sensor_quality": 9680
+      },
+      "passed": true,
+      "point_count": 920160,
+      "quality_bad_points": 216,
+      "rules": {
+        "communication_metrics_change": true,
+        "fan_failure_precedes_heat": true,
+        "power_basis_present": true,
+        "recovery_trajectory_present": true,
+        "sensor_cross_measurement": true
+      }
+    },
+    "completeness": {
+      "alarm_categories": {
+        "access": 611,
+        "auto_recovery": 611,
+        "comm_jitter": 611,
+        "communication": 900,
+        "environment": 611,
+        "fan": 900,
+        "module": 611,
+        "other_sensor": 611,
+        "power": 900,
+        "sensor": 900,
+        "status": 612,
+        "temperature": 900,
+        "unsupported": 611,
+        "voltage": 611
+      },
+      "counts": {
+        "alarms": 10000,
+        "audit_events": 465,
+        "case_review_events": 465,
+        "cases": 400,
+        "chunks": 4266,
+        "devices": 400,
+        "diagnosis_reviews": 400,
+        "diagnosis_runs": 400,
+        "diagnosis_sessions": 400,
+        "documents": 24,
+        "evaluation_samples": 250,
+        "sites": 3,
+        "tickets": 3000,
+        "timeseries_points": 920160
+      },
+      "failures": {},
+      "passed": true
+    },
+    "distribution": {
+      "case_statuses": {
+        "APPROVED": 200,
+        "DISABLED": 35,
+        "DRAFT": 50,
+        "PENDING_REVIEW": 50,
+        "REJECTED": 35,
+        "SUPERSEDED": 30
+      },
+      "device_types": {
+        "PCS": 120,
+        "PV_INVERTER": 280
+      },
+      "evaluation_splits": {
+        "calibration": 100,
+        "holdout": 50,
+        "regression": 100
+      },
+      "evaluation_templates": {
+        "pcs_fan_abnormal_v1": 50,
+        "pcs_temperature_abnormal_v1": 50,
+        "pcs_temperature_sensor_abnormal_v1": 50,
+        "pv_inverter_communication_abnormal_v1": 50,
+        "pv_inverter_power_abnormal_v1": 50
+      },
+      "manufacturers": {
+        "华曜能源": 96,
+        "启衡电气": 97,
+        "昇维动力": 95,
+        "澜峰科技": 112
+      },
+      "models": {
+        "HY-PCS-500": 40,
+        "HY-PV-320": 56,
+        "LF-PV-110": 56,
+        "LF-PV-250": 56,
+        "QH-PCS-630": 41,
+        "QH-PV-500": 56,
+        "SW-PCS-1000": 39,
+        "SW-PV-625": 56
+      },
+      "passed": true,
+      "scenario_kinds": {
+        "complete": 200,
+        "conflicting_evidence": 30,
+        "missing_evidence": 20
+      },
+      "sites": {
+        "SITE-BG-02": 140,
+        "SITE-BG-03": 140,
+        "SITE-PILOT-01": 120
+      },
+      "ticket_classes": {
+        "closed_reviewed": 1800,
+        "closed_unreviewed": 600,
+        "corrected": 150,
+        "low_information": 300,
+        "recurring": 150
+      }
+    },
+    "duplication": {
+      "chunk_count": 4266,
+      "embedding_dimension": 1024,
+      "embedding_model": "BAAI/bge-m3",
+      "embedding_status": "PASSED",
+      "error": null,
+      "exact_duplicate_tickets": 0,
+      "finite_score_check": true,
+      "method": "normalized_exact_plus_char_5gram_simhash_plus_bge_m3_all_chunks",
+      "nearest_neighbor_over_0_90": 3222,
+      "nearest_neighbor_over_0_90_rate": 0.9179487179487179,
+      "nearest_neighbor_over_0_95": 1715,
+      "nearest_neighbor_over_0_95_rate": 0.4886039886039886,
+      "nearest_neighbor_over_0_98": 1123,
+      "nearest_neighbor_over_0_98_rate": 0.31994301994301994,
+      "noncontrolled_chunk_count": 3510,
+      "normalized_exact_duplicates": 777,
+      "normalized_exact_rate": 0.22136752136752136,
+      "passed": false,
+      "simhash_near_count": 38,
+      "top_pairs_report": "reports/manual_duplicate_pairs.json"
+    },
+    "evaluation": {
+      "failures": [],
+      "gold_count": 250,
+      "holdout_overlap_count": 0,
+      "max_exact_repetition": 1,
+      "normalized_unique_count": 250,
+      "normalized_unique_ratio": 1.0,
+      "passed": true,
+      "per_template_unique": {
+        "pcs_fan_abnormal_v1": 50,
+        "pcs_temperature_abnormal_v1": 50,
+        "pcs_temperature_sensor_abnormal_v1": 50,
+        "pv_inverter_communication_abnormal_v1": 50,
+        "pv_inverter_power_abnormal_v1": 50
+      },
+      "profile_counts": {
+        "CONFLICT_CASE_TIMESERIES": 15,
+        "CONFLICT_MANUAL_TICKET": 15,
+        "GRAPH_SUPPLEMENT": 25,
+        "TS_CASE": 30,
+        "TS_MANUAL": 50,
+        "TS_MANUAL_CASE": 30,
+        "TS_MANUAL_TICKET": 45,
+        "TS_TICKET_CASE": 20,
+        "WEAK_ONLY_ESCALATE": 20
+      },
+      "sample_count": 250,
+      "split_counts": {
+        "calibration": 100,
+        "holdout": 50,
+        "regression": 100
+      },
+      "unique_input_text": 250,
+      "unmapped_source_count": 0,
+      "unmapped_sources": []
+    },
+    "gold_isolation": {
+      "gold_leak_count": 0,
+      "leaks": [],
+      "passed": true
+    },
+    "lifecycle": {
+      "approved_queued": 200,
+      "audit_event_count": 465,
+      "case_count": 400,
+      "disabled_without_event_case_ids": [],
+      "facts_without_multiple_independent_cases": [],
+      "fake_approval_case_ids": [],
+      "independently_supported_facts": 24,
+      "invalid_strong_case_ids": [],
+      "invalid_superseded_case_ids": [],
+      "minimum_independent_cases_per_fact": 5,
+      "missing_approved_reviewer_case_ids": [],
+      "orphan_case_ids": [],
+      "passed": true,
+      "rejected_without_comment_case_ids": [],
+      "required_independent_cases_per_fact": 2,
+      "review_count": 400,
+      "review_event_count": 465,
+      "run_count": 400,
+      "runs_without_result": [],
+      "self_review_case_ids": [],
+      "session_count": 400,
+      "status_distribution": {
+        "APPROVED": 200,
+        "DISABLED": 35,
+        "DRAFT": 50,
+        "PENDING_REVIEW": 50,
+        "REJECTED": 35,
+        "SUPERSEDED": 30
+      },
+      "version_chains": 30
+    },
+    "manuals": {
+      "blueprints": {
+        "alarm_code_manual": 1,
+        "communication_guide": 2,
+        "fan_service_manual": 2,
+        "maintenance_manual": 1,
+        "power_control_guide": 5,
+        "sensor_service_manual": 2,
+        "technical_bulletin": 8,
+        "troubleshooting_guide": 3
+      },
+      "current_count": 16,
+      "failures": [],
+      "format_counts": {
+        "docx": 6,
+        "markdown": 4,
+        "pdf": 12,
+        "text": 2
+      },
+      "historical_count": 6,
+      "matrix": [
+        [
+          "HY-PCS-500",
+          "PCS机柜温度异常"
+        ],
+        [
+          "QH-PCS-630",
+          "PCS机柜温度异常"
+        ],
+        [
+          "QH-PCS-630",
+          "PCS风扇异常"
+        ],
+        [
+          "SW-PCS-1000",
+          "PCS风扇异常"
+        ],
+        [
+          "HY-PCS-500",
+          "PCS温度传感器异常"
+        ],
+        [
+          "SW-PCS-1000",
+          "PCS温度传感器异常"
+        ],
+        [
+          "LF-PV-110",
+          "光伏逆变器通讯异常"
+        ],
+        [
+          "LF-PV-110",
+          "光伏逆变器功率异常"
+        ],
+        [
+          "LF-PV-250",
+          "光伏逆变器通讯异常"
+        ],
+        [
+          "LF-PV-250",
+          "光伏逆变器功率异常"
+        ],
+        [
+          "HY-PV-320",
+          "光伏逆变器通讯异常"
+        ],
+        [
+          "HY-PV-320",
+          "光伏逆变器功率异常"
+        ],
+        [
+          "QH-PV-500",
+          "光伏逆变器通讯异常"
+        ],
+        [
+          "QH-PV-500",
+          "光伏逆变器功率异常"
+        ],
+        [
+          "SW-PV-625",
+          "光伏逆变器通讯异常"
+        ],
+        [
+          "SW-PV-625",
+          "光伏逆变器功率异常"
+        ]
+      ],
+      "ocr_required": 2,
+      "parsed_scan_blocks": 0,
+      "passed": true,
+      "scan_count": 2
+    },
+    "natural_language": {
+      "finding_count": 0,
+      "findings": [],
+      "passed": true,
+      "scanned_cases": 400,
+      "scanned_evaluation_samples": 250,
+      "scanned_tickets": 3000
+    }
+  },
+  "dataset_id": "pilot_medium_v1",
+  "status": "FAILED",
+  "validated_at": "2026-06-01T00:00:00+08:00"
+}

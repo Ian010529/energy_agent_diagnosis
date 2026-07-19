@@ -1,0 +1,36 @@
+{
+  "failures": [],
+  "gold_count": 250,
+  "holdout_overlap_count": 0,
+  "max_exact_repetition": 1,
+  "normalized_unique_count": 250,
+  "normalized_unique_ratio": 1.0,
+  "passed": true,
+  "per_template_unique": {
+    "pcs_fan_abnormal_v1": 50,
+    "pcs_temperature_abnormal_v1": 50,
+    "pcs_temperature_sensor_abnormal_v1": 50,
+    "pv_inverter_communication_abnormal_v1": 50,
+    "pv_inverter_power_abnormal_v1": 50
+  },
+  "profile_counts": {
+    "CONFLICT_CASE_TIMESERIES": 15,
+    "CONFLICT_MANUAL_TICKET": 15,
+    "GRAPH_SUPPLEMENT": 25,
+    "TS_CASE": 30,
+    "TS_MANUAL": 50,
+    "TS_MANUAL_CASE": 30,
+    "TS_MANUAL_TICKET": 45,
+    "TS_TICKET_CASE": 20,
+    "WEAK_ONLY_ESCALATE": 20
+  },
+  "sample_count": 250,
+  "split_counts": {
+    "calibration": 100,
+    "holdout": 50,
+    "regression": 100
+  },
+  "unique_input_text": 250,
+  "unmapped_source_count": 0,
+  "unmapped_sources": []
+}

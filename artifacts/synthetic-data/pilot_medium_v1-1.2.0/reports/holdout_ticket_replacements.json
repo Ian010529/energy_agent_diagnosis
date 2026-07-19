@@ -1,0 +1,248 @@
+{
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.2.0",
+  "policy": "verified tickets must not belong to holdout devices",
+  "replacement_count": 24,
+  "replacements": [
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-01283e99023e66d6e1a4",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0058",
+      "new_ticket_id": "TICKET-pilot_medium_v1-2f2689c8092ddecdb125",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0138",
+      "old_ticket_id": "TICKET-pilot_medium_v1-02ed2b6a08465ad8938d",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-005405561b2c5ffe9677",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0119",
+      "new_ticket_id": "TICKET-pilot_medium_v1-5bde4f2c5278db5a0c87",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0133",
+      "old_ticket_id": "TICKET-pilot_medium_v1-088aeaab920ec34cbc4c",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0235518a9a4ad53926e2",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0138",
+      "new_ticket_id": "TICKET-pilot_medium_v1-677c6d76985019745cf0",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0132",
+      "old_ticket_id": "TICKET-pilot_medium_v1-16c4ad1e756ce6b21565",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0409301197e13a1c9482",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0107",
+      "new_ticket_id": "TICKET-pilot_medium_v1-ed7d64c44968cf713fe4",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0136",
+      "old_ticket_id": "TICKET-pilot_medium_v1-1bd9415a388d0755ea71",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-058d1a72802b975b0cc0",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0043",
+      "new_ticket_id": "TICKET-pilot_medium_v1-5f5b2ede778defae529c",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0138",
+      "old_ticket_id": "TICKET-pilot_medium_v1-2e2e931e52803a765c7a",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-00195d2fab662dcbc69c",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0049",
+      "new_ticket_id": "TICKET-pilot_medium_v1-1edcd70736bcd69380a2",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0137",
+      "old_ticket_id": "TICKET-pilot_medium_v1-34fcaaa3bb796a250a3b",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-250",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0023024bb1ab6f286298",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0075",
+      "new_ticket_id": "TICKET-pilot_medium_v1-812609390eb794f8ad3c",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0140",
+      "old_ticket_id": "TICKET-pilot_medium_v1-3d022da329b5a55df2e7",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0abec2a339d5eef9185a",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0090",
+      "new_ticket_id": "TICKET-pilot_medium_v1-0a77adf72e37efbd2169",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0138",
+      "old_ticket_id": "TICKET-pilot_medium_v1-4404abf112c88ca361f2",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-110",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0043d8104872d9c18912",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0094",
+      "new_ticket_id": "TICKET-pilot_medium_v1-2b83118e2c51726a41d5",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0139",
+      "old_ticket_id": "TICKET-pilot_medium_v1-47cbc94d7139af13bc73",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-034dd979a84a2c6cda4e",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0094",
+      "new_ticket_id": "TICKET-pilot_medium_v1-e3c777e9c6d4b80fa453",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0132",
+      "old_ticket_id": "TICKET-pilot_medium_v1-6c68b9b870c3592da88e",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-06f041cd2fb9893ba604",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0122",
+      "new_ticket_id": "TICKET-pilot_medium_v1-11c3b12d2f5fe2260c1e",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0136",
+      "old_ticket_id": "TICKET-pilot_medium_v1-7559ea2b69da314d50f5",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-095c4d65995d84e08fe0",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0063",
+      "new_ticket_id": "TICKET-pilot_medium_v1-feeb5752e7e8ee39a55d",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0131",
+      "old_ticket_id": "TICKET-pilot_medium_v1-79634c0995278591fbf3",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-03dace57902881df3f2a",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0067",
+      "new_ticket_id": "TICKET-pilot_medium_v1-e75b1c8eeba4f5a8e545",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0132",
+      "old_ticket_id": "TICKET-pilot_medium_v1-7dee3a6b5bc62e11401b",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-110",
+      "new_alarm_id": "ALARM-pilot_medium_v1-00eb3e10e7fdee3282c0",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0066",
+      "new_ticket_id": "TICKET-pilot_medium_v1-eedb83d87ebc742788fa",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0139",
+      "old_ticket_id": "TICKET-pilot_medium_v1-8332e7062fae98106813",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0506dc8d76621f6c70f8",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0108",
+      "new_ticket_id": "TICKET-pilot_medium_v1-5aa9ccc70557faabae78",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0137",
+      "old_ticket_id": "TICKET-pilot_medium_v1-83b87694461d6ac0002d",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-00936c31ca656c94c199",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0054",
+      "new_ticket_id": "TICKET-pilot_medium_v1-af5b9c6565794e67faaf",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0133",
+      "old_ticket_id": "TICKET-pilot_medium_v1-9244d9b5f31a2b53f605",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-110",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0f35af2131749fa771de",
+      "new_device_id": "pilot_medium_v1-SITE-PILOT-01-PV-0101",
+      "new_ticket_id": "TICKET-pilot_medium_v1-216a1bc58a40035b8696",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0139",
+      "old_ticket_id": "TICKET-pilot_medium_v1-938dc5fdd5fa7353e10a",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-250",
+      "new_alarm_id": "ALARM-pilot_medium_v1-005fff0081a681e51ce1",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0130",
+      "new_ticket_id": "TICKET-pilot_medium_v1-709a662bc43584e7cee2",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0140",
+      "old_ticket_id": "TICKET-pilot_medium_v1-961a4662de88f3e5ce40",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-1eddf0af68732952a214",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0051",
+      "new_ticket_id": "TICKET-pilot_medium_v1-e1ce3fbc66b25297249d",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0136",
+      "old_ticket_id": "TICKET-pilot_medium_v1-9b338ed24231746ee262",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-2a8bc3ae86aed84d65f2",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0087",
+      "new_ticket_id": "TICKET-pilot_medium_v1-b740e6b1609eeecee64f",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0131",
+      "old_ticket_id": "TICKET-pilot_medium_v1-a047366e13fa1d491dae",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "SW-PV-625",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0231930d8faddf3833a1",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0068",
+      "new_ticket_id": "TICKET-pilot_medium_v1-8d4c1da98b51a43eed97",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0133",
+      "old_ticket_id": "TICKET-pilot_medium_v1-d42bc2c142226df4d4e6",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "QH-PV-500",
+      "new_alarm_id": "ALARM-pilot_medium_v1-0c36bf5eb59d707dd35f",
+      "new_device_id": "pilot_medium_v1-SITE-BG-02-PV-0123",
+      "new_ticket_id": "TICKET-pilot_medium_v1-b982eb4679abec0d9156",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0137",
+      "old_ticket_id": "TICKET-pilot_medium_v1-e2db348c554ade083cf4",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器通讯异常",
+      "device_model": "HY-PV-320",
+      "new_alarm_id": "ALARM-pilot_medium_v1-2cc9ef0a55a9af40c716",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0091",
+      "new_ticket_id": "TICKET-pilot_medium_v1-e0c54ee3f43a223400e1",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0131",
+      "old_ticket_id": "TICKET-pilot_medium_v1-e8144cb3c6eadb299d99",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    },
+    {
+      "alarm_name": "光伏逆变器功率异常",
+      "device_model": "LF-PV-250",
+      "new_alarm_id": "ALARM-pilot_medium_v1-06cd9cc6b45b04a8a197",
+      "new_device_id": "pilot_medium_v1-SITE-BG-03-PV-0060",
+      "new_ticket_id": "TICKET-pilot_medium_v1-61be479f495ac56e9c48",
+      "old_device_id": "pilot_medium_v1-SITE-BG-03-PV-0140",
+      "old_ticket_id": "TICKET-pilot_medium_v1-e89a1a4bbf16590faefe",
+      "reason": "Remove verified ticket from holdout device while preserving frozen counts."
+    }
+  ]
+}

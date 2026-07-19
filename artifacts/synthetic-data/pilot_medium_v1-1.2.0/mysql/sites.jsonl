@@ -1,0 +1,3 @@
+{"dataset_id": "pilot_medium_v1", "name": "SITE-PILOT-01综合能源场站", "role": "pilot", "site_id": "SITE-PILOT-01", "timezone": "Asia/Shanghai"}
+{"dataset_id": "pilot_medium_v1", "name": "SITE-BG-02综合能源场站", "role": "background", "site_id": "SITE-BG-02", "timezone": "Asia/Shanghai"}
+{"dataset_id": "pilot_medium_v1", "name": "SITE-BG-03综合能源场站", "role": "background", "site_id": "SITE-BG-03", "timezone": "Asia/Shanghai"}

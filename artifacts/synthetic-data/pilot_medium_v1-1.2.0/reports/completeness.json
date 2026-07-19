@@ -1,0 +1,36 @@
+{
+  "alarm_categories": {
+    "access": 611,
+    "auto_recovery": 611,
+    "comm_jitter": 611,
+    "communication": 900,
+    "environment": 611,
+    "fan": 900,
+    "module": 611,
+    "other_sensor": 611,
+    "power": 900,
+    "sensor": 900,
+    "status": 612,
+    "temperature": 900,
+    "unsupported": 611,
+    "voltage": 611
+  },
+  "counts": {
+    "alarms": 10000,
+    "audit_events": 465,
+    "case_review_events": 465,
+    "cases": 400,
+    "chunks": 4266,
+    "devices": 400,
+    "diagnosis_reviews": 400,
+    "diagnosis_runs": 400,
+    "diagnosis_sessions": 400,
+    "documents": 24,
+    "evaluation_samples": 250,
+    "sites": 3,
+    "tickets": 3000,
+    "timeseries_points": 920160
+  },
+  "failures": {},
+  "passed": true
+}
