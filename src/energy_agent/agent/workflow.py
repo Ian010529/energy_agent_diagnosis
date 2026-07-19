@@ -7,7 +7,6 @@ from langgraph.graph import END, START, StateGraph
 from energy_agent.agent.nodes.base import NodeLogCallable, traced_node
 from energy_agent.agent.state import (
     AlarmContext,
-    CandidateCause,
     ClarificationQuestion,
     DeviceContext,
     DiagnosisState,
@@ -15,8 +14,13 @@ from energy_agent.agent.state import (
     PlanStep,
     ToolResultSummary,
 )
+from energy_agent.agent.templates.registry import (
+    TemplateAmbiguousError,
+    TemplateNotFoundError,
+)
+from energy_agent.agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY
+from energy_agent.agent.templates.rules import evaluate_candidate_rules
 from energy_agent.contracts.common import DiagnosisIntent, DiagnosisPhase, RiskLevel
-from energy_agent.core.errors import UnsupportedIntentError
 from energy_agent.core.time import utc_now
 from energy_agent.model.gateway import (
     CandidateCauseEnvelope,
@@ -28,15 +32,6 @@ from energy_agent.tools.contracts import ToolResult, ToolStatus
 from energy_agent.tools.executor import ToolExecutor
 
 MEMORY_WRITER = Callable[[DiagnosisState], Awaitable[None]]
-PCS_TEMPLATE_ID = "pcs_temperature_abnormal_v1"
-METRICS = [
-    "cabinet_temperature",
-    "ambient_temperature",
-    "fan_speed",
-    "fan_status",
-    "output_power",
-    "dc_current",
-]
 
 
 def _context(state: DiagnosisState) -> dict[str, object]:
@@ -73,12 +68,6 @@ def build_diagnosis_graph(
             if state.user_feedback
             else DiagnosisIntent.FAULT_DIAGNOSIS
         )
-        alarm_name = state.alarm_context.alarm_name if state.alarm_context else ""
-        text = f"{alarm_name} {state.user_message or ''}"
-        if state.source.value != "alarm" and not any(
-            term in text for term in ("温度", "散热", "PCS", "机柜")
-        ):
-            raise UnsupportedIntentError("Phase 2 only supports PCS cabinet temperature diagnosis")
         return {"intent": intent}
 
     async def entity_parser(state: DiagnosisState) -> dict[str, object]:
@@ -105,8 +94,49 @@ def build_diagnosis_graph(
         }
 
     async def plan_builder(state: DiagnosisState) -> dict[str, object]:
+        assert state.alarm_context
+        try:
+            with tracer.start_span(
+                "template.route",
+                trace_id=state.trace_id,
+                metadata={
+                    "device_type": (
+                        state.device_context.device_type if state.device_context else None
+                    ),
+                    "alarm_name": state.alarm_context.alarm_name,
+                },
+            ) as span:
+                template, route_basis = DEFAULT_TEMPLATE_REGISTRY.route(
+                    device_type=(
+                        state.device_context.device_type if state.device_context else None
+                    ),
+                    alarm_name=state.alarm_context.alarm_name,
+                    user_text=state.user_message,
+                )
+                span.set_output(
+                    {
+                        "template_id": template.template_id,
+                        "template_version": template.template_version,
+                        "route_basis": route_basis,
+                    }
+                )
+        except (TemplateNotFoundError, TemplateAmbiguousError) as exc:
+            return {
+                "phase": DiagnosisPhase.NEED_USER_INPUT,
+                "clarification_questions": [
+                    ClarificationQuestion(
+                        question_id="template_route",
+                        question="请补充标准设备类型和准确告警名称。",
+                        reason=str(exc),
+                    )
+                ],
+                "errors": [str(exc)],
+            }
         return {
-            "diagnosis_template_id": PCS_TEMPLATE_ID,
+            "diagnosis_template_id": template.template_id,
+            "diagnosis_template_version": template.template_version,
+            "alarm_category": template.alarm_category,
+            "template_route_basis": route_basis,
             "phase": DiagnosisPhase.PLAN_READY,
             "plan": [
                 PlanStep(step_id="S1", goal="查询设备画像", tool="get_device_profile"),
@@ -114,10 +144,11 @@ def build_diagnosis_graph(
                 PlanStep(step_id="S3", goal="查询最近时序窗口", tool="query_timeseries_window"),
                 PlanStep(step_id="S4", goal="检索设备手册", tool="search_manual_chunks"),
                 PlanStep(step_id="S5", goal="检索已审核相似工单", tool="search_similar_tickets"),
-                PlanStep(step_id="S6", goal="归并证据并检测缺口"),
-                PlanStep(step_id="S7", goal="生成候选根因或补充问题"),
-                PlanStep(step_id="S8", goal="生成答复并进行规则校验"),
-                PlanStep(step_id="S9", goal="写入会话记忆和诊断结果"),
+                PlanStep(step_id="S6", goal="查询图谱补充关系", tool="query_graph_relations"),
+                *[
+                    PlanStep(step_id=f"T{index}", goal=goal)
+                    for index, goal in enumerate(template.plan_steps, 1)
+                ],
             ],
         }
 
@@ -167,18 +198,21 @@ def build_diagnosis_graph(
 
     async def timeseries_fetcher(state: DiagnosisState) -> dict[str, object]:
         assert state.device_context
+        assert state.diagnosis_template_id
+        template = DEFAULT_TEMPLATE_REGISTRY.get(state.diagnosis_template_id)
         end = (
             state.alarm_context.trigger_time
             if state.alarm_context and state.alarm_context.trigger_time
             else utc_now()
         )
-        start = end - timedelta(minutes=30)
+        start = end - timedelta(minutes=template.default_window_minutes)
         result = await executor.execute(
             "query_timeseries_window",
             {
                 "context": _context(state),
                 "device_id": state.device_context.device_id,
-                "metrics": METRICS,
+                "measurements": template.measurements,
+                "metrics": template.metrics,
                 "start_time": start.isoformat(),
                 "end_time": end.isoformat(),
             },
@@ -255,6 +289,31 @@ def build_diagnosis_graph(
             "tool_results": [
                 *state.tool_results,
                 _tool_summary("search_manual_chunks", result),
+            ],
+            "degraded_components": sorted(set(degraded)),
+        }
+
+    async def graph_fetcher(state: DiagnosisState) -> dict[str, object]:
+        assert state.device_context and state.alarm_context
+        result = await executor.execute(
+            "query_graph_relations",
+            {
+                "context": _context(state),
+                "alarm_name": state.alarm_context.alarm_name,
+                "device_type": state.device_context.device_type,
+                "relation_depth": 2,
+                "top_k": 2,
+            },
+            state.trace_id,
+        )
+        tool_data["query_graph_relations"] = result
+        degraded = list(state.degraded_components)
+        if result.status == ToolStatus.DEGRADED:
+            degraded.append("neo4j")
+        return {
+            "tool_results": [
+                *state.tool_results,
+                _tool_summary("query_graph_relations", result),
             ],
             "degraded_components": sorted(set(degraded)),
         }
@@ -369,6 +428,37 @@ def build_diagnosis_graph(
                         },
                     )
                 )
+        graph = tool_data.get("query_graph_relations")
+        if graph and graph.success and isinstance(graph.data, dict):
+            assert state.alarm_context
+            relations = graph.data.get("relations", [])
+            if isinstance(relations, list):
+                for row in relations[:2]:
+                    if not isinstance(row, dict):
+                        continue
+                    support_count = int(row.get("support_count", 0))
+                    reliability = min(0.60 + min(support_count, 2) * 0.05, 0.70)
+                    alarm_name = str(row.get("alarm_name", state.alarm_context.alarm_name))
+                    fault_cause = str(row["fault_cause"])
+                    evidence.append(
+                        Evidence(
+                            evidence_id=f"graph:{alarm_name}:{fault_cause}",
+                            source_type="graph",
+                            source_id=f"{alarm_name}->{fault_cause}",
+                            summary=(
+                                f"{alarm_name} 可能关联 {fault_cause}；"
+                                f"部件 {row.get('component') or '未知'}；"
+                                f"审核案例支撑 {support_count}"
+                            ),
+                            citation=f"[图谱: {alarm_name} -> {fault_cause}]",
+                            verified=False,
+                            reliability=reliability,
+                            relevance=0.65,
+                            source_reliability=reliability,
+                            need_manual_confirmation=True,
+                            metadata=row,
+                        )
+                    )
         deduped = {item.evidence_id: item for item in evidence}
         values = list(deduped.values())
         return {
@@ -391,11 +481,16 @@ def build_diagnosis_graph(
         return {"errors": gaps}
 
     async def clarification_generator(state: DiagnosisState) -> dict[str, object]:
+        template = (
+            DEFAULT_TEMPLATE_REGISTRY.get(state.diagnosis_template_id)
+            if state.diagnosis_template_id
+            else None
+        )
         questions = []
         for index, gap in enumerate(state.errors[:3], 1):
             text = (
-                "请现场确认散热风扇是否运转、是否有异常噪音。"
-                if "时序" in gap
+                template.clarification_rules[min(index - 1, len(template.clarification_rules) - 1)]
+                if "时序" in gap and template
                 else "请补充对应设备或现场检查信息。"
             )
             questions.append(
@@ -426,21 +521,9 @@ def build_diagnosis_graph(
         }
 
     async def reason_generator(state: DiagnosisState) -> dict[str, object]:
-        causes: list[CandidateCause] = []
-        by_type: dict[str, list[Evidence]] = {}
-        for item in state.evidence:
-            by_type.setdefault(item.source_type, []).append(item)
-        all_text = " ".join(item.summary for item in state.evidence)
+        assert state.diagnosis_template_id
+        template = DEFAULT_TEMPLATE_REGISTRY.get(state.diagnosis_template_id)
         feedback = " ".join(item.answer for item in state.user_feedback)
-
-        def refs(*terms: str) -> list[str]:
-            matched = [
-                item.evidence_id
-                for item in state.evidence
-                if any(term in item.summary for term in terms)
-            ]
-            return matched or [item.evidence_id for item in state.evidence[:2]]
-
         with tracer.start_generation(
             "llm.reason_generator",
             trace_id=state.trace_id,
@@ -451,46 +534,15 @@ def build_diagnosis_graph(
                 "fallback": True,
             },
         ) as generation:
-            if any(term in all_text + feedback for term in ("风扇", "不转", "转速")):
-                causes.append(
-                    CandidateCause(
-                        cause="散热风扇失效或转速异常",
-                        confidence=0.82 if "不转" in feedback else 0.72,
-                        supporting_evidence=refs("风扇", "转速"),
-                        missing_information=["现场确认风扇供电与机械状态"],
-                        need_manual_confirmation=True,
-                    )
-                )
-            if any(term in all_text + feedback for term in ("滤网", "堵塞", "风道")):
-                causes.append(
-                    CandidateCause(
-                        cause="滤网或风道堵塞",
-                        confidence=0.68,
-                        supporting_evidence=refs("滤网", "堵塞", "风道"),
-                        missing_information=["现场检查滤网压差与积尘"],
-                        need_manual_confirmation=True,
-                    )
-                )
-            ts_text = " ".join(item.summary for item in by_type.get("timeseries", []))
-            if any(term in all_text + ts_text for term in ("环境温度", "负荷", "output_power")):
-                causes.append(
-                    CandidateCause(
-                        cause="环境温度或负荷过高",
-                        confidence=0.62,
-                        supporting_evidence=refs("环境温度", "负荷", "功率"),
-                        need_manual_confirmation=True,
-                    )
-                )
-            if any(term in all_text for term in ("传感器", "漂移")):
-                causes.append(
-                    CandidateCause(
-                        cause="温度传感器漂移",
-                        confidence=0.55,
-                        supporting_evidence=refs("传感器", "漂移"),
-                        missing_information=["使用独立测温仪交叉校验"],
-                        need_manual_confirmation=True,
-                    )
-                )
+            with tracer.start_span(
+                "template.rule_evaluate",
+                trace_id=state.trace_id,
+                metadata={
+                    "template_id": template.template_id,
+                    "template_version": template.template_version,
+                },
+            ):
+                causes = evaluate_candidate_rules(template, state.evidence, feedback)
             generation.set_output({"candidate_count": len(causes), "provider": "rules"})
         if model_gateway and causes:
             enhanced = await model_gateway.generate(
@@ -513,6 +565,8 @@ def build_diagnosis_graph(
         }
 
     async def response_generator(state: DiagnosisState) -> dict[str, object]:
+        assert state.diagnosis_template_id
+        template = DEFAULT_TEMPLATE_REGISTRY.get(state.diagnosis_template_id)
         result = {
             "summary": (
                 "已基于设备、告警、时序与知识证据形成候选诊断，需按顺序现场确认。"
@@ -521,13 +575,8 @@ def build_diagnosis_graph(
             ),
             "candidate_causes": [item.model_dump(mode="json") for item in state.candidate_causes],
             "evidence": [item.model_dump(mode="json") for item in state.evidence],
-            "inspection_steps": [
-                "核对柜内温度与独立测温值",
-                "检查风扇运行、供电和转速",
-                "检查滤网积尘与风道通畅情况",
-                "核对环境温度和当前负荷",
-            ],
-            "safety_notes": ["涉及停机、断电或回路切换时必须由授权人员人工确认并执行。"],
+            "inspection_steps": template.inspection_steps,
+            "safety_notes": template.safety_notes,
             "missing_information": sorted(
                 {
                     missing
@@ -579,6 +628,18 @@ def build_diagnosis_graph(
             return {"errors": [*state.errors, "候选根因包含未知证据引用"]}
         if not state.candidate_causes:
             return {"errors": [*state.errors, "无可验证候选根因"]}
+        non_graph_types = {
+            item.source_type
+            for item in state.evidence
+            if item.source_type not in {"graph", "device", "alarm"}
+        }
+        graph_only = any(
+            cause.supporting_evidence
+            and all(ref.startswith("graph:") for ref in cause.supporting_evidence)
+            for cause in state.candidate_causes
+        )
+        if graph_only and not non_graph_types:
+            return {"errors": [*state.errors, "图谱证据需人工确认"]}
         return {"phase": DiagnosisPhase.REVIEWING}
 
     async def memory_writer_node(state: DiagnosisState) -> dict[str, object]:
@@ -594,6 +655,7 @@ def build_diagnosis_graph(
         "timeseries_fetcher": timeseries_fetcher,
         "ticket_fetcher": ticket_fetcher,
         "doc_retriever": doc_retriever,
+        "graph_fetcher": graph_fetcher,
         "evidence_aggregator": evidence_aggregator,
         "gap_detector": gap_detector,
         "clarification_generator": clarification_generator,
@@ -618,14 +680,19 @@ def build_diagnosis_graph(
     graph.add_edge("clarification_applier", "gap_detector")
     graph.add_conditional_edges(
         "entity_parser",
-        lambda state: "clarify" if state.phase == DiagnosisPhase.NEED_USER_INPUT else "plan",
-        {"clarify": "clarification_generator", "plan": "plan_builder"},
+        lambda state: "clarify" if state.phase == DiagnosisPhase.NEED_USER_INPUT else "dispatch",
+        {"clarify": "clarification_generator", "dispatch": "tool_dispatcher"},
     )
-    graph.add_edge("plan_builder", "tool_dispatcher")
-    graph.add_edge("tool_dispatcher", "timeseries_fetcher")
+    graph.add_edge("tool_dispatcher", "plan_builder")
+    graph.add_conditional_edges(
+        "plan_builder",
+        lambda state: "clarify" if state.phase == DiagnosisPhase.NEED_USER_INPUT else "fetch",
+        {"clarify": "clarification_generator", "fetch": "timeseries_fetcher"},
+    )
     graph.add_edge("timeseries_fetcher", "ticket_fetcher")
     graph.add_edge("ticket_fetcher", "doc_retriever")
-    graph.add_edge("doc_retriever", "evidence_aggregator")
+    graph.add_edge("doc_retriever", "graph_fetcher")
+    graph.add_edge("graph_fetcher", "evidence_aggregator")
     graph.add_edge("evidence_aggregator", "gap_detector")
     graph.add_conditional_edges(
         "gap_detector",

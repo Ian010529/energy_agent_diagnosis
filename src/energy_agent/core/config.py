@@ -91,6 +91,25 @@ class Settings(BaseSettings):
     final_relevance_to_alarm_weight: float = Field(default=0.15, ge=0, le=1)
     final_freshness_weight: float = Field(default=0.15, ge=0, le=1)
     document_max_bytes: int = Field(default=20 * 1024 * 1024, gt=0)
+    index_execution_mode: Literal["sync", "rabbitmq"] = "sync"
+    index_max_attempts: int = Field(default=3, ge=1, le=20)
+    index_publish_poll_interval_seconds: float = Field(default=1.0, gt=0)
+    rabbitmq_url: str = "amqp://energy:energy_dev@localhost:5672/"
+    rabbitmq_index_exchange: str = "energy.indexing.v1"
+    rabbitmq_index_queue: str = "energy.indexing.jobs.v1"
+    rabbitmq_index_retry_queue: str = "energy.indexing.retry.v1"
+    rabbitmq_index_dead_queue: str = "energy.indexing.dead.v1"
+    rabbitmq_prefetch_count: int = Field(default=8, ge=1, le=256)
+    rabbitmq_publish_timeout_seconds: float = Field(default=5.0, gt=0)
+    rabbitmq_retry_delay_ms: int = Field(default=5_000, ge=100)
+    graph_mode: Literal["disabled", "neo4j"] = "disabled"
+    neo4j_uri: str = "neo4j://localhost:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str | None = None
+    neo4j_database: str = "neo4j"
+    neo4j_query_timeout_seconds: float = Field(default=5.0, gt=0)
+    graph_top_k: int = Field(default=5, ge=1, le=20)
+    graph_source_reliability: float = Field(default=0.60, ge=0, le=0.70)
 
     @model_validator(mode="after")
     def validate_dependencies_and_weights(self) -> "Settings":
@@ -98,6 +117,10 @@ class Settings(BaseSettings):
             raise ValueError("development_headers authentication is limited to local and test")
         if self.auth_mode == "trusted_headers" and not self.internal_api_key:
             raise ValueError("INTERNAL_API_KEY is required for trusted_headers authentication")
+        if self.index_execution_mode == "sync" and self.app_env not in {"local", "test"}:
+            raise ValueError("INDEX_EXECUTION_MODE=sync is limited to local and test")
+        if self.graph_mode == "neo4j" and not self.neo4j_password:
+            raise ValueError("NEO4J_PASSWORD is required when GRAPH_MODE=neo4j")
         if self.observability_mode == "langfuse" and not (
             self.langfuse_public_key and self.langfuse_secret_key
         ):

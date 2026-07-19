@@ -304,7 +304,8 @@ def test_completed_readback_sse_and_step_logs(phase2_data: None) -> None:
         assert "agent.intent_router" in names
         assert "agent.memory_writer" in names
         assert "tool.query_timeseries_window" in names
-        assert len({name for name in names if name.startswith("tool.")}) == 5
+        assert "tool.query_graph_relations" in names
+        assert len({name for name in names if name.startswith("tool.")}) == 6
 
     asyncio.run(assert_logs())
 

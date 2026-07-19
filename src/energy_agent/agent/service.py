@@ -313,6 +313,8 @@ class DiagnosisService:
                 else None
             ),
             diagnosis_template_id=memory.diagnosis_template_id if memory else None,
+            diagnosis_template_version=(memory.diagnosis_template_version if memory else None),
+            alarm_category=memory.alarm_category if memory else None,
             plan=memory.plan if memory else [],
             tool_results=(
                 [
@@ -382,6 +384,12 @@ class DiagnosisService:
         ):
             output = await graph.ainvoke(initial)
         state = DiagnosisState.model_validate(output)
+        await self.runs.set_template(
+            run_id,
+            template_id=state.diagnosis_template_id,
+            template_version=state.diagnosis_template_version,
+            alarm_category=state.alarm_category,
+        )
         for summary in state.tool_results:
             now = utc_now()
             await self.step_logs.create(
@@ -452,6 +460,8 @@ class DiagnosisService:
             else None,
             intent=state.intent,
             diagnosis_template_id=state.diagnosis_template_id,
+            diagnosis_template_version=state.diagnosis_template_version,
+            alarm_category=state.alarm_category,
             plan=state.plan,
             tool_summaries=[item.model_dump(mode="json") for item in state.tool_results],
             evidence=state.evidence,
@@ -579,6 +589,9 @@ class DiagnosisService:
                 phase=DiagnosisPhase.COMPLETED,
                 parent_run_id=parent,
                 run_type="explanation",
+                diagnosis_template_id=memory.diagnosis_template_id if memory else None,
+                diagnosis_template_version=(memory.diagnosis_template_version if memory else None),
+                alarm_category=memory.alarm_category if memory else None,
             )
         )
         await self.runs.finish(run_id, DiagnosisPhase.COMPLETED, "completed")

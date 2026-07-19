@@ -8,6 +8,8 @@ from energy_agent.core.config import Settings
 from energy_agent.core.ids import new_id
 from energy_agent.core.lifecycle import create_tracer
 from energy_agent.core.time import utc_now
+from energy_agent.indexing.contracts import EntityType, IndexJobCreate, IndexOperation
+from energy_agent.indexing.repository import IndexRepository
 from energy_agent.persistence.models import MaintenanceTicketModel
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
@@ -32,6 +34,7 @@ async def run() -> None:
     tracer = create_tracer(settings)
     engine = create_mysql_engine(settings.mysql_dsn)
     factory = create_session_factory(engine)
+    index_repository = IndexRepository(factory, tracer)
     embedding = OpenAICompatibleEmbeddingProvider(
         base_url=settings.embedding_base_url or "",
         api_key=settings.embedding_api_key or "",
@@ -50,6 +53,51 @@ async def run() -> None:
     )
     generation = new_id()
     try:
+        if settings.index_execution_mode == "rabbitmq":
+            async with factory() as session:
+                tickets = (
+                    (
+                        await session.execute(
+                            select(MaintenanceTicketModel).where(
+                                MaintenanceTicketModel.is_verified.is_(True)
+                            )
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+            queued = 0
+            for ticket in tickets:
+                generation = new_id()
+                trace_id = f"ticket-index-{generation}"
+                async with factory.begin() as session:
+                    current = await session.get(
+                        MaintenanceTicketModel,
+                        ticket.ticket_id,
+                        with_for_update=True,
+                    )
+                    if not current or not current.is_verified:
+                        continue
+                    current.index_generation = generation
+                    current.index_status = "QUEUED"
+                    current.index_error_code = None
+                    current.updated_at = utc_now()
+                    await index_repository.add_job(
+                        session,
+                        IndexJobCreate(
+                            entity_type=EntityType.MAINTENANCE_TICKET,
+                            entity_id=current.ticket_id,
+                            entity_version=generation,
+                            operation=IndexOperation.UPSERT,
+                            trace_id=trace_id,
+                            correlation_id=current.ticket_id,
+                            causation_id=generation,
+                            max_attempts=settings.index_max_attempts,
+                        ),
+                    )
+                    queued += 1
+            print(f"TICKET_QUEUED={queued}")
+            return
         await milvus.ensure_collections()
         async with factory() as session:
             tickets = (

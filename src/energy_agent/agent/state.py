@@ -70,6 +70,7 @@ class Evidence(StrictModel):
     final_score: float | None = Field(default=None, ge=0, le=1)
     chunk_id: str | None = None
     package_id: str | None = None
+    need_manual_confirmation: bool = False
     metadata: dict[str, object] = Field(default_factory=dict)
 
 
@@ -106,6 +107,9 @@ class DiagnosisState(StrictModel):
     parent_run_id: str | None = None
     intent: DiagnosisIntent | None = None
     diagnosis_template_id: str | None = None
+    diagnosis_template_version: str | None = None
+    alarm_category: str | None = None
+    template_route_basis: str | None = None
     device_context: DeviceContext | None = None
     alarm_context: AlarmContext | None = None
     time_window: TimeWindow | None = None

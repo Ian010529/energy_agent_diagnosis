@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.15"
 dependencies = [
   "alembic>=1.16,<2",
+  "aio-pika>=9.5,<10",
   "asyncmy>=0.2.10,<1",
   "cryptography>=45,<48",
   "fastapi>=0.116,<1",
@@ -14,6 +15,7 @@ dependencies = [
   "langfuse>=3.3.1,<5",
   "langgraph>=0.6,<2",
   "minio>=7.2,<8",
+  "neo4j>=5.28,<7",
   "pymilvus>=2.5,<3",
   "pypdf>=5.7,<7",
   "python-docx>=1.2,<2",
@@ -59,5 +61,5 @@ plugins = ["pydantic.mypy"]
 packages = ["energy_agent"]
 
 [[tool.mypy.overrides]]
-module = ["langfuse.*", "minio.*", "pymilvus.*", "docx.*", "pypdf.*"]
+module = ["aio_pika.*", "langfuse.*", "minio.*", "neo4j.*", "pymilvus.*", "docx.*", "pypdf.*"]
 ignore_missing_imports = true

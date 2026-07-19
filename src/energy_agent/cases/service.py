@@ -31,6 +31,11 @@ from energy_agent.core.errors import (
 from energy_agent.core.idempotency import request_fingerprint
 from energy_agent.core.ids import new_id
 from energy_agent.core.time import utc_now
+from energy_agent.indexing.contracts import (
+    EntityType,
+    IndexJobCreate,
+    IndexOperation,
+)
 from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.audit import AuditRepository
 from energy_agent.persistence.repositories.cases import CaseRepository
@@ -84,6 +89,8 @@ class CaseService:
         tracer: Tracer,
         embedding: OpenAICompatibleEmbeddingProvider | None,
         milvus: MilvusVectorProvider | None,
+        index_execution_mode: str = "sync",
+        index_max_attempts: int = 3,
     ) -> None:
         self.cases = cases
         self.sessions = sessions
@@ -93,6 +100,8 @@ class CaseService:
         self.tracer = tracer
         self.embedding = embedding
         self.milvus = milvus
+        self.index_execution_mode = index_execution_mode
+        self.index_max_attempts = index_max_attempts
 
     @classmethod
     def from_request(cls, request: Request) -> "CaseService":
@@ -106,6 +115,8 @@ class CaseService:
             tracer=state.tracer,
             embedding=state.embedding_provider,
             milvus=state.milvus_provider,
+            index_execution_mode=state.settings.index_execution_mode,
+            index_max_attempts=state.settings.index_max_attempts,
         )
 
     @staticmethod
@@ -375,6 +386,14 @@ class CaseService:
         if case.created_by == actor.actor_id:
             raise SelfReviewForbiddenError("Case creator cannot review their own case")
         target = CaseStatus.APPROVED if payload.decision == "approve" else CaseStatus.REJECTED
+        index_request = (
+            self._index_request(case, IndexOperation.UPSERT)
+            if target == CaseStatus.APPROVED and self.index_execution_mode == "rabbitmq"
+            else None
+        )
+        async_updates: dict[str, object] = (
+            {"index_status": CaseIndexStatus.QUEUED, "is_active": False} if index_request else {}
+        )
         updated = await self.cases.transition(
             case_id,
             expected=CaseStatus.PENDING_REVIEW,
@@ -388,10 +407,16 @@ class CaseService:
             ),
             idempotency_key=idempotency_key,
             comment=payload.comment,
-            updates={"reviewer": actor.actor_id, "review_comment": payload.comment},
+            updates={
+                "reviewer": actor.actor_id,
+                "review_comment": payload.comment,
+                **async_updates,
+            },
+            index_request=index_request,
         )
         if target == CaseStatus.APPROVED:
-            updated = await self._index(updated, actor, action_prefix="case")
+            if self.index_execution_mode == "sync":
+                updated = await self._index(updated, actor, action_prefix="case")
             if updated.index_status == CaseIndexStatus.INDEXED and updated.supersedes_case_id:
                 await self._supersede(updated.supersedes_case_id, actor)
         await self._audit_case(
@@ -412,6 +437,12 @@ class CaseService:
             metadata={"case_id": case_id},
         ):
             pass
+        current = await self.get(case_id)
+        index_request = (
+            self._index_request(current, IndexOperation.TOMBSTONE)
+            if self.index_execution_mode == "rabbitmq"
+            else None
+        )
         case = await self.cases.transition(
             case_id,
             expected=CaseStatus.APPROVED,
@@ -427,14 +458,14 @@ class CaseService:
             comment=payload.reason,
             updates={
                 "is_active": False,
-                "index_status": CaseIndexStatus.TOMBSTONED,
+                "index_status": (
+                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.TOMBSTONED
+                ),
             },
+            index_request=index_request,
         )
-        if self.milvus:
-            try:
-                await self.milvus.delete("case", [case_id])
-            except Exception:
-                pass
+        if self.index_execution_mode == "sync" and self.milvus:
+            await self.milvus.delete("case", [case_id])
         await self._audit_case(actor, "case.disabled", case)
         return case
 
@@ -470,6 +501,8 @@ class CaseService:
                 "review_comment",
                 "embedding_text",
                 "index_error_code",
+                "index_job_id",
+                "graph_projection_status",
             }
         )
         values.update(payload.model_dump(exclude_unset=True, exclude={"submit_for_review"}))
@@ -519,8 +552,22 @@ class CaseService:
         if case.review_status != CaseStatus.APPROVED or case.index_status not in {
             CaseIndexStatus.FAILED,
             CaseIndexStatus.PENDING,
+            CaseIndexStatus.DEGRADED,
         }:
             raise CaseNotIndexedError("Case is not eligible for reindex")
+        if self.index_execution_mode == "rabbitmq":
+            updated = await self.cases.queue_index(
+                case_id,
+                request=self._index_request(case, IndexOperation.REINDEX),
+                actor_id=actor.actor_id,
+                actor_role=actor.actor_role,
+                action="case.reindex_queued",
+                trace_id=self.trace_id(),
+                request_hash=fingerprint,
+                idempotency_key=idempotency_key,
+            )
+            await self._audit_case(actor, "case.reindex_queued", updated)
+            return updated
         await self.cases.append_event(
             case_id=case_id,
             actor_id=actor.actor_id,
@@ -606,6 +653,12 @@ class CaseService:
             metadata={"case_id": case_id},
         ):
             pass
+        current = await self.get(case_id)
+        index_request = (
+            self._index_request(current, IndexOperation.TOMBSTONE)
+            if self.index_execution_mode == "rabbitmq"
+            else None
+        )
         old = await self.cases.transition(
             case_id,
             expected=CaseStatus.APPROVED,
@@ -618,15 +671,28 @@ class CaseService:
             idempotency_key=f"supersede:{case_id}",
             updates={
                 "is_active": False,
-                "index_status": CaseIndexStatus.TOMBSTONED,
+                "index_status": (
+                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.TOMBSTONED
+                ),
             },
+            index_request=index_request,
         )
-        if self.milvus:
-            try:
-                await self.milvus.delete("case", [case_id])
-            except Exception:
-                pass
+        if self.index_execution_mode == "sync" and self.milvus:
+            await self.milvus.delete("case", [case_id])
         await self._audit_case(actor, "case.superseded", old)
+
+    def _index_request(self, case: DiagnosisCase, operation: IndexOperation) -> IndexJobCreate:
+        trace_id = self.trace_id()
+        return IndexJobCreate(
+            entity_type=EntityType.DIAGNOSIS_CASE,
+            entity_id=case.case_id,
+            entity_version=str(case.case_version),
+            operation=operation,
+            trace_id=trace_id,
+            correlation_id=case.source_session_id,
+            causation_id=case.source_review_id,
+            max_attempts=self.index_max_attempts,
+        )
 
     async def _audit_case(self, actor: ActorContext, action: str, case: DiagnosisCase) -> None:
         await self.audit.write(

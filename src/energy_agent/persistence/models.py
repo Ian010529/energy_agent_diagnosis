@@ -66,6 +66,9 @@ class DiagnosisRunModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     parent_run_id: Mapped[str | None] = mapped_column(String(64))
     run_type: Mapped[str] = mapped_column(String(32), nullable=False, default="diagnosis")
+    diagnosis_template_id: Mapped[str | None] = mapped_column(String(128))
+    diagnosis_template_version: Mapped[str | None] = mapped_column(String(32))
+    alarm_category: Mapped[str | None] = mapped_column(String(64))
 
 
 class DiagnosisResultModel(Base):
@@ -163,6 +166,7 @@ class MaintenanceTicketModel(Base):
     embedding_text: Mapped[str | None] = mapped_column(Text)
     index_status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING")
     index_error_code: Mapped[str | None] = mapped_column(String(64))
+    index_generation: Mapped[str | None] = mapped_column(String(64))
     embedding_model: Mapped[str | None] = mapped_column(String(128))
     embedding_dimension: Mapped[int | None] = mapped_column(Integer)
     indexed_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
@@ -295,3 +299,75 @@ class AuditEventModel(Base):
     outcome: Mapped[str] = mapped_column(String(32), nullable=False)
     safe_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class IndexJobModel(Base):
+    __tablename__ = "index_job"
+    __table_args__ = (
+        UniqueConstraint(
+            "entity_type",
+            "entity_id",
+            "entity_version",
+            "operation",
+            name="uq_index_job_entity_operation",
+        ),
+        Index("ix_index_job_status_next_attempt", "status", "next_attempt_at"),
+    )
+
+    job_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    entity_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    operation: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    correlation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    causation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    last_error_code: Mapped[str | None] = mapped_column(String(64))
+    last_error_message: Mapped[str | None] = mapped_column(String(512))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    finished_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class IndexOutboxModel(Base):
+    __tablename__ = "index_outbox"
+    __table_args__ = (Index("ix_index_outbox_publish_status", "publish_status", "created_at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    job_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("index_job.job_id"), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    publish_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    publish_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_error_code: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class GraphProjectionModel(Base):
+    __tablename__ = "graph_projection"
+    __table_args__ = (
+        UniqueConstraint(
+            "entity_type",
+            "entity_id",
+            "entity_version",
+            name="uq_graph_projection_entity_version",
+        ),
+    )
+
+    projection_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    entity_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    last_error_code: Mapped[str | None] = mapped_column(String(64))
+    projected_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)

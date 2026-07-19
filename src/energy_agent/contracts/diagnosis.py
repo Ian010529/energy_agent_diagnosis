@@ -43,6 +43,9 @@ class DiagnosisRunCreate(StrictModel):
     status: str = "running"
     parent_run_id: str | None = None
     run_type: str = "diagnosis"
+    diagnosis_template_id: str | None = None
+    diagnosis_template_version: str | None = None
+    alarm_category: str | None = None
 
 
 class DiagnosisRunRecord(DiagnosisRunCreate):
@@ -169,6 +172,8 @@ class SessionMemoryPayload(StrictModel):
     alarm_context: dict[str, object] | None = None
     intent: DiagnosisIntent | None = None
     diagnosis_template_id: str | None = None
+    diagnosis_template_version: str | None = None
+    alarm_category: str | None = None
     plan: list[PlanStep] = Field(default_factory=list)
     tool_summaries: list[dict[str, object]] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)

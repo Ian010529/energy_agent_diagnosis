@@ -2,14 +2,21 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from energy_agent.core.time import utc_now
+from energy_agent.indexing.contracts import IndexJobCreate
+from energy_agent.indexing.repository import IndexRepository
 from energy_agent.persistence.models import ManualChunkModel, ManualDocumentModel
 from energy_agent.retrieval.ingestion.chunking import DocumentChunk
 from energy_agent.retrieval.ingestion.manifests import DocumentManifest, IndexStatus
 
 
 class ManualDocumentRepository:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        index_repository: IndexRepository | None = None,
+    ) -> None:
         self.session_factory = session_factory
+        self.index_repository = index_repository
 
     async def find(self, doc_id: str, version: str) -> ManualDocumentModel | None:
         async with self.session_factory() as session:
@@ -34,7 +41,8 @@ class ManualDocumentRepository:
         index_generation: str,
         embedding_model: str | None,
         embedding_dimension: int | None,
-    ) -> None:
+        index_request: IndexJobCreate | None = None,
+    ) -> str | None:
         now = utc_now()
         async with self.session_factory() as session, session.begin():
             if manifest.effective:
@@ -71,7 +79,7 @@ class ManualDocumentRepository:
                     chunking_version=chunking_version,
                     embedding_model=embedding_model,
                     embedding_dimension=embedding_dimension,
-                    index_status=IndexStatus.PENDING,
+                    index_status=(IndexStatus.QUEUED if index_request else IndexStatus.PENDING),
                     index_generation=index_generation,
                     chunk_count=len(chunks),
                     created_at=now,
@@ -105,6 +113,13 @@ class ManualDocumentRepository:
                 )
                 for chunk in chunks
             )
+            job_id: str | None = None
+            if index_request:
+                if not self.index_repository:
+                    raise RuntimeError("index repository is unavailable")
+                job = await self.index_repository.add_job(session, index_request)
+                job_id = job.job_id
+        return job_id
 
     async def set_index_status(
         self,

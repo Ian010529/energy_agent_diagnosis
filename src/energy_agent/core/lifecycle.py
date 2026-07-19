@@ -13,6 +13,8 @@ from influxdb_client.client.influxdb_client import InfluxDBClient
 from energy_agent.core.config import Settings
 from energy_agent.core.context import get_context
 from energy_agent.core.ids import new_id
+from energy_agent.graph.service import GraphService
+from energy_agent.indexing.repository import IndexRepository
 from energy_agent.memory.session_store import RedisSessionStore
 from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.langfuse import LangFuseTracer
@@ -38,10 +40,12 @@ from energy_agent.providers.influxdb import InfluxTimeseriesProvider
 from energy_agent.providers.milvus import MilvusVectorProvider
 from energy_agent.providers.minio import MinioDocumentProvider
 from energy_agent.providers.mysql import MySQLDiagnosisProvider
+from energy_agent.providers.neo4j import Neo4jProvider
 from energy_agent.providers.reranker import HttpRerankerProvider
 from energy_agent.retrieval.contracts import QueryRewrite, RetrievalMode
 from energy_agent.retrieval.scoring import ScoreWeights
 from energy_agent.retrieval.service import RetrievalService
+from energy_agent.tools.implementations.graph_tools import register_graph_tool
 from energy_agent.tools.implementations.read_tools import build_registry
 from energy_agent.tools.implementations.review_tools import register_review_tool
 
@@ -166,6 +170,18 @@ def build_lifespan(
             if settings.rerank_mode == "http"
             else None
         )
+        neo4j_provider = (
+            Neo4jProvider(
+                uri=settings.neo4j_uri,
+                user=settings.neo4j_user,
+                password=settings.neo4j_password or "",
+                database=settings.neo4j_database,
+                timeout_seconds=settings.neo4j_query_timeout_seconds,
+            )
+            if settings.graph_mode == "neo4j"
+            else None
+        )
+        graph_service = GraphService(neo4j_provider)
         if minio_provider:
             await minio_provider.ensure_bucket()
         if milvus_provider:
@@ -234,12 +250,15 @@ def build_lifespan(
         app.state.milvus_provider = milvus_provider
         app.state.reranker_provider = reranker_provider
         app.state.retrieval_service = retrieval_service
+        app.state.graph_service = graph_service
         app.state.audit_repository = AuditRepository(session_factory, tracer)
-        app.state.case_repository = CaseRepository(session_factory)
+        app.state.index_repository = IndexRepository(session_factory, tracer)
+        app.state.case_repository = CaseRepository(session_factory, app.state.index_repository)
         app.state.review_repository = DiagnosisReviewRepository(session_factory)
         app.state.tool_registry = build_registry(
             mysql_provider, timeseries_provider, tracer, retrieval_service
         )
+        register_graph_tool(app.state.tool_registry, graph_service, tracer)
         register_review_tool(app.state.tool_registry, app.state.review_repository)
         app.state.model_gateway = model_gateway
         app.state.session_store = RedisSessionStore(
@@ -255,6 +274,8 @@ def build_lifespan(
                 await _close("reranker", reranker_provider.close())
             if milvus_provider:
                 await _close("milvus", milvus_provider.close())
+            if neo4j_provider:
+                await _close("neo4j", neo4j_provider.close())
             await _close("tracer_flush", tracer.flush())
             await _close("tracer_shutdown", tracer.shutdown())
             await _close("redis", redis.aclose())

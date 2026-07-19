@@ -23,7 +23,10 @@ class CaseStatus(StrEnum):
 
 class CaseIndexStatus(StrEnum):
     PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
     INDEXED = "INDEXED"
+    DEGRADED = "DEGRADED"
     FAILED = "FAILED"
     TOMBSTONED = "TOMBSTONED"
 
@@ -91,6 +94,8 @@ class DiagnosisCase(StrictModel):
     index_error_code: str | None = None
     is_active: bool = False
     supersedes_case_id: str | None = None
+    index_job_id: str | None = None
+    graph_projection_status: str | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime

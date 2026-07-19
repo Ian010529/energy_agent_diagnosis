@@ -43,6 +43,7 @@ def build_evidence_package(
         manual_evidence=[item for item in ranked if item.source_type == SourceType.MANUAL][:3],
         ticket_evidence=[item for item in ranked if item.source_type == SourceType.TICKET][:2],
         case_evidence=[item for item in ranked if item.source_type == SourceType.CASE][:3],
+        graph_relations=[item for item in ranked if item.source_type == SourceType.GRAPH][:2],
         timeseries_summary_ref=timeseries_summary_ref,
         candidate_counts=candidate_counts,
         degraded_components=sorted(set(degraded_components)),

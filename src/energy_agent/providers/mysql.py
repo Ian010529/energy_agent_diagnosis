@@ -110,7 +110,7 @@ class MySQLDiagnosisProvider:
     ) -> list[dict[str, object]]:
         query = select(DiagnosisCaseModel).where(
             DiagnosisCaseModel.review_status == "APPROVED",
-            DiagnosisCaseModel.index_status == "INDEXED",
+            DiagnosisCaseModel.index_status.in_(["INDEXED", "DEGRADED"]),
             DiagnosisCaseModel.is_active.is_(True),
         )
         for name in ("device_type", "device_model", "manufacturer", "alarm_name"):

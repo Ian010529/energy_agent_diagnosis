@@ -17,6 +17,7 @@ class SourceType(StrEnum):
     MANUAL = "manual"
     TICKET = "ticket"
     CASE = "case"
+    GRAPH = "graph"
 
 
 class QueryRewrite(StrictModel):
@@ -88,6 +89,7 @@ class EvidencePackage(StrictModel):
     manual_evidence: list[RankedEvidence]
     ticket_evidence: list[RankedEvidence]
     case_evidence: list[RankedEvidence] = Field(default_factory=list)
+    graph_relations: list[RankedEvidence] = Field(default_factory=list)
     timeseries_summary_ref: str | None = None
     candidate_counts: dict[str, int]
     degraded_components: list[str]

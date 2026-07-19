@@ -30,6 +30,9 @@ class DiagnosisRunRepository:
             status=model.status,
             parent_run_id=model.parent_run_id,
             run_type=model.run_type,
+            diagnosis_template_id=model.diagnosis_template_id,
+            diagnosis_template_version=model.diagnosis_template_version,
+            alarm_category=model.alarm_category,
             started_at=ensure_utc(model.started_at),
             ended_at=ensure_utc(model.ended_at) if model.ended_at else None,
             created_at=ensure_utc(model.created_at),
@@ -103,6 +106,25 @@ class DiagnosisRunRepository:
                     model.updated_at = utc_now()
         except Exception as exc:
             raise DependencyUnavailableError("MySQL diagnosis run update failed") from exc
+
+    async def set_template(
+        self,
+        run_id: str,
+        *,
+        template_id: str | None,
+        template_version: str | None,
+        alarm_category: str | None,
+    ) -> None:
+        try:
+            async with self.session_factory.begin() as session:
+                model = await session.get(DiagnosisRunModel, run_id)
+                if model:
+                    model.diagnosis_template_id = template_id
+                    model.diagnosis_template_version = template_version
+                    model.alarm_category = alarm_category
+                    model.updated_at = utc_now()
+        except Exception as exc:
+            raise DependencyUnavailableError("MySQL diagnosis template update failed") from exc
 
 
 class DiagnosisResultRepository:

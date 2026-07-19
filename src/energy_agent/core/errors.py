@@ -188,3 +188,23 @@ class RerankerResponseError(RagError):
 
 class RetrievalChannelsFailedError(DependencyUnavailableError):
     code = "RETRIEVAL_ALL_CHANNELS_FAILED"
+
+
+class IndexJobNotFoundError(ResourceNotFoundError):
+    code = "INDEX_JOB_NOT_FOUND"
+
+
+class IndexJobStateConflictError(ConflictError):
+    code = "INDEX_JOB_STATE_CONFLICT"
+
+
+class RabbitMQUnavailableError(DependencyUnavailableError):
+    code = "RABBITMQ_UNAVAILABLE"
+
+
+class GraphUnavailableError(DependencyUnavailableError):
+    code = "GRAPH_UNAVAILABLE"
+
+
+class TemplateNotFoundDomainError(InvalidRequestError):
+    code = "TEMPLATE_NOT_FOUND"

@@ -77,12 +77,34 @@ class AlarmDetailInput(StrictModel):
 class TimeseriesWindowInput(StrictModel):
     context: ToolContext
     device_id: str
+    measurements: list[str] = Field(default_factory=lambda: ["pcs_metrics"], min_length=1)
     metrics: list[str] = Field(min_length=1)
     start_time: str
     end_time: str
     aggregation: str = "trend"
     granularity: str = "5m"
     max_points: int = Field(default=500, ge=1, le=5000)
+
+    @model_validator(mode="after")
+    def validate_controlled_measurements(self) -> "TimeseriesWindowInput":
+        allowed = {
+            "pcs_metrics",
+            "fan_metrics",
+            "environment_metrics",
+            "inverter_metrics",
+        }
+        if not set(self.measurements).issubset(allowed):
+            raise ValueError("TIMESERIES_MEASUREMENT_INVALID")
+        return self
+
+
+class GraphRelationsInput(StrictModel):
+    context: ToolContext
+    alarm_name: str
+    device_type: str | None = None
+    component: str | None = None
+    relation_depth: int = Field(default=2, ge=1, le=3)
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 class ManualSearchInput(StrictModel):

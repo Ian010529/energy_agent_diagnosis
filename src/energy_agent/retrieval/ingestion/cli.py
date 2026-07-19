@@ -4,6 +4,7 @@ from pathlib import Path
 
 from energy_agent.core.config import Settings
 from energy_agent.core.lifecycle import create_tracer
+from energy_agent.indexing.repository import IndexRepository
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 from energy_agent.persistence.repositories.manual_document import ManualDocumentRepository
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
@@ -62,13 +63,17 @@ async def run() -> None:
     try:
         await minio.ensure_bucket()
         await milvus.ensure_collections()
+        factory = create_session_factory(engine)
+        index_repository = IndexRepository(factory, tracer)
         service = DocumentIngestionService(
-            repository=ManualDocumentRepository(create_session_factory(engine)),
+            repository=ManualDocumentRepository(factory, index_repository),
             minio=minio,
             milvus=milvus,
             embedding=embedding,
             tracer=tracer,
             max_bytes=settings.document_max_bytes,
+            index_execution_mode=settings.index_execution_mode,
+            index_max_attempts=settings.index_max_attempts,
         )
         result = await service.ingest(
             DocumentManifest(

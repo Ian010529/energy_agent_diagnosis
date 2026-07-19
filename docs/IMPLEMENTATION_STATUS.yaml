@@ -11,12 +11,12 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_4_HUMAN_COLLABORATION_AND_CASE_LIFECYCLE
+  id: PHASE_5_ASYNC_INDEX_GRAPH_AND_SCENARIO_EXPANSION
   status: COMPLETED
   objective: >
-    完成人工补充上下文恢复、人工根因确认、角色边界、审计、
-    案例草稿与审核状态机、案例版本管理、审核案例 Milvus 索引
-    及高可信案例召回。
+    完成 RabbitMQ 异步索引闭环、索引任务与 outbox、重试和 DLQ、
+    Neo4j 模板与审核案例关系投影、图谱补充 Tool，以及 PCS 和
+    光伏逆变器五类优先告警的模板化诊断。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -57,22 +57,23 @@ last_completed:
   - phase_2_first_diagnosis_vertical_slice
   - phase_3_complete_rag
   - phase_4_human_collaboration_and_case_lifecycle
+  - phase_5_async_index_graph_and_scenario_expansion
 
 current_task: []
 
 next_phase:
-  id: PHASE_5_ASYNC_INDEX_GRAPH_AND_SCENARIO_EXPANSION
+  id: PHASE_6_EVALUATION_RISK_AND_PILOT_HARDENING
   status: NOT_STARTED
 
 next_task:
-  - wait_for_phase_5_prompt
+  - wait_for_phase_6_prompt
 
 blockers: []
 
 external_validation:
   langfuse:
     status: PASSED
-    reason: authenticated_rag_trace_flushed
+    reason: authenticated_rag_and_async_worker_traces_flushed
   model_gateway:
     status: PASSED
     reason: openai_responses_strict_structured_output
@@ -88,5 +89,17 @@ external_validation:
   case_retrieval:
     status: PASSED
     reason: new_session_recalled_approved_indexed_active_case_with_versioned_citation
+  rabbitmq_index:
+    status: PASSED
+    reason: persistent_confirmed_publish_manual_ack_retry_dlq_and_live_async_entities_verified
+  neo4j:
+    status: PASSED
+    reason: schema_template_bootstrap_case_projection_query_and_tombstone_verified
+  graph_tool:
+    status: PASSED
+    reason: real_neo4j_relation_query_and_non_blocking_degradation_verified
+  phase5_scenarios:
+    status: PASSED
+    reason: five_templates_across_pcs_and_pv_inverter_completed_with_shared_langgraph
 
-updated_at: "2026-07-18T16:16:19Z"
+updated_at: "2026-07-18T17:42:53Z"

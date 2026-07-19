@@ -18,6 +18,13 @@ class ActorContext:
 
 
 @dataclass(frozen=True, slots=True)
+class ServiceActorContext:
+    actor_id: str
+    actor_role: str = "service"
+    actor_kind: str = "service"
+
+
+@dataclass(frozen=True, slots=True)
 class RequestContext:
     trace_id: str
     request_id: str

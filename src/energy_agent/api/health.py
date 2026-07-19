@@ -31,6 +31,7 @@ class ReadyDependencies(StrictModel):
 class ReadyResponse(StrictModel):
     status: Literal["ready", "not_ready"]
     dependencies: ReadyDependencies
+    capabilities: dict[str, Literal["ready", "degraded", "not_ready"]]
     trace_id: str
 
 
@@ -96,5 +97,16 @@ async def ready(request: Request, response: Response) -> ReadyResponse:
             embedding=embedding,
             reranker=reranker,
         ),
+        capabilities={
+            "diagnosis": "ready" if status == "ready" else "not_ready",
+            "retrieval": (
+                "ready"
+                if settings.retrieval_mode == "hybrid"
+                and all(item == "up" for item in (minio, milvus, embedding))
+                else "degraded"
+            ),
+            "indexing": ("degraded" if settings.index_execution_mode == "rabbitmq" else "ready"),
+            "graph": "ready" if settings.graph_mode == "neo4j" else "degraded",
+        },
         trace_id=context.trace_id,
     )

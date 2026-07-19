@@ -41,15 +41,28 @@ class InfluxTimeseriesProvider:
         start_time: str,
         end_time: str,
         max_points: int,
+        measurements: list[str] | None = None,
     ) -> dict[str, object]:
+        selected_measurements = measurements or ["pcs_metrics"]
+        allowed_measurements = {
+            "pcs_metrics",
+            "fan_metrics",
+            "environment_metrics",
+            "inverter_metrics",
+        }
+        if not set(selected_measurements).issubset(allowed_measurements):
+            raise ValueError("TIMESERIES_MEASUREMENT_INVALID")
         escaped_device = device_id.replace('"', '\\"')
         metric_filter = " or ".join(
             f'r.metric_name == "{metric.replace(chr(34), "")}"' for metric in metrics
         )
+        measurement_filter = " or ".join(
+            f'r._measurement == "{measurement}"' for measurement in selected_measurements
+        )
         flux = (
             f'from(bucket: "{self.bucket}")'
             f" |> range(start: {start_time}, stop: {end_time})"
-            ' |> filter(fn: (r) => r._measurement == "pcs_metrics")'
+            f" |> filter(fn: (r) => {measurement_filter})"
             f' |> filter(fn: (r) => r.device_id == "{escaped_device}")'
             f" |> filter(fn: (r) => {metric_filter})"
             ' |> filter(fn: (r) => r._field == "value")'

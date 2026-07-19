@@ -2,7 +2,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from energy_agent.core.context import ActorContext
+from energy_agent.core.context import ActorContext, ServiceActorContext
 from energy_agent.core.errors import DependencyUnavailableError
 from energy_agent.core.time import utc_now
 from energy_agent.observability.redaction import redact
@@ -18,7 +18,7 @@ class AuditRepository:
     async def write(
         self,
         *,
-        actor: ActorContext,
+        actor: ActorContext | ServiceActorContext,
         action: str,
         resource_type: str,
         resource_id: str,

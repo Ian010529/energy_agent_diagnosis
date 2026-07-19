@@ -116,6 +116,7 @@ class FakeInflux:
         start_time: str,
         end_time: str,
         max_points: int,
+        measurements: list[str] | None = None,
     ) -> dict[str, dict[str, object]]:
         return {
             metric: {
@@ -233,6 +234,6 @@ async def test_existing_langgraph_completes_with_full_hybrid_without_vector_degr
     )
     state = DiagnosisState.model_validate(output)
     assert state.phase == DiagnosisPhase.COMPLETED
-    assert state.degraded_components == []
+    assert state.degraded_components == ["neo4j"]
     assert "vector_retrieval" not in state.degraded_components
     assert {item.source_type for item in state.evidence} >= {"manual", "ticket"}

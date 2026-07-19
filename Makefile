@@ -9,7 +9,12 @@
 	up-phase4 down-phase4 test-unit-phase4 test-contract-phase4 \
 	test-integration-clarification test-integration-roles test-integration-cases \
 	test-integration-case-retrieval smoke-human-clarification smoke-case-lifecycle \
-	smoke-case-index smoke-case-retrieval smoke-langfuse-case phase4-check
+	smoke-case-index smoke-case-retrieval smoke-langfuse-case phase4-check \
+	up-phase5 down-phase5 test-unit-phase5 test-contract-phase5 \
+	test-integration-rabbitmq test-integration-index-worker test-integration-neo4j \
+	test-integration-graph-tool test-integration-scenarios smoke-rabbit-index \
+	smoke-index-retry smoke-neo4j smoke-graph-tool smoke-phase5-scenarios \
+	smoke-async-case-index smoke-langfuse-worker phase5-check
 
 LOCAL_TEST_ENV = RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
 	EMBEDDING_MODE=disabled RERANK_MODE=disabled MODEL_MODE=disabled \
@@ -166,3 +171,52 @@ phase4-check: verify-design lint typecheck phase3-check test-unit-phase4 \
 	test-contract-phase4 test-integration-clarification test-integration-roles \
 	test-integration-cases test-integration-case-retrieval \
 	smoke-human-clarification smoke-case-lifecycle
+
+up-phase5:
+	docker compose up -d --wait mysql redis influxdb minio etcd milvus rabbitmq neo4j
+
+down-phase5:
+	docker compose down
+
+test-unit-phase5:
+	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase5_async_graph_scenarios.py
+
+test-contract-phase5:
+	$(LOCAL_TEST_ENV) uv run pytest tests/contract/test_phase5_contracts.py
+
+test-integration-rabbitmq:
+	uv run pytest -m integration tests/integration/phase5/test_rabbitmq.py
+
+test-integration-index-worker:
+	uv run pytest -m integration tests/integration/phase5/test_index_worker.py
+
+test-integration-neo4j:
+	uv run pytest -m integration tests/integration/phase5/test_neo4j.py
+
+test-integration-graph-tool:
+	uv run pytest -m integration tests/integration/phase5/test_graph_tool.py
+
+test-integration-scenarios:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase5/test_scenarios.py
+
+smoke-rabbit-index: test-integration-index-worker
+
+smoke-index-retry: test-integration-rabbitmq
+
+smoke-neo4j: test-integration-neo4j
+
+smoke-graph-tool: test-integration-graph-tool
+
+smoke-phase5-scenarios: test-integration-scenarios
+
+smoke-async-case-index:
+	PHASE5_LIVE=1 uv run pytest -m integration \
+		tests/integration/phase5/test_async_index_live.py
+
+smoke-langfuse-worker:
+	PHASE5_LIVE=1 OBSERVABILITY_MODE=langfuse uv run pytest -m integration \
+		tests/integration/phase5/test_async_index_live.py
+
+phase5-check: verify-design lint typecheck phase4-check test-unit-phase5 \
+	test-contract-phase5 test-integration-rabbitmq test-integration-index-worker \
+	test-integration-neo4j test-integration-graph-tool test-integration-scenarios

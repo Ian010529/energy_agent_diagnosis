@@ -87,6 +87,7 @@ def build_registry(
                 request.start_time,
                 request.end_time,
                 request.max_points,
+                request.measurements,
             ),
         )
         if not any(not summary.get("missing", True) for summary in data.values()):
@@ -150,10 +151,27 @@ def build_registry(
         )
         metadata = ticket_result.retrieval_metadata
         combined = ticket_result.model_dump(mode="json")
-        combined["ranked_evidence"] = [
+        merged = [
             *ticket_result.model_dump(mode="json")["ranked_evidence"],
             *case_result.model_dump(mode="json")["ranked_evidence"],
-        ][: request.top_k]
+        ]
+        merged.sort(key=lambda row: float(row.get("final_score", 0)), reverse=True)
+        per_source: dict[str, int] = {}
+        seen: set[str] = set()
+        ranked: list[dict[str, object]] = []
+        for row in merged:
+            source = str(row.get("source_type", "ticket"))
+            identity = " ".join(str(row.get("content_summary", "")).lower().split())
+            if identity in seen or per_source.get(source, 0) >= request.top_k:
+                continue
+            seen.add(identity)
+            per_source[source] = per_source.get(source, 0) + 1
+            ranked.append(row)
+            if len(ranked) >= request.top_k:
+                break
+        combined["ranked_evidence"] = ranked
+        combined["retrieval_metadata"]["source_counts"] = per_source
+        combined["retrieval_metadata"]["final_count"] = len(ranked)
         degraded = sorted(
             set(metadata.degraded_components + case_result.retrieval_metadata.degraded_components)
         )

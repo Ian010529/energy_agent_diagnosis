@@ -12,6 +12,8 @@ class ReviewStatus(StrEnum):
 
 class IndexStatus(StrEnum):
     PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
     INDEXED = "INDEXED"
     DEGRADED = "DEGRADED"
     FAILED = "FAILED"
@@ -39,3 +41,4 @@ class IngestionResult(StrictModel):
     chunk_count: int
     index_status: IndexStatus
     existing: bool = False
+    job_id: str | None = None

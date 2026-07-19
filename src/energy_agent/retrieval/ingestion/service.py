@@ -7,6 +7,7 @@ from energy_agent.core.errors import (
     DocumentTooLargeError,
 )
 from energy_agent.core.ids import new_id
+from energy_agent.indexing.contracts import EntityType, IndexJobCreate, IndexOperation
 from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.manual_document import ManualDocumentRepository
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
@@ -31,6 +32,8 @@ class DocumentIngestionService:
         embedding: OpenAICompatibleEmbeddingProvider | None,
         tracer: Tracer,
         max_bytes: int,
+        index_execution_mode: str = "sync",
+        index_max_attempts: int = 3,
     ) -> None:
         self.repository = repository
         self.minio = minio
@@ -38,6 +41,8 @@ class DocumentIngestionService:
         self.embedding = embedding
         self.tracer = tracer
         self.max_bytes = max_bytes
+        self.index_execution_mode = index_execution_mode
+        self.index_max_attempts = index_max_attempts
 
     async def ingest(self, manifest: DocumentManifest, content: bytes) -> IngestionResult:
         if len(content) > self.max_bytes:
@@ -98,7 +103,21 @@ class DocumentIngestionService:
             ) as span:
                 chunks = chunk_blocks(manifest.doc_id, manifest.version, blocks)
                 span.set_output({"chunk_count": len(chunks)})
-            await self.repository.create_pending(
+            index_request = (
+                IndexJobCreate(
+                    entity_type=EntityType.MANUAL_DOCUMENT,
+                    entity_id=manifest.doc_id,
+                    entity_version=generation,
+                    operation=IndexOperation.UPSERT,
+                    trace_id=trace_id,
+                    correlation_id=manifest.doc_id,
+                    causation_id=generation,
+                    max_attempts=self.index_max_attempts,
+                )
+                if self.index_execution_mode == "rabbitmq"
+                else None
+            )
+            job_id = await self.repository.create_pending(
                 manifest,
                 object_key=object_key,
                 checksum=checksum,
@@ -108,7 +127,19 @@ class DocumentIngestionService:
                 index_generation=generation,
                 embedding_model=self.embedding.model if self.embedding else None,
                 embedding_dimension=self.embedding.dimension if self.embedding else None,
+                index_request=index_request,
             )
+            if index_request:
+                status = IndexStatus.QUEUED
+                return IngestionResult(
+                    doc_id=manifest.doc_id,
+                    version=manifest.version,
+                    object_key=object_key,
+                    file_sha256=checksum,
+                    chunk_count=len(chunks),
+                    index_status=status,
+                    job_id=job_id,
+                )
             status = IndexStatus.DEGRADED
             error_code: str | None = "EMBEDDING_UNAVAILABLE"
             if self.embedding and self.milvus:
@@ -158,4 +189,5 @@ class DocumentIngestionService:
             file_sha256=checksum,
             chunk_count=len(chunks),
             index_status=status,
+            job_id=None,
         )
