@@ -1,0 +1,9 @@
+{
+  "dataset_version": "1.3.0",
+  "total_unique_input_text": 250,
+  "unique_input_text_by_split": {
+    "calibration": 100,
+    "holdout": 50,
+    "regression": 100
+  }
+}

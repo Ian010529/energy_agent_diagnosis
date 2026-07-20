@@ -69,6 +69,9 @@ class DiagnosisRunModel(Base):
     diagnosis_template_id: Mapped[str | None] = mapped_column(String(128))
     diagnosis_template_version: Mapped[str | None] = mapped_column(String(32))
     alarm_category: Mapped[str | None] = mapped_column(String(64))
+    first_event_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    guardrail_status: Mapped[str | None] = mapped_column(String(32))
+    failure_category: Mapped[str | None] = mapped_column(String(64))
 
 
 class DiagnosisResultModel(Base):
@@ -90,6 +93,29 @@ class DiagnosisResultModel(Base):
     risk_level: Mapped[str] = mapped_column(String(16), nullable=False)
     warnings: Mapped[list[str]] = mapped_column(JSON, nullable=False)
     degraded_components: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    recommended_actions: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    guardrail_decision: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class DiagnosisAlarmDedupModel(Base):
+    __tablename__ = "diagnosis_alarm_dedup"
+    __table_args__ = (Index("ix_alarm_dedup_lookup", "device_id", "alarm_category", "expires_at"),)
+
+    dedup_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    alarm_category: Mapped[str] = mapped_column(String(128), nullable=False)
+    session_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_session.id"), nullable=False
+    )
+    alarm_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
 

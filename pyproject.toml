@@ -7,8 +7,7 @@ requires-python = ">=3.12,<3.15"
 dependencies = [
   "alembic>=1.16,<2",
   "aio-pika>=9.5,<10",
-  "asyncmy>=0.2.10,<1",
-  "cryptography>=45,<48",
+  "cryptography>=48.0.1,<49",
   "fastapi>=0.116,<1",
   "httpx[socks]>=0.28,<1",
   "influxdb-client>=1.49,<2",
@@ -24,11 +23,15 @@ dependencies = [
   "redis>=6.2,<9",
   "sqlalchemy[asyncio]>=2.0.41,<3",
   "uvicorn[standard]>=0.35,<1",
+  "prometheus-client>=0.22,<1",
+  "aiomysql>=0.2,<1",
 ]
 
 [dependency-groups]
 dev = [
+  "bandit>=1.8,<2",
   "mypy>=1.16,<2",
+  "pip-audit>=2.9,<3",
   "pytest>=8.4,<10",
   "pytest-asyncio>=1.0,<2",
   "ruff>=0.12,<1",

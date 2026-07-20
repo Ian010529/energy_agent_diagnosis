@@ -4,4 +4,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-artifacts/synthetic-data/
+artifacts/synthetic-data/*
+!artifacts/synthetic-data/pilot_medium_v1-1.3.0/
+!artifacts/synthetic-data/pilot_medium_v1-1.3.0/**

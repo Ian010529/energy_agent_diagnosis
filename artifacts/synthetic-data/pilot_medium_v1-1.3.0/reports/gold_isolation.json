@@ -1,0 +1,6 @@
+{
+  "holdout_ticket_device_leak_count": 0,
+  "runtime_gold_field_leak_count": 0,
+  "static_forbidden_overlap_count": 0,
+  "status": "PASSED_STATIC_REQUIRES_FULL_API_RERUN"
+}

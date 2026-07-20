@@ -13,6 +13,7 @@ from energy_agent.persistence.models import (
     AuditEventModel,
     CaseReviewEventModel,
     DeviceProfileModel,
+    DiagnosisAlarmDedupModel,
     DiagnosisCaseModel,
     DiagnosisResultModel,
     DiagnosisReviewModel,
@@ -25,7 +26,7 @@ from energy_agent.persistence.models import (
 )
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 
-MYSQL_DSN = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
+MYSQL_DSN = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
 DEVICE = "PCS-PHASE4-1"
 ALARM = "ALARM-PHASE4-1"
 ALARM_NAME = "PCS机柜温度持续升高"
@@ -66,23 +67,8 @@ class _Milvus:
 async def _reset_and_seed() -> None:
     engine = create_mysql_engine(MYSQL_DSN)
     factory = create_session_factory(engine)
+    await _clean_mysql()
     async with factory.begin() as session:
-        for model in (
-            AuditEventModel,
-            CaseReviewEventModel,
-            DiagnosisCaseModel,
-            DiagnosisReviewModel,
-            DiagnosisResultModel,
-            DiagnosisStepLogModel,
-            DiagnosisRunModel,
-            DiagnosisSessionModel,
-            MaintenanceTicketModel,
-            ManualChunkModel,
-            ManualDocumentModel,
-            AlarmEventModel,
-            DeviceProfileModel,
-        ):
-            await session.execute(delete(model))
         session.add(
             DeviceProfileModel(
                 device_id=DEVICE,
@@ -149,6 +135,80 @@ async def _reset_and_seed() -> None:
     await engine.dispose()
 
 
+async def _clean_mysql() -> None:
+    engine = create_mysql_engine(MYSQL_DSN)
+    factory = create_session_factory(engine)
+    async with factory.begin() as session:
+        session_ids = list(
+            (
+                await session.execute(
+                    select(DiagnosisSessionModel.id).where(
+                        DiagnosisSessionModel.device_id == DEVICE
+                    )
+                )
+            ).scalars()
+        )
+        case_ids = list(
+            (
+                await session.execute(
+                    select(DiagnosisCaseModel.case_id).where(
+                        DiagnosisCaseModel.source_session_id.in_(session_ids)
+                    )
+                )
+            ).scalars()
+        )
+        if case_ids:
+            await session.execute(
+                delete(CaseReviewEventModel).where(CaseReviewEventModel.case_id.in_(case_ids))
+            )
+            await session.execute(
+                delete(AuditEventModel).where(AuditEventModel.case_id.in_(case_ids))
+            )
+            await session.execute(
+                delete(DiagnosisCaseModel).where(DiagnosisCaseModel.case_id.in_(case_ids))
+            )
+        if session_ids:
+            await session.execute(
+                delete(AuditEventModel).where(AuditEventModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisReviewModel).where(DiagnosisReviewModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisResultModel).where(DiagnosisResultModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisStepLogModel).where(
+                    DiagnosisStepLogModel.session_id.in_(session_ids)
+                )
+            )
+            await session.execute(
+                delete(DiagnosisAlarmDedupModel).where(
+                    DiagnosisAlarmDedupModel.session_id.in_(session_ids)
+                )
+            )
+            await session.execute(
+                delete(DiagnosisRunModel).where(DiagnosisRunModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisSessionModel).where(DiagnosisSessionModel.id.in_(session_ids))
+            )
+        await session.execute(
+            delete(MaintenanceTicketModel).where(MaintenanceTicketModel.device_id == DEVICE)
+        )
+        await session.execute(
+            delete(ManualChunkModel).where(ManualChunkModel.chunk_id == "CHUNK-PHASE4-1")
+        )
+        await session.execute(
+            delete(ManualDocumentModel).where(ManualDocumentModel.doc_id == "DOC-PHASE4-1")
+        )
+        await session.execute(delete(AlarmEventModel).where(AlarmEventModel.alarm_id == ALARM))
+        await session.execute(
+            delete(DeviceProfileModel).where(DeviceProfileModel.device_id == DEVICE)
+        )
+    await engine.dispose()
+
+
 async def _database_readback(session_id: str, case_id: str) -> dict[str, object]:
     engine = create_mysql_engine(MYSQL_DSN)
     factory = create_session_factory(engine)
@@ -191,15 +251,15 @@ async def _database_readback(session_id: str, case_id: str) -> dict[str, object]
 def phase4_data() -> None:
     asyncio.run(_reset_and_seed())
     yield
-    asyncio.run(_reset_and_seed())
+    asyncio.run(_clean_mysql())
 
 
-def _create(client: TestClient) -> dict[str, object]:
+def _create(client: TestClient, *, source: str = "alarm") -> dict[str, object]:
     response = client.post(
         "/api/v1/diagnosis/sessions",
         headers=OPERATOR,
         json={
-            "source": "alarm",
+            "source": source,
             "site_id": "SITE-04",
             "device_id": DEVICE,
             "alarm_id": ALARM,
@@ -382,7 +442,7 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         if not live:
             assert case_id in milvus.rows
 
-        second = _create(client)
+        second = _create(client, source="chat")
         second_response = client.post(
             "/api/v1/diagnosis/chat",
             headers=OPERATOR,

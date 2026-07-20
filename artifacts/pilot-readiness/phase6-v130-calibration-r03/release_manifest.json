@@ -1,0 +1,58 @@
+{
+  "commit_sha": "402db0bbb98a25f6d2b32a61ff04bf85b74d1b58",
+  "build_time": "2026-07-20T17:24:53.447588+00:00",
+  "application_version": "0.1.0",
+  "python_version": "3.12.13",
+  "migration_head": "0006_phase6",
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "data_validation_status": "PASSED",
+  "waiver_id": null,
+  "evaluation_run_id": "phase6-v130-calibration-r03",
+  "technical_gate": "PASSED",
+  "business_thresholds": "NOT_CONFIGURED",
+  "templates": [
+    {
+      "template_id": "pcs_temperature_abnormal_v1",
+      "template_version": "1.1.0"
+    },
+    {
+      "template_id": "pcs_fan_abnormal_v1",
+      "template_version": "1.1.0"
+    },
+    {
+      "template_id": "pcs_temperature_sensor_abnormal_v1",
+      "template_version": "1.0.0"
+    },
+    {
+      "template_id": "pv_inverter_communication_abnormal_v1",
+      "template_version": "1.0.0"
+    },
+    {
+      "template_id": "pv_inverter_power_abnormal_v1",
+      "template_version": "1.0.0"
+    }
+  ],
+  "prompt_versions": [
+    "diag.clarification_generator.v1.0",
+    "diag.reason_generator.v1.0",
+    "diag.response_generator.v1.0"
+  ],
+  "rag_versions": {
+    "query_rewrite": "rag.query_rewrite.v1.0",
+    "evidence_package": "rag.evidence.v1.0"
+  },
+  "providers": {
+    "model_mode": "openai",
+    "model_name": "gpt-4o-mini",
+    "embedding_mode": "openai_compatible",
+    "embedding_model": "BAAI/bge-m3",
+    "rerank_mode": "http",
+    "rerank_model": "BAAI/bge-reranker-v2-m3",
+    "retrieval_mode": "hybrid",
+    "query_rewrite_mode": "model_enhanced",
+    "graph_mode": "neo4j",
+    "observability_mode": "langfuse"
+  },
+  "known_limitations": []
+}

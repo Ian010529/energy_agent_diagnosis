@@ -19,7 +19,7 @@ def test_liveness_contract_and_trace_headers() -> None:
 def test_readiness_contract_when_dependencies_are_down() -> None:
     settings = Settings(
         app_env="test",
-        mysql_dsn="mysql+asyncmy://energy:energy_dev@127.0.0.1:1/energy_agent",
+        mysql_dsn="mysql+aiomysql://energy:energy_dev@127.0.0.1:1/energy_agent",
         redis_url="redis://127.0.0.1:1/0",
         influxdb_url="http://127.0.0.1:1",
     )

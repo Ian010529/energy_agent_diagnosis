@@ -1,5 +1,8 @@
 import asyncio
+import hashlib
 import logging
+import re
+from collections.abc import Callable
 from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import Any, Literal, Self
@@ -15,9 +18,11 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
         self,
         manager: AbstractContextManager[Any],
         mode: ContentMode,
+        on_failure: Callable[[], None],
     ) -> None:
         self.manager = manager
         self.mode = mode
+        self.on_failure = on_failure
         self.observation: Any = None
         self.error_recorded = False
 
@@ -25,6 +30,7 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
         try:
             self.observation = self.manager.__enter__()
         except Exception:
+            self.on_failure()
             log_event(logger, logging.ERROR, "trace_export_failed")
         return self
 
@@ -41,6 +47,7 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
         try:
             self.manager.__exit__(exc_type, exc_value, traceback)
         except Exception:
+            self.on_failure()
             log_event(logger, logging.ERROR, "trace_export_failed")
         return False
 
@@ -50,6 +57,7 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
         try:
             self.observation.update(output=redact(output, mode=self.mode))
         except Exception:
+            self.on_failure()
             log_event(logger, logging.ERROR, "trace_export_failed")
 
     def record_event(self, name: str, metadata: dict[str, object] | None = None) -> None:
@@ -61,6 +69,7 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
                 metadata=redact(metadata or {}, mode=self.mode),
             )
         except Exception:
+            self.on_failure()
             log_event(logger, logging.ERROR, "trace_export_failed")
 
     def record_error(self, error: BaseException) -> None:
@@ -73,6 +82,7 @@ class LangFuseSpan(AbstractContextManager["LangFuseSpan"]):
                 status_message=type(error).__name__,
             )
         except Exception:
+            self.on_failure()
             log_event(logger, logging.ERROR, "trace_export_failed")
 
 
@@ -100,10 +110,17 @@ class LangFuseTracer:
         self.client: Any = client
         self.mode = ContentMode(mode)
         self.shutdown_timeout_seconds = shutdown_timeout_seconds
+        self.export_failed = False
+
+    def _mark_export_failed(self) -> None:
+        self.export_failed = True
 
     @staticmethod
     def _langfuse_trace_id(trace_id: str) -> str:
-        return trace_id.replace("-", "")
+        compact = trace_id.replace("-", "").lower()
+        if re.fullmatch(r"[0-9a-f]{32}", compact):
+            return compact
+        return hashlib.sha256(trace_id.encode("utf-8")).hexdigest()[:32]
 
     def _start(
         self,
@@ -125,9 +142,10 @@ class LangFuseTracer:
         try:
             manager = self.client.start_as_current_observation(**kwargs)
         except Exception:
+            self._mark_export_failed()
             log_event(logger, logging.ERROR, "trace_export_failed")
             manager = _NoopManager()
-        return LangFuseSpan(manager, self.mode)
+        return LangFuseSpan(manager, self.mode, self._mark_export_failed)
 
     def start_trace(
         self, name: str, *, trace_id: str, metadata: dict[str, object] | None = None
@@ -156,6 +174,7 @@ class LangFuseTracer:
                 timeout=self.shutdown_timeout_seconds,
             )
         except Exception:
+            self._mark_export_failed()
             log_event(logger, logging.ERROR, "trace_export_failed")
 
     async def shutdown(self) -> None:
@@ -165,6 +184,7 @@ class LangFuseTracer:
                 timeout=self.shutdown_timeout_seconds,
             )
         except Exception:
+            self._mark_export_failed()
             log_event(logger, logging.ERROR, "trace_export_failed")
 
 

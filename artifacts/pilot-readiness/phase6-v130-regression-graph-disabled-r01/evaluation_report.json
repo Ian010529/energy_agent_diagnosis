@@ -1,0 +1,331 @@
+{
+  "business_thresholds": "NOT_CONFIGURED",
+  "commit_sha": "402db0bbb98a25f6d2b32a61ff04bf85b74d1b58",
+  "data_validation": {
+    "external_readback_path": "artifacts/pilot-readiness/data-1.3.0/external_load_readback.json",
+    "index_graph_readback_path": "artifacts/pilot-readiness/data-1.3.0/index_graph_readback.json",
+    "real_bge_m3": {
+      "dataset_id": "pilot_medium_v1",
+      "dataset_version": "1.3.0",
+      "effective_chunk_count": 3389,
+      "embedding_dimension": 1024,
+      "embedding_model": "BAAI/bge-m3",
+      "gate": {
+        "metric": "nearest_neighbor_similarity_above_0_95",
+        "observed": 101,
+        "observed_rate": 0.029802301563883152,
+        "result": "PASSED",
+        "threshold": 0.03
+      },
+      "milvus_readback_count": 3389,
+      "missing_chunk_count": 0,
+      "nearest_neighbor": {
+        "above_0.90": 1749,
+        "above_0.95": 101,
+        "above_0.98": 0,
+        "rate_above_0.90": 0.5160814399527884,
+        "rate_above_0.95": 0.029802301563883152,
+        "rate_above_0.98": 0.0
+      },
+      "status": "PASSED",
+      "unexpected_chunk_count": 0
+    },
+    "status": "PASSED"
+  },
+  "dataset": {
+    "id": "pilot_medium_v1",
+    "manifest_sha256": "5ee8c6c7042ee2c1759b0a3e8eddb2a877315bda024b14a28364254879ea2b2d",
+    "split": "regression",
+    "version": "1.3.0"
+  },
+  "degradation_results": [
+    {
+      "graph_mode": "disabled",
+      "profile": "observed_configuration",
+      "rerank_mode": "http",
+      "retrieval_mode": "hybrid",
+      "status": "EXECUTED",
+      "technical_gate": "FAILED"
+    },
+    {
+      "profile": "full_hybrid",
+      "reason": "Requires a separate controlled evaluation run.",
+      "status": "NOT_EXECUTED"
+    },
+    {
+      "profile": "keyword_only",
+      "reason": "Requires a separate controlled evaluation run.",
+      "status": "NOT_EXECUTED"
+    },
+    {
+      "profile": "hybrid_without_reranker",
+      "reason": "Requires a separate controlled evaluation run.",
+      "status": "NOT_EXECUTED"
+    }
+  ],
+  "evaluation_run_id": "phase6-v130-regression-graph-disabled-r01",
+  "known_limitations": [],
+  "metrics": {
+    "all_candidate_evidence_coverage": 1.0,
+    "answerable_session_failure_rate": 0.0,
+    "blocked_action_count": 0,
+    "by_evidence_profile": {
+      "CONFLICT_CASE_TIMESERIES": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 1.0,
+        "intervention_rate": 0.0,
+        "sample_count": 5,
+        "top1": 0.0,
+        "top3": 0.6
+      },
+      "CONFLICT_MANUAL_TICKET": {
+        "candidate_evidence_coverage": 0.0,
+        "completion_rate": 0.0,
+        "intervention_rate": 1.0,
+        "sample_count": 7,
+        "top1": 0.0,
+        "top3": 0.0
+      },
+      "GRAPH_SUPPLEMENT": {
+        "candidate_evidence_coverage": 0.0,
+        "completion_rate": 0.0,
+        "intervention_rate": 1.0,
+        "sample_count": 10,
+        "top1": 0.0,
+        "top3": 0.0
+      },
+      "TS_CASE": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.9090909090909091,
+        "intervention_rate": 0.09090909090909091,
+        "sample_count": 11,
+        "top1": 0.18181818181818182,
+        "top3": 0.9090909090909091
+      },
+      "TS_MANUAL": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.95,
+        "intervention_rate": 0.05,
+        "sample_count": 20,
+        "top1": 0.15,
+        "top3": 0.75
+      },
+      "TS_MANUAL_CASE": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.8333333333333334,
+        "intervention_rate": 0.16666666666666666,
+        "sample_count": 12,
+        "top1": 0.16666666666666666,
+        "top3": 0.6666666666666666
+      },
+      "TS_MANUAL_TICKET": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.9473684210526315,
+        "intervention_rate": 0.05263157894736842,
+        "sample_count": 19,
+        "top1": 0.10526315789473684,
+        "top3": 0.5263157894736842
+      },
+      "TS_TICKET_CASE": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 1.0,
+        "intervention_rate": 0.0,
+        "sample_count": 8,
+        "top1": 0.25,
+        "top3": 0.875
+      },
+      "WEAK_ONLY_ESCALATE": {
+        "candidate_evidence_coverage": 0.0,
+        "completion_rate": 0.0,
+        "intervention_rate": 1.0,
+        "sample_count": 8,
+        "top1": 0.0,
+        "top3": 0.0
+      }
+    },
+    "by_split": {
+      "regression": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.7,
+        "intervention_rate": 0.3,
+        "sample_count": 100,
+        "top1": 0.11,
+        "top3": 0.53
+      }
+    },
+    "by_template": {
+      "pcs_temperature_sensor_abnormal_v1": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.74,
+        "intervention_rate": 0.26,
+        "sample_count": 50,
+        "top1": 0.14,
+        "top3": 0.54
+      },
+      "pv_inverter_communication_abnormal_v1": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.66,
+        "intervention_rate": 0.34,
+        "sample_count": 50,
+        "top1": 0.08,
+        "top3": 0.52
+      }
+    },
+    "candidate_count_distribution": {
+      "0": 30,
+      "2": 9,
+      "3": 50,
+      "4": 11
+    },
+    "first_event_p50_seconds": 0.055473374435678124,
+    "first_event_p95_seconds": 0.28958433400839567,
+    "forbidden_assertion_count": 0,
+    "full_diagnosis_p50_seconds": 22.15244943741709,
+    "full_diagnosis_p95_seconds": 27.496094374917448,
+    "gold_leak_count": 0,
+    "gold_related_evidence_hit_rate": 0.68,
+    "guardrail_blocked_count": 0,
+    "high_risk_confirmation_coverage": 1.0,
+    "human_escalation": {
+      "f1": 0.6,
+      "false_negative": 5,
+      "false_positive": 15,
+      "intervention_rate": 0.3,
+      "precision": 0.5,
+      "recall": 0.75
+    },
+    "invalid_evidence_reference_count": 0,
+    "key_conclusion_evidence_coverage": 1.0,
+    "manual_sensitivity": {
+      "conflict": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.4166666666666667,
+        "intervention_rate": 0.5833333333333334,
+        "sample_count": 12,
+        "top1": 0.0,
+        "top3": 0.25
+      },
+      "manual_dominant": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.95,
+        "intervention_rate": 0.05,
+        "sample_count": 20,
+        "top1": 0.15,
+        "top3": 0.75
+      },
+      "weak_only_escalation": {
+        "candidate_evidence_coverage": 0.0,
+        "completion_rate": 0.0,
+        "intervention_rate": 1.0,
+        "sample_count": 8,
+        "top1": 0.0,
+        "top3": 0.0
+      },
+      "with_manual_evidence": {
+        "candidate_evidence_coverage": 1.0,
+        "completion_rate": 0.7,
+        "intervention_rate": 0.3,
+        "sample_count": 100,
+        "top1": 0.11,
+        "top3": 0.53
+      },
+      "without_manual_evidence": {
+        "candidate_evidence_coverage": 0.0,
+        "completion_rate": 0.0,
+        "intervention_rate": 0.0,
+        "sample_count": 0,
+        "top1": 0.0,
+        "top3": 0.0
+      }
+    },
+    "no_candidate_rate": 0.3,
+    "out_of_run_evidence_reference_count": 0,
+    "prompt_injection_escape_count": 0,
+    "sample_count": 100,
+    "session_failure_rate": 0.0,
+    "source_type_distribution": {
+      "alarm": 100,
+      "device": 100,
+      "manual": 200,
+      "ticket": 200,
+      "timeseries": 75
+    },
+    "tool_success_rate": 0.7916666666666666,
+    "top1": 0.11,
+    "top3": 0.53,
+    "uncited_candidate_count": 0,
+    "unknown_evidence_reference_count": 0,
+    "unsupported_strong_claim_count": 0
+  },
+  "recommendation": "NO_GO",
+  "release_manifest": {
+    "application_version": "0.1.0",
+    "build_time": "2026-07-20T18:49:16.928525+00:00",
+    "business_thresholds": "NOT_CONFIGURED",
+    "commit_sha": "402db0bbb98a25f6d2b32a61ff04bf85b74d1b58",
+    "data_validation_status": "PASSED",
+    "dataset_id": "pilot_medium_v1",
+    "dataset_version": "1.3.0",
+    "evaluation_run_id": "phase6-v130-regression-graph-disabled-r01",
+    "known_limitations": [],
+    "migration_head": "0006_phase6",
+    "prompt_versions": [
+      "diag.clarification_generator.v1.0",
+      "diag.reason_generator.v1.0",
+      "diag.response_generator.v1.0"
+    ],
+    "providers": {
+      "embedding_mode": "openai_compatible",
+      "embedding_model": "BAAI/bge-m3",
+      "graph_mode": "disabled",
+      "model_mode": "openai",
+      "model_name": "gpt-4o-mini",
+      "observability_mode": "langfuse",
+      "query_rewrite_mode": "model_enhanced",
+      "rerank_mode": "http",
+      "rerank_model": "BAAI/bge-reranker-v2-m3",
+      "retrieval_mode": "hybrid"
+    },
+    "python_version": "3.12.13",
+    "rag_versions": {
+      "evidence_package": "rag.evidence.v1.0",
+      "query_rewrite": "rag.query_rewrite.v1.0"
+    },
+    "technical_gate": "FAILED",
+    "templates": [
+      {
+        "template_id": "pcs_temperature_abnormal_v1",
+        "template_version": "1.1.0"
+      },
+      {
+        "template_id": "pcs_fan_abnormal_v1",
+        "template_version": "1.1.0"
+      },
+      {
+        "template_id": "pcs_temperature_sensor_abnormal_v1",
+        "template_version": "1.0.0"
+      },
+      {
+        "template_id": "pv_inverter_communication_abnormal_v1",
+        "template_version": "1.0.0"
+      },
+      {
+        "template_id": "pv_inverter_power_abnormal_v1",
+        "template_version": "1.0.0"
+      }
+    ],
+    "waiver_id": null
+  },
+  "technical_gate": "FAILED",
+  "technical_gate_checks": {
+    "answerable_session_failure_rate": true,
+    "full_diagnosis_p95_seconds": true,
+    "gold_leak_count": true,
+    "high_risk_confirmation_coverage": true,
+    "invalid_evidence_reference_count": true,
+    "prompt_injection_escape_count": true,
+    "tool_success_rate": false,
+    "unsupported_strong_claim_count": true
+  },
+  "waiver_id": null
+}

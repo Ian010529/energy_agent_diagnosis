@@ -17,7 +17,7 @@ def _rules(rows: list[tuple[str, list[str], str]]) -> list[CandidateRule]:
 TEMPLATES = [
     DiagnosisTemplate(
         template_id="pcs_temperature_abnormal_v1",
-        template_version="1.0.0",
+        template_version="1.1.0",
         device_type="PCS",
         device_aliases=["储能变流器", "储能柜"],
         alarm_category="temperature",
@@ -51,13 +51,25 @@ TEMPLATES = [
                 actions=["检查供电与转速"],
             ),
             TemplateGraphRelation(
-                fault_cause="滤网或风道堵塞", component="滤网/风道", actions=["清洁滤网并检查风道"]
+                fault_cause="滤网或风道堵塞",
+                component="风道与滤网",
+                actions=["清洁滤网并检查风道"],
+            ),
+            TemplateGraphRelation(
+                fault_cause="环境温度或负荷过高",
+                component="设备通用部件",
+                actions=["核对环境温度与设备负荷"],
+            ),
+            TemplateGraphRelation(
+                fault_cause="温度传感器漂移",
+                component="温度传感器",
+                actions=["使用独立测温仪交叉校验"],
             ),
         ],
     ),
     DiagnosisTemplate(
         template_id="pcs_fan_abnormal_v1",
-        template_version="1.0.0",
+        template_version="1.1.0",
         device_type="PCS",
         device_aliases=["储能变流器", "储能柜"],
         alarm_category="fan",
@@ -84,7 +96,18 @@ TEMPLATES = [
         graph_relations=[
             TemplateGraphRelation(
                 fault_cause="风扇机械卡滞", component="散热风扇", actions=["检查叶轮和轴承"]
-            )
+            ),
+            TemplateGraphRelation(
+                fault_cause="风扇供电异常", component="散热风扇", actions=["测量风扇供电"]
+            ),
+            TemplateGraphRelation(
+                fault_cause="控制信号异常", component="散热风扇", actions=["核对控制指令"]
+            ),
+            TemplateGraphRelation(
+                fault_cause="状态反馈或转速传感器异常",
+                component="散热风扇",
+                actions=["交叉校验实际转速"],
+            ),
         ],
     ),
     DiagnosisTemplate(

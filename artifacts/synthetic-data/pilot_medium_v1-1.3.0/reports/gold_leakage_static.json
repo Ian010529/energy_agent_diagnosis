@@ -1,0 +1,25 @@
+{
+  "splits": {
+    "calibration": {
+      "full_api_rerun_required": true,
+      "static_forbidden_overlap_count": 0,
+      "unresolved": [],
+      "unresolved_relevant_source_count": 0,
+      "violations": []
+    },
+    "holdout": {
+      "full_api_rerun_required": true,
+      "static_forbidden_overlap_count": 0,
+      "unresolved": [],
+      "unresolved_relevant_source_count": 0,
+      "violations": []
+    },
+    "regression": {
+      "full_api_rerun_required": true,
+      "static_forbidden_overlap_count": 0,
+      "unresolved": [],
+      "unresolved_relevant_source_count": 0,
+      "violations": []
+    }
+  }
+}

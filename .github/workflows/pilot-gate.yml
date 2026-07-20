@@ -1,0 +1,27 @@
+name: Pilot Gate
+on:
+  workflow_dispatch:
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    environment: pilot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {python-version: "3.12"}
+      - run: uv sync --frozen
+      - name: Validate required credentials
+        env:
+          MODEL_GATEWAY_API_KEY: ${{ secrets.MODEL_GATEWAY_API_KEY }}
+          EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
+          RERANK_API_KEY: ${{ secrets.RERANK_API_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+        run: |
+          for name in MODEL_GATEWAY_API_KEY EMBEDDING_API_KEY RERANK_API_KEY LANGFUSE_SECRET_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "BLOCKED_MISSING_CREDENTIALS: ${name}"
+              exit 2
+            fi
+          done
+      - run: make pilot-gate

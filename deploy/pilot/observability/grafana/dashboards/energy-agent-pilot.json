@@ -1,0 +1,21 @@
+{
+  "title": "Energy Agent Pilot",
+  "uid": "energy-agent-pilot",
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {"id": 1, "title": "Diagnosis p50/p95", "type": "timeseries", "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(energy_diagnosis_duration_seconds_bucket[5m])))"}]},
+    {"id": 2, "title": "First SSE p95", "type": "timeseries", "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(energy_first_event_latency_seconds_bucket[5m])))"}]},
+    {"id": 3, "title": "Template request volume", "type": "timeseries", "targets": [{"expr": "sum by (template) (rate(energy_diagnosis_runs_total[5m]))"}]},
+    {"id": 4, "title": "Session failure rate", "type": "timeseries", "targets": [{"expr": "sum(rate(energy_session_failures_total[5m])) / clamp_min(sum(rate(energy_diagnosis_runs_total[5m])), 1)"}]},
+    {"id": 5, "title": "Tool success", "type": "timeseries", "targets": [{"expr": "sum by (status) (rate(energy_tool_calls_total[5m]))"}]},
+    {"id": 6, "title": "Model latency and tokens", "type": "timeseries", "targets": [{"expr": "sum by (provider) (rate(energy_model_tokens_total[5m]))"}]},
+    {"id": 7, "title": "Retrieval degradation", "type": "timeseries", "targets": [{"expr": "sum by (component) (rate(energy_retrieval_degraded_total[5m]))"}]},
+    {"id": 8, "title": "Human escalation", "type": "timeseries", "targets": [{"expr": "sum by (reason) (rate(energy_human_escalations_total[5m]))"}]},
+    {"id": 9, "title": "Cases and indexing", "type": "timeseries", "targets": [{"expr": "sum by (status) (rate(energy_index_jobs_total[5m]))"}]},
+    {"id": 10, "title": "Retry / DLQ / outbox", "type": "timeseries", "targets": [{"expr": "sum(rate(energy_index_dead_letters_total[5m]))"}]},
+    {"id": 11, "title": "Circuit breakers", "type": "state-timeline", "targets": [{"expr": "energy_circuit_breaker_state"}]},
+    {"id": 12, "title": "Guardrails and high-risk coverage", "type": "timeseries", "targets": [{"expr": "sum by (status) (rate(energy_guardrail_decisions_total[5m]))"}]}
+  ]
+}

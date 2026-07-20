@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable, Sequence
+from time import monotonic
 from typing import cast
 
 from energy_agent.core.errors import (
@@ -6,6 +7,12 @@ from energy_agent.core.errors import (
     MilvusUnavailableError,
     RerankerUnavailableError,
     RetrievalChannelsFailedError,
+)
+from energy_agent.observability.metrics import (
+    RETRIEVAL_DEGRADED,
+    RETRIEVAL_DURATION,
+    RETRIEVAL_EVIDENCE,
+    RETRIEVAL_QUERIES,
 )
 from energy_agent.observability.tracing import Tracer
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
@@ -71,6 +78,8 @@ class RetrievalService:
         self.keyword = LightweightKeywordRetriever()
         self._rewrites: dict[str, object] = {}
         self._rewrite_cache_limit = 1024
+        self._vectors: dict[str, list[float]] = {}
+        self._vector_cache_limit = 2048
 
     async def search(
         self,
@@ -84,6 +93,7 @@ class RetrievalService:
         score_threshold: float = 0.45,
         verified_only: bool = True,
     ) -> RetrievalResult:
+        started = monotonic()
         selected_mode = mode or self.default_mode
         rewrite_key = f"{trace_id}:{query}:{sorted(filters.items())}"
         with self.tracer.start_span(
@@ -185,7 +195,29 @@ class RetrievalService:
                         trace_id=trace_id,
                         metadata={"source": source, "allowed_id_count": len(rows)},
                     ) as span:
-                        vector = (await self.embedding.embed([search_query]))[0]
+                        vector_key = f"{trace_id}:{search_query}"
+                        vector = self._vectors.get(vector_key)
+                        if vector is None:
+                            queries = list(
+                                dict.fromkeys(
+                                    (
+                                        typed_rewrite.manual_query,
+                                        typed_rewrite.ticket_query,
+                                    )
+                                )
+                            )
+                            vectors = await self.embedding.embed(queries)
+                            if len(self._vectors) + len(queries) > self._vector_cache_limit:
+                                self._vectors.clear()
+                            self._vectors.update(
+                                {
+                                    f"{trace_id}:{query_text}": query_vector
+                                    for query_text, query_vector in zip(
+                                        queries, vectors, strict=True
+                                    )
+                                }
+                            )
+                            vector = self._vectors[vector_key]
                         id_field = (
                             "chunk_id"
                             if source == SourceType.MANUAL
@@ -223,6 +255,8 @@ class RetrievalService:
             and (selected_mode == RetrievalMode.VECTOR_ONLY or not rows)
         ):
             if rows:
+                RETRIEVAL_QUERIES.labels(mode=selected_mode, status="failed").inc()
+                RETRIEVAL_DURATION.labels(mode=selected_mode).observe(monotonic() - started)
                 raise RetrievalChannelsFailedError("All requested retrieval channels failed")
         merged = merge_candidates(
             keyword_candidates, vector_candidates, limit=self.rerank_input_size
@@ -312,6 +346,12 @@ class RetrievalService:
             degraded_components=sorted(set(degraded)),
             index_generation=_index_generation(rows),
         )
+        status = "degraded" if degraded else "ok"
+        RETRIEVAL_QUERIES.labels(mode=actual_mode, status=status).inc()
+        RETRIEVAL_DURATION.labels(mode=actual_mode).observe(monotonic() - started)
+        RETRIEVAL_EVIDENCE.labels(source_type=source).observe(len(ranked_evidence))
+        for component in sorted(set(degraded)):
+            RETRIEVAL_DEGRADED.labels(component=component).inc()
         return RetrievalResult(
             query_rewrite=typed_rewrite,
             ranked_evidence=list(ranked_evidence),

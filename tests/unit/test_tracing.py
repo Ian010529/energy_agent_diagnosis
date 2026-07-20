@@ -1,5 +1,6 @@
 import logging
 from contextlib import nullcontext
+from hashlib import sha256
 
 from energy_agent.core.ids import new_id
 from energy_agent.observability.langfuse import LangFuseTracer
@@ -57,6 +58,7 @@ async def test_langfuse_failure_does_not_escape(caplog) -> None:
     await remote.flush()
     await remote.shutdown()
     assert "trace_export_failed" in caplog.text
+    assert remote.export_failed is True
 
 
 def test_langfuse_redacts_metadata() -> None:
@@ -69,3 +71,20 @@ def test_langfuse_redacts_metadata() -> None:
     ):
         pass
     assert client.kwargs["metadata"]["password"] == "[REDACTED]"
+
+
+def test_langfuse_normalizes_uuid_and_business_trace_ids() -> None:
+    client = RecordingClient()
+    remote = tracer(client)
+    uuid_trace_id = "12345678-1234-5678-1234-567812345678"
+    with remote.start_span("foundation", trace_id=uuid_trace_id):
+        pass
+    assert client.kwargs["trace_context"]["trace_id"] == uuid_trace_id.replace("-", "")
+
+    business_trace_id = "graph-template-pcs_temperature_abnormal_v1"
+    with remote.start_span("foundation", trace_id=business_trace_id):
+        pass
+    assert (
+        client.kwargs["trace_context"]["trace_id"]
+        == sha256(business_trace_id.encode("utf-8")).hexdigest()[:32]
+    )

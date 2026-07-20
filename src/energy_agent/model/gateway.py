@@ -1,5 +1,7 @@
+import asyncio
 import json
 from copy import deepcopy
+from time import monotonic
 from typing import Any
 
 import httpx
@@ -7,7 +9,9 @@ from pydantic import BaseModel, ValidationError
 
 from energy_agent.agent.state import CandidateCause, ClarificationQuestion
 from energy_agent.contracts.common import StrictModel
+from energy_agent.observability.metrics import MODEL_CALLS, MODEL_DURATION, MODEL_TOKENS
 from energy_agent.observability.tracing import Tracer
+from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 
 class CandidateCauseEnvelope(StrictModel):
@@ -29,6 +33,8 @@ class ModelGateway:
         temperature: float,
         tracer: Tracer,
         api_mode: str = "chat_completions",
+        circuit_breaker: CircuitBreaker | None = None,
+        max_retries: int = 2,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
@@ -37,6 +43,36 @@ class ModelGateway:
         self.temperature = temperature
         self.tracer = tracer
         self.api_mode = api_mode
+        self.circuit_breaker = circuit_breaker
+        self.max_retries = max_retries
+
+    async def _post_with_retry(
+        self,
+        client: httpx.AsyncClient,
+        endpoint: str,
+        *,
+        headers: dict[str, str],
+        payload: dict[str, object],
+    ) -> httpx.Response:
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    headers=headers,
+                    json=payload,
+                )
+            except (httpx.TimeoutException, httpx.NetworkError):
+                if attempt >= self.max_retries:
+                    raise
+                await asyncio.sleep(0.1 * (attempt + 1))
+                continue
+            if (
+                response.status_code == 429 or response.status_code >= 500
+            ) and attempt < self.max_retries:
+                await asyncio.sleep(0.1 * (attempt + 1))
+                continue
+            return response
+        raise RuntimeError("Model request retry loop exhausted")
 
     async def generate(
         self,
@@ -49,6 +85,13 @@ class ModelGateway:
         evidence_package: dict[str, object],
         output_schema: type[BaseModel],
     ) -> BaseModel | None:
+        started = monotonic()
+        if self.circuit_breaker:
+            try:
+                self.circuit_breaker.allow()
+            except CircuitOpenError:
+                MODEL_CALLS.labels(provider="openai_compatible", status="circuit_open").inc()
+                return None
         with self.tracer.start_generation(
             f"llm.{node_name}",
             trace_id=trace_id,
@@ -58,8 +101,8 @@ class ModelGateway:
             try:
                 async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                     schema = _openai_strict_schema(output_schema.model_json_schema())
-                    payload = (
-                        {
+                    if self.api_mode == "responses":
+                        payload: dict[str, object] = {
                             "model": self.model,
                             "instructions": system_prompt,
                             "input": json.dumps(evidence_package, ensure_ascii=False, default=str),
@@ -71,11 +114,12 @@ class ModelGateway:
                                     "schema": schema,
                                 }
                             },
-                            "reasoning": {"effort": "low"},
                             "max_output_tokens": 2048,
                         }
-                        if self.api_mode == "responses"
-                        else {
+                        if _supports_reasoning_effort(self.model):
+                            payload["reasoning"] = {"effort": "low"}
+                    else:
+                        payload = {
                             "model": self.model,
                             "messages": [
                                 {"role": "system", "content": system_prompt},
@@ -89,19 +133,19 @@ class ModelGateway:
                             "temperature": self.temperature,
                             "response_format": {"type": "json_object"},
                         }
-                    )
                     endpoint = (
                         "/v1/responses" if self.api_mode == "responses" else "/v1/chat/completions"
                     )
-                    response = await client.post(
-                        f"{self.base_url}{endpoint}",
+                    response = await self._post_with_retry(
+                        client,
+                        endpoint,
                         headers={
                             "Authorization": f"Bearer {self.api_key}",
                             "X-Trace-Id": trace_id,
                             "X-Session-Id": session_id,
                             "X-Prompt-Version": prompt_version,
                         },
-                        json=payload,
+                        payload=payload,
                     )
                     response.raise_for_status()
                 body: dict[str, Any] = response.json()
@@ -127,8 +171,28 @@ class ModelGateway:
                         "validated": True,
                     }
                 )
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_success()
+                MODEL_CALLS.labels(provider="openai_compatible", status="ok").inc()
+                MODEL_DURATION.labels(provider="openai_compatible", status="ok").observe(
+                    monotonic() - started
+                )
+                usage = body.get("usage", {})
+                if isinstance(usage, dict):
+                    MODEL_TOKENS.labels(provider="openai_compatible", direction="input").inc(
+                        int(usage.get("input_tokens", usage.get("prompt_tokens", 0)) or 0)
+                    )
+                    MODEL_TOKENS.labels(provider="openai_compatible", direction="output").inc(
+                        int(usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0)
+                    )
                 return validated
             except (httpx.HTTPError, KeyError, TypeError, ValidationError, ValueError) as exc:
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_failure(countable=isinstance(exc, httpx.HTTPError))
+                MODEL_CALLS.labels(provider="openai_compatible", status="fallback").inc()
+                MODEL_DURATION.labels(provider="openai_compatible", status="fallback").observe(
+                    monotonic() - started
+                )
                 generation.record_event(
                     "model_fallback",
                     {"error_code": type(exc).__name__, "prompt_version": prompt_version},
@@ -155,3 +219,8 @@ def _openai_strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
 
     visit(strict)
     return strict
+
+
+def _supports_reasoning_effort(model: str) -> bool:
+    normalized = model.lower()
+    return normalized.startswith(("gpt-5", "o1", "o3", "o4"))

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     internal_api_key: str | None = None
     log_level: str = "INFO"
     log_format: Literal["console", "json"] = "console"
-    mysql_dsn: str = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
+    mysql_dsn: str = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
     redis_url: str = "redis://localhost:6379/0"
     redis_session_ttl_seconds: int = Field(default=86_400, gt=0)
     influxdb_url: str = "http://localhost:8086"
@@ -110,6 +110,17 @@ class Settings(BaseSettings):
     neo4j_query_timeout_seconds: float = Field(default=5.0, gt=0)
     graph_top_k: int = Field(default=5, ge=1, le=20)
     graph_source_reliability: float = Field(default=0.60, ge=0, le=0.70)
+    alarm_dedup_window_seconds: int = Field(default=900, ge=60, le=86_400)
+    pilot_mode: bool = False
+    pilot_allowed_actors: str = ""
+    rate_limit_enabled: bool = False
+    rate_limit_diagnosis_per_minute: int = Field(default=30, ge=1)
+    rate_limit_review_per_minute: int = Field(default=10, ge=1)
+    rate_limit_case_write_per_minute: int = Field(default=10, ge=1)
+    rate_limit_stream_concurrent: int = Field(default=2, ge=1)
+    request_body_max_bytes: int = Field(default=1_048_576, ge=1_024)
+    cors_allow_origins: str = ""
+    worker_metrics_port: int = Field(default=9101, ge=1024, le=65_535)
 
     @model_validator(mode="after")
     def validate_dependencies_and_weights(self) -> "Settings":
@@ -117,6 +128,10 @@ class Settings(BaseSettings):
             raise ValueError("development_headers authentication is limited to local and test")
         if self.auth_mode == "trusted_headers" and not self.internal_api_key:
             raise ValueError("INTERNAL_API_KEY is required for trusted_headers authentication")
+        if self.pilot_mode and (self.auth_mode != "trusted_headers" or not self.internal_api_key):
+            raise ValueError(
+                "PILOT_MODE requires trusted_headers authentication and INTERNAL_API_KEY"
+            )
         if self.index_execution_mode == "sync" and self.app_env not in {"local", "test"}:
             raise ValueError("INDEX_EXECUTION_MODE=sync is limited to local and test")
         if self.graph_mode == "neo4j" and not self.neo4j_password:

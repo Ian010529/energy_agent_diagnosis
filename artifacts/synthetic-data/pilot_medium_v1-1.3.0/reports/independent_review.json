@@ -1,0 +1,81 @@
+{
+  "bge_m3_status": "NOT_EXECUTED_OFFLINE",
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "decision": "OFFLINE_DATA_READY_REQUIRES_EXTERNAL_RELOAD",
+  "external_load_status": "NOT_EXECUTED_FOR_NEW_VERSION",
+  "gold_mapping_error_count": 0,
+  "graph_expected_nodes": 415,
+  "graph_expected_relationships": 1000,
+  "holdout_ticket_device_leak_count": 0,
+  "invalid_decoy_count": 0,
+  "manual_validation": {
+    "bge_m3_status": "NOT_EXECUTED_OFFLINE_REQUIRES_REAL_PROVIDER_RERUN",
+    "char_ngram_nearest_neighbor": {
+      "above_0_90": 49,
+      "above_0_95": 30,
+      "above_0_98": 16,
+      "rate_above_0_90": 0.01132162661737523,
+      "rate_above_0_95": 0.006931608133086876,
+      "rate_above_0_98": 0.0036968576709796672
+    },
+    "chunk_count": 4328,
+    "dataset_id": "pilot_medium_v1",
+    "dataset_version": "1.3.0",
+    "doc_id_uniqueness": true,
+    "historical_versions_use_unique_doc_ids": true,
+    "index_policy": {
+      "adjacent_chunk_collapse": true,
+      "current_effective_only": true,
+      "exact_content_hash_dedup": true,
+      "max_chunks_per_content_cluster_in_top_k": 1,
+      "max_chunks_per_document_in_top_k": 2
+    },
+    "normalized_exact_duplicate_rate": 0.004158964879852125,
+    "normalized_exact_duplicate_records": 18,
+    "ocr_completed_documents": 2,
+    "parseable_documents": 24,
+    "section_type_distribution": {
+      "告警定义": 910,
+      "正文": 2737,
+      "注意事项": 543,
+      "维护步骤": 120,
+      "表格": 18
+    },
+    "source_documents": 24
+  },
+  "point_count": 1161650,
+  "static_forbidden_overlap_count": 0,
+  "timeseries_alignment": {
+    "calibration": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 77,
+      "declared_timeseries": 77,
+      "missing_sample_ids": [],
+      "samples": 100,
+      "undeclared_timeseries": 23,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    },
+    "holdout": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 38,
+      "declared_timeseries": 38,
+      "missing_sample_ids": [],
+      "samples": 50,
+      "undeclared_timeseries": 12,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    },
+    "regression": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 75,
+      "declared_timeseries": 75,
+      "missing_sample_ids": [],
+      "samples": 100,
+      "undeclared_timeseries": 25,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    }
+  }
+}

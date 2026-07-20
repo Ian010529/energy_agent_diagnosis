@@ -1,0 +1,33 @@
+{
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "status": "PASSED",
+  "rabbitmq": {
+    "initial_upsert_jobs": 2018,
+    "case_reindex_jobs": 200,
+    "failed_jobs": 0,
+    "published_outbox_rows": 2218
+  },
+  "milvus": {
+    "manual_unique_ids": 3389,
+    "ticket_unique_ids": 1800,
+    "case_unique_ids": 200,
+    "missing_ids": 0,
+    "unexpected_ids": 0
+  },
+  "neo4j_case_projection": {
+    "nodes": 415,
+    "relationships": 1000,
+    "relationship_types": {
+      "CONFIRMS": 200,
+      "HAS_ALARM": 200,
+      "MAY_BE_CAUSED_BY": 200,
+      "MITIGATED_BY": 200,
+      "RELATES_TO": 200
+    }
+  },
+  "neo4j_with_template_enhancement": {
+    "nodes": 435,
+    "relationships": 1038
+  }
+}

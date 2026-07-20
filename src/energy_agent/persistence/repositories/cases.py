@@ -15,6 +15,7 @@ from energy_agent.core.errors import (
 from energy_agent.core.time import ensure_utc, utc_now
 from energy_agent.indexing.contracts import IndexJobCreate
 from energy_agent.indexing.repository import IndexRepository
+from energy_agent.observability.metrics import CASE_INDEX_STATUS, CASE_TRANSITIONS
 from energy_agent.persistence.models import CaseReviewEventModel, DiagnosisCaseModel
 
 
@@ -161,6 +162,8 @@ class CaseRepository:
                 job = await self.index_repository.add_job(session, index_request)
                 index_job_id = job.job_id
         record = case_record(model)
+        CASE_TRANSITIONS.labels(from_status=expected, to_status=target).inc()
+        CASE_INDEX_STATUS.labels(status=record.index_status).inc()
         return record.model_copy(update={"index_job_id": index_job_id})
 
     async def queue_index(
@@ -200,6 +203,7 @@ class CaseRepository:
                 )
             )
             job = await self.index_repository.add_job(session, request)
+        CASE_INDEX_STATUS.labels(status=CaseIndexStatus.QUEUED).inc()
         return case_record(model).model_copy(update={"index_job_id": job.job_id})
 
     async def find_idempotent_event(
@@ -266,6 +270,7 @@ class CaseRepository:
             if active is not None:
                 model.is_active = active
             model.updated_at = utc_now()
+        CASE_INDEX_STATUS.labels(status=status).inc()
         return case_record(model)
 
     async def next_version(self, session_id: str) -> int:

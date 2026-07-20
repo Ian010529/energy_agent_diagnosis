@@ -6,6 +6,7 @@ from aio_pika import DeliveryMode, ExchangeType, Message
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractRobustConnection
 
 from energy_agent.core.config import Settings
+from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 MessageHandler = Callable[[AbstractIncomingMessage], Awaitable[None]]
 
@@ -16,8 +17,9 @@ class RabbitMQProvider:
     retry_routing_key = "energy.indexing.retry.v1"
     dead_routing_key = "energy.indexing.dead.v1"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, circuit_breaker: CircuitBreaker | None = None) -> None:
         self.settings = settings
+        self.circuit_breaker = circuit_breaker
         self.connection: AbstractRobustConnection | None = None
         self.channel: AbstractChannel | None = None
 
@@ -62,22 +64,36 @@ class RabbitMQProvider:
         await dead.bind(exchange, self.dead_routing_key)
 
     async def publish(self, payload: bytes, *, routing_key: str | None = None) -> None:
+        if self.circuit_breaker:
+            try:
+                self.circuit_breaker.allow()
+            except CircuitOpenError as exc:
+                raise RuntimeError("RABBITMQ_CIRCUIT_OPEN") from exc
         if not self.channel:
+            if self.circuit_breaker:
+                self.circuit_breaker.record_failure()
             raise RuntimeError("RABBITMQ_UNAVAILABLE")
-        exchange = await self.channel.get_exchange(self.settings.rabbitmq_index_exchange)
-        message = Message(
-            payload,
-            content_type="application/json",
-            delivery_mode=DeliveryMode.PERSISTENT,
-        )
-        async with asyncio.timeout(self.settings.rabbitmq_publish_timeout_seconds):
-            confirmed = await exchange.publish(
-                message,
-                routing_key=routing_key or self.routing_key,
-                mandatory=True,
+        try:
+            exchange = await self.channel.get_exchange(self.settings.rabbitmq_index_exchange)
+            message = Message(
+                payload,
+                content_type="application/json",
+                delivery_mode=DeliveryMode.PERSISTENT,
             )
-        if confirmed is None:
-            raise RuntimeError("RABBITMQ_PUBLISH_TIMEOUT")
+            async with asyncio.timeout(self.settings.rabbitmq_publish_timeout_seconds):
+                confirmed = await exchange.publish(
+                    message,
+                    routing_key=routing_key or self.routing_key,
+                    mandatory=True,
+                )
+            if confirmed is None:
+                raise RuntimeError("RABBITMQ_PUBLISH_TIMEOUT")
+        except Exception:
+            if self.circuit_breaker:
+                self.circuit_breaker.record_failure()
+            raise
+        if self.circuit_breaker:
+            self.circuit_breaker.record_success()
 
     async def consume(self, handler: MessageHandler) -> None:
         if not self.channel:

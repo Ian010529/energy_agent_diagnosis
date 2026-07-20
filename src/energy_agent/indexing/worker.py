@@ -1,5 +1,7 @@
 import asyncio
 
+from prometheus_client import start_http_server
+
 from energy_agent.core.config import Settings
 from energy_agent.core.lifecycle import create_tracer
 from energy_agent.graph.service import GraphService
@@ -13,10 +15,12 @@ from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
 from energy_agent.providers.milvus import MilvusVectorProvider
 from energy_agent.providers.neo4j import Neo4jProvider
 from energy_agent.providers.rabbitmq import RabbitMQProvider
+from energy_agent.reliability.registry import CircuitBreakerRegistry
 
 
 async def run() -> None:
     settings = Settings()
+    start_http_server(settings.worker_metrics_port)
     if settings.index_execution_mode != "rabbitmq":
         raise RuntimeError("index-worker requires INDEX_EXECUTION_MODE=rabbitmq")
     if settings.embedding_mode != "openai_compatible":
@@ -24,7 +28,8 @@ async def run() -> None:
     engine = create_mysql_engine(settings.mysql_dsn)
     factory = create_session_factory(engine)
     tracer = create_tracer(settings)
-    rabbitmq = RabbitMQProvider(settings)
+    circuit_breakers = CircuitBreakerRegistry()
+    rabbitmq = RabbitMQProvider(settings, circuit_breaker=circuit_breakers.get("rabbitmq"))
     embedding = OpenAICompatibleEmbeddingProvider(
         base_url=settings.embedding_base_url or "",
         api_key=settings.embedding_api_key or "",
@@ -32,6 +37,7 @@ async def run() -> None:
         dimension=settings.embedding_dimension,
         timeout_seconds=settings.embedding_timeout_seconds,
         batch_size=settings.embedding_batch_size,
+        circuit_breaker=circuit_breakers.get("embedding"),
     )
     milvus = MilvusVectorProvider(
         uri=settings.milvus_uri,
@@ -41,6 +47,7 @@ async def run() -> None:
         case_collection=settings.milvus_case_collection,
         dimension=settings.milvus_vector_dimension,
         metric_type=settings.milvus_metric_type,
+        circuit_breaker=circuit_breakers.get("milvus"),
     )
     neo4j = (
         Neo4jProvider(

@@ -1,0 +1,7 @@
+{
+  "adjacent_chunk_collapse": true,
+  "current_effective_only": true,
+  "exact_content_hash_dedup": true,
+  "max_chunks_per_content_cluster_in_top_k": 1,
+  "max_chunks_per_document_in_top_k": 2
+}

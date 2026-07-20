@@ -1,0 +1,8 @@
+{
+  "approved_cases": 200,
+  "expected_nodes": 415,
+  "expected_relationships": 1000,
+  "passes_target": true,
+  "target_node_minimum": 250,
+  "unique_actions": 200
+}

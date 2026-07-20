@@ -1,0 +1,45 @@
+{
+  "all_declared_matched": true,
+  "all_undeclared_absent": true,
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "measurement_counts": {
+    "environment_metrics": 198534,
+    "fan_metrics": 101752,
+    "inverter_metrics": 205086,
+    "pcs_metrics": 656278
+  },
+  "point_count": 1161650,
+  "splits": {
+    "calibration": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 77,
+      "declared_timeseries": 77,
+      "missing_sample_ids": [],
+      "samples": 100,
+      "undeclared_timeseries": 23,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    },
+    "holdout": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 38,
+      "declared_timeseries": 38,
+      "missing_sample_ids": [],
+      "samples": 50,
+      "undeclared_timeseries": 12,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    },
+    "regression": {
+      "declared_match_rate": 1.0,
+      "declared_matched": 75,
+      "declared_timeseries": 75,
+      "missing_sample_ids": [],
+      "samples": 100,
+      "undeclared_timeseries": 25,
+      "unexpected_matches": 0,
+      "unexpected_sample_ids": []
+    }
+  }
+}

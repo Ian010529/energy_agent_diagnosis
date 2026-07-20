@@ -3,6 +3,7 @@ import asyncio
 import httpx
 
 from energy_agent.core.errors import RerankerResponseError, RerankerUnavailableError
+from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 
 class HttpRerankerProvider:
@@ -16,9 +17,11 @@ class HttpRerankerProvider:
         model: str,
         timeout_seconds: float,
         max_retries: int = 2,
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         self.model = model
         self.max_retries = max_retries
+        self.circuit_breaker = circuit_breaker
         self.client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             headers={"Authorization": f"Bearer {api_key}"},
@@ -27,6 +30,11 @@ class HttpRerankerProvider:
 
     async def rerank(self, query: str, candidates: list[tuple[str, str]]) -> dict[str, float]:
         ids = [identifier for identifier, _ in candidates]
+        if self.circuit_breaker:
+            try:
+                self.circuit_breaker.allow()
+            except CircuitOpenError as exc:
+                raise RerankerUnavailableError("Reranker circuit is open") from exc
         for attempt in range(1, self.max_retries + 2):
             try:
                 response = await self.client.post(
@@ -56,11 +64,19 @@ class HttpRerankerProvider:
                     output[ids[index]] = max(0.0, min(1.0, float(score)))
                 if set(output) != set(ids):
                     raise RerankerResponseError("Reranker candidate IDs do not align")
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_success()
                 return output
             except (httpx.TimeoutException, httpx.NetworkError, RerankerUnavailableError) as exc:
                 if attempt > self.max_retries:
+                    if self.circuit_breaker:
+                        self.circuit_breaker.record_failure()
                     raise RerankerUnavailableError("Reranker unavailable") from exc
                 await asyncio.sleep(0.05 * attempt)
+            except RerankerResponseError:
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_failure(countable=False)
+                raise
         raise RerankerUnavailableError("Reranker unavailable")
 
     async def close(self) -> None:

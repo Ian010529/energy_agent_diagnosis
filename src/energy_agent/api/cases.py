@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header, Query, Request
 
-from energy_agent.api.auth import actor_from_request, require_roles
+from energy_agent.api.auth import actor_from_request, require_pilot_write, require_roles
 from energy_agent.cases.service import CaseService
 from energy_agent.contracts.cases import (
     CaseDisableRequest,
@@ -30,6 +30,7 @@ async def review_diagnosis(
 ) -> DiagnosisReviewResponse:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).review_diagnosis(
         session_id, payload, actor, idempotency_key
     )
@@ -81,6 +82,7 @@ async def case_history(case_id: str, request: Request) -> list[CaseReviewEvent]:
 async def patch_case(case_id: str, payload: CasePatchRequest, request: Request) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).patch(case_id, payload, actor)
 
 
@@ -92,6 +94,7 @@ async def submit_case(
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).submit(case_id, actor, idempotency_key)
 
 
@@ -104,6 +107,7 @@ async def review_case(
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).review_case(
         case_id, payload, actor, idempotency_key
     )
@@ -118,6 +122,7 @@ async def disable_case(
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).disable(case_id, payload, actor, idempotency_key)
 
 
@@ -130,6 +135,7 @@ async def revise_case(
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).revision(
         case_id, payload, actor, idempotency_key
     )
@@ -143,4 +149,5 @@ async def reindex_case(
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await CaseService.from_request(request).reindex(case_id, actor, idempotency_key)

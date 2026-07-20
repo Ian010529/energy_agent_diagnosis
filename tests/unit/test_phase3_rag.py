@@ -228,7 +228,16 @@ def test_ticket_embedding_text_and_typed_tool_filters() -> None:
         )
 
 
-def test_phase3_settings_validate_dimension_credentials_and_weight_sums() -> None:
+def test_phase3_settings_validate_dimension_credentials_and_weight_sums(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in (
+        "EMBEDDING_MODE",
+        "EMBEDDING_BASE_URL",
+        "EMBEDDING_API_KEY",
+        "RETRIEVAL_MODE",
+    ):
+        monkeypatch.delenv(name, raising=False)
     with pytest.raises(ValidationError, match="dimensions"):
         Settings(_env_file=None, embedding_dimension=768)
     with pytest.raises(ValidationError, match="Hybrid retrieval"):

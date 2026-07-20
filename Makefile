@@ -14,9 +14,20 @@
 	test-integration-rabbitmq test-integration-index-worker test-integration-neo4j \
 	test-integration-graph-tool test-integration-scenarios smoke-rabbit-index \
 	smoke-index-retry smoke-neo4j smoke-graph-tool smoke-phase5-scenarios \
-	smoke-async-case-index smoke-langfuse-worker phase5-check
+	smoke-async-case-index smoke-langfuse-worker phase5-check \
+	up-phase6 down-phase6 up-pilot-observability down-pilot-observability \
+	test-unit-phase6 test-contract-phase6 test-integration-evaluation \
+	test-integration-guardrails test-integration-circuit-breakers \
+	test-integration-dedup test-integration-sse test-integration-rate-limit \
+	test-integration-metrics test-degradation-phase6 test-pilot-stability \
+	evaluate-calibration evaluate-regression evaluate-holdout compare-evaluation \
+	accept-evaluation-baseline dependency-audit static-security-check docker-build \
+	docker-smoke pilot-credentials-check pilot-readiness-report phase6-check pilot-gate \
+	reload-pilot-data drain-pilot-index validate-pilot-manual-vectors
 
-LOCAL_TEST_ENV = RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
+LOCAL_TEST_ENV = APP_ENV=test AUTH_MODE=development_headers INTERNAL_API_KEY= \
+	PILOT_MODE=false PILOT_ALLOWED_ACTORS= INDEX_EXECUTION_MODE=sync \
+	GRAPH_MODE=disabled RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
 	EMBEDDING_MODE=disabled RERANK_MODE=disabled MODEL_MODE=disabled \
 	OBSERVABILITY_MODE=local
 
@@ -220,3 +231,106 @@ smoke-langfuse-worker:
 phase5-check: verify-design lint typecheck phase4-check test-unit-phase5 \
 	test-contract-phase5 test-integration-rabbitmq test-integration-index-worker \
 	test-integration-neo4j test-integration-graph-tool test-integration-scenarios
+
+up-phase6:
+	docker compose --profile phase6 up -d --wait
+
+down-phase6:
+	docker compose --profile phase6 down
+
+up-pilot-observability:
+	docker compose --profile pilot-observability up -d
+
+down-pilot-observability:
+	docker compose --profile pilot-observability down
+
+test-unit-phase6:
+	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase6_hardening.py
+
+test-contract-phase6:
+	$(LOCAL_TEST_ENV) uv run pytest tests/contract/test_phase6_contracts.py
+
+test-integration-evaluation:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_evaluation.py
+
+test-integration-guardrails:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_guardrails.py
+
+test-integration-circuit-breakers:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_circuit_breakers.py
+
+test-integration-dedup:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_dedup.py
+
+test-integration-sse:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_sse.py
+
+test-integration-rate-limit:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_rate_limit.py
+
+test-integration-metrics:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_metrics.py
+
+test-degradation-phase6:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/degradation
+
+test-pilot-stability:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase6/test_stability.py
+
+evaluate-calibration:
+	uv run python -m energy_agent.evaluation.cli evaluate --split calibration --prepare-runtime
+
+evaluate-regression:
+	uv run python -m energy_agent.evaluation.cli evaluate --split regression --prepare-runtime
+
+reload-pilot-data:
+	test "$(REPLACE_ALL)" = "1"
+	uv run python -m energy_agent.evaluation.reload_dataset --replace-all
+
+drain-pilot-index:
+	uv run python -m energy_agent.evaluation.drain_index_queue --batch-size 64
+
+validate-pilot-manual-vectors:
+	uv run python -m energy_agent.evaluation.validate_manual_vectors
+
+evaluate-holdout:
+	test -n "$(RUN_ID)"
+	uv run python -m energy_agent.evaluation.cli evaluate --split holdout \
+		--prepare-runtime --run-id "$(RUN_ID)"
+
+compare-evaluation:
+	uv run python -m energy_agent.evaluation.cli compare --run-id $(RUN_ID)
+
+accept-evaluation-baseline:
+	uv run python -m energy_agent.evaluation.cli accept-baseline --run-id $(RUN_ID)
+
+dependency-audit:
+	uv run pip-audit
+
+static-security-check:
+	uv run bandit -q -ll -r src
+	! git grep -I -nE '(sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|BEGIN (RSA|OPENSSH) PRIVATE KEY)' -- \
+		src migrations docs deploy .github pyproject.toml compose.yaml Dockerfile .env.example
+
+docker-build:
+	docker build -t energy-agent:phase6 .
+
+docker-smoke: docker-build
+	docker run --rm energy-agent:phase6 python -c "import energy_agent.app"
+
+pilot-readiness-report:
+	test -n "$(RUN_ID)"
+	test -f artifacts/pilot-readiness/$(RUN_ID)/evaluation_report.json
+
+pilot-credentials-check:
+	uv run python -m energy_agent.pilot_credentials
+
+phase6-check: verify-design lint typecheck phase5-check test-unit-phase6 \
+	test-contract-phase6 test-integration-evaluation test-integration-guardrails \
+	test-integration-circuit-breakers test-integration-dedup test-integration-sse \
+	test-integration-rate-limit test-integration-metrics test-degradation-phase6 \
+	dependency-audit static-security-check docker-build docker-smoke \
+	evaluate-calibration evaluate-regression
+
+pilot-gate: pilot-credentials-check phase6-check up-phase6 migrate \
+	evaluate-holdout pilot-readiness-report

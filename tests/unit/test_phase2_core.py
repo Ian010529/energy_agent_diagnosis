@@ -16,6 +16,7 @@ from energy_agent.tools.contracts import (
     ToolStatus,
 )
 from energy_agent.tools.executor import ToolExecutor
+from energy_agent.tools.policies import timeout_seconds_for
 from energy_agent.tools.registry import ToolRegistry
 
 
@@ -125,3 +126,9 @@ async def test_tool_executor_validates_budget_timeout_and_retry() -> None:
         await executor.execute("missing", {}, "trace")
     over_budget = await executor.execute("missing", {}, "trace")
     assert over_budget.error_code == "TOOL_BUDGET_EXCEEDED"
+
+
+def test_retrieval_tools_have_composite_operation_timeout_budget() -> None:
+    assert timeout_seconds_for("get_device_profile") == 5.0
+    assert timeout_seconds_for("search_manual_chunks") == 30.0
+    assert timeout_seconds_for("search_similar_tickets") == 30.0

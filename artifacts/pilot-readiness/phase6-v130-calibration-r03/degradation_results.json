@@ -1,0 +1,25 @@
+[
+  {
+    "profile": "observed_configuration",
+    "status": "EXECUTED",
+    "retrieval_mode": "hybrid",
+    "rerank_mode": "http",
+    "graph_mode": "neo4j",
+    "technical_gate": "PASSED"
+  },
+  {
+    "profile": "keyword_only",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  },
+  {
+    "profile": "hybrid_without_reranker",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  },
+  {
+    "profile": "graph_disabled",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  }
+]

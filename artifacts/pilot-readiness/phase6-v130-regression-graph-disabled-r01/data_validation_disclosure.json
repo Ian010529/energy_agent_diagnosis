@@ -1,0 +1,33 @@
+{
+  "waiver_id": null,
+  "technical_validation": "PASSED",
+  "governance_decision": "NO_ACTIVE_WAIVER",
+  "real_bge_m3": {
+    "dataset_id": "pilot_medium_v1",
+    "dataset_version": "1.3.0",
+    "effective_chunk_count": 3389,
+    "embedding_dimension": 1024,
+    "embedding_model": "BAAI/bge-m3",
+    "gate": {
+      "metric": "nearest_neighbor_similarity_above_0_95",
+      "observed": 101,
+      "observed_rate": 0.029802301563883152,
+      "threshold": 0.03,
+      "result": "PASSED"
+    },
+    "milvus_readback_count": 3389,
+    "missing_chunk_count": 0,
+    "nearest_neighbor": {
+      "above_0.90": 1749,
+      "above_0.95": 101,
+      "above_0.98": 0,
+      "rate_above_0.90": 0.5160814399527884,
+      "rate_above_0.95": 0.029802301563883152,
+      "rate_above_0.98": 0.0
+    },
+    "status": "PASSED",
+    "unexpected_chunk_count": 0
+  },
+  "external_readback_path": "artifacts/pilot-readiness/data-1.3.0/external_load_readback.json",
+  "index_graph_readback_path": "artifacts/pilot-readiness/data-1.3.0/index_graph_readback.json"
+}

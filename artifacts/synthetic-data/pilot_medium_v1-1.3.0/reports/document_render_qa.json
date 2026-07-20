@@ -1,0 +1,34 @@
+{
+  "dataset_version": "1.3.0",
+  "docx_rendered_pages": {
+    "11_HY-PV-320_1.1.docx": 11,
+    "12_HY-PV-320_1.1.docx": 11,
+    "13_QH-PV-500_1.1.docx": 11,
+    "14_QH-PV-500_1.1.docx": 11,
+    "15_SW-PV-625_1.1.docx": 11,
+    "16_SW-PV-625_1.1.docx": 11
+  },
+  "invalid_rendered_images": [],
+  "notes": [
+    "PDF and DOCX source files were rendered after generation.",
+    "DOCX tables were changed to one-column page layout to prevent clipping.",
+    "Scanned PDFs include visible scan-style pages and an extractable OCR text layer."
+  ],
+  "pdf_documents": {
+    "01_HY-PCS-500_1.1.pdf": 20,
+    "02_QH-PCS-630_1.1.pdf": 20,
+    "03_QH-PCS-630_1.1.pdf": 20,
+    "04_SW-PCS-1000_1.1.pdf": 20,
+    "05_HY-PCS-500_1.1.pdf": 20,
+    "06_SW-PCS-1000_1.1.pdf": 20,
+    "07_LF-PV-110_1.1.pdf": 20,
+    "08_LF-PV-110_1.1.pdf": 20,
+    "09_LF-PV-250_1.1.pdf": 20,
+    "10_LF-PV-250_1.1.pdf": 20,
+    "23_QH-PCS-630_scan-1.0.pdf": 16,
+    "24_SW-PV-625_scan-1.0.pdf": 16
+  },
+  "rendered_docx_pages": 66,
+  "rendered_pdf_pages": 232,
+  "status": "PASSED"
+}

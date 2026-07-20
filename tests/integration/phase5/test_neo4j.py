@@ -56,11 +56,12 @@ async def test_neo4j_constraints_template_bootstrap_case_projection_and_tombston
             )
             record = await result.single()
         assert record is not None
-        assert record["relation_count"] == 4
+        assert record["relation_count"] == 5
         assert set(record["relation_types"]) == {
             "CONFIRMS",
             "HAS_ALARM",
             "MAY_BE_CAUSED_BY",
+            "RELATES_TO",
             "MITIGATED_BY",
         }
         relations = await service.query(

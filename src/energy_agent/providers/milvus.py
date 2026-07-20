@@ -5,6 +5,7 @@ from typing import Any
 from pymilvus import DataType, MilvusClient
 
 from energy_agent.core.errors import MilvusSchemaMismatchError, MilvusUnavailableError
+from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 
 class MilvusVectorProvider:
@@ -20,6 +21,7 @@ class MilvusVectorProvider:
         dimension: int,
         metric_type: str,
         case_collection: str = "reviewed_cases",
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         self.manual_collection = manual_collection
         self.ticket_collection = ticket_collection
@@ -31,6 +33,7 @@ class MilvusVectorProvider:
         }
         self.dimension = dimension
         self.metric_type = metric_type
+        self.circuit_breaker = circuit_breaker
         try:
             self.client = MilvusClient(uri=uri, token=token or "")
         except Exception as exc:
@@ -75,6 +78,7 @@ class MilvusVectorProvider:
         self.client.create_collection(name, schema=schema, index_params=index)
 
     async def ensure_collections(self) -> None:
+        self._allow()
         try:
             await asyncio.to_thread(
                 self._ensure_collection_sync, self.manual_collection, source="manual"
@@ -85,17 +89,23 @@ class MilvusVectorProvider:
             await asyncio.to_thread(
                 self._ensure_collection_sync, self.case_collection, source="case"
             )
+            self._success()
         except MilvusSchemaMismatchError:
+            self._failure(countable=False)
             raise
         except Exception as exc:
+            self._failure()
             raise MilvusUnavailableError("Milvus collection unavailable") from exc
 
     async def upsert(self, source: str, rows: list[dict[str, Any]]) -> None:
         collection = self.collections[source]
+        self._allow()
         try:
             await asyncio.to_thread(self.client.upsert, collection, data=rows)
             await asyncio.to_thread(self.client.flush, collection)
+            self._success()
         except Exception as exc:
+            self._failure()
             raise MilvusUnavailableError("Milvus upsert unavailable") from exc
 
     async def search(
@@ -111,6 +121,7 @@ class MilvusVectorProvider:
             return []
         collection = self.collections[source]
         escaped = json.dumps(allowed_ids, ensure_ascii=False)
+        self._allow()
         try:
             result = await asyncio.to_thread(
                 self.client.search,
@@ -121,7 +132,7 @@ class MilvusVectorProvider:
                 output_fields=["source_id", "embedding"],
                 search_params={"metric_type": self.metric_type},
             )
-            return [
+            rows = [
                 {
                     "id": hit["id"],
                     "source_id": hit["entity"]["source_id"],
@@ -130,7 +141,10 @@ class MilvusVectorProvider:
                 }
                 for hit in result[0]
             ]
+            self._success()
+            return rows
         except Exception as exc:
+            self._failure()
             raise MilvusUnavailableError("Milvus vector search unavailable") from exc
 
     async def delete(self, source: str, ids: list[str]) -> None:
@@ -142,6 +156,21 @@ class MilvusVectorProvider:
 
     async def health(self) -> bool:
         return bool(await asyncio.to_thread(self.client.has_collection, self.manual_collection))
+
+    def _allow(self) -> None:
+        if self.circuit_breaker:
+            try:
+                self.circuit_breaker.allow()
+            except CircuitOpenError as exc:
+                raise MilvusUnavailableError("Milvus circuit is open") from exc
+
+    def _success(self) -> None:
+        if self.circuit_breaker:
+            self.circuit_breaker.record_success()
+
+    def _failure(self, *, countable: bool = True) -> None:
+        if self.circuit_breaker:
+            self.circuit_breaker.record_failure(countable=countable)
 
     async def close(self) -> None:
         await asyncio.to_thread(self.client.close)

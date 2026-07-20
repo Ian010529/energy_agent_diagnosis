@@ -1,0 +1,18 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {python-version: "3.12"}
+      - run: uv sync --frozen
+      - run: make verify-design lint typecheck test-unit test-contract
+      - run: uv run python -m compileall migrations/control/versions
+      - run: make dependency-audit static-security-check
+      - run: make docker-build

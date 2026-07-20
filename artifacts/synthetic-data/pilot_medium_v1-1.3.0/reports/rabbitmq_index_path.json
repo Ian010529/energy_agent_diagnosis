@@ -1,0 +1,9 @@
+{
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "indexed": 0,
+  "published_confirmed": 0,
+  "status": "NOT_EXECUTED_FOR_NEW_VERSION",
+  "worker_acked": 0,
+  "worker_consumed": 0
+}

@@ -1,5 +1,6 @@
 import json
 import logging
+from time import monotonic
 
 from aio_pika.abc import AbstractIncomingMessage
 from pydantic import ValidationError
@@ -18,6 +19,13 @@ from energy_agent.indexing.handlers import (
 )
 from energy_agent.indexing.repository import IndexRepository
 from energy_agent.observability.logging import log_event
+from energy_agent.observability.metrics import (
+    GRAPH_PROJECTION,
+    INDEX_DEAD_LETTERS,
+    INDEX_JOB_DURATION,
+    INDEX_JOBS,
+    INDEX_RETRIES,
+)
 from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.audit import AuditRepository
 from energy_agent.providers.rabbitmq import RabbitMQProvider
@@ -45,6 +53,7 @@ class IndexConsumer:
         self.actor = ServiceActorContext(actor_id="service:index-worker")
 
     async def consume(self, message: AbstractIncomingMessage) -> None:
+        started = monotonic()
         try:
             event = IndexJobMessage.model_validate_json(message.body)
         except ValidationError:
@@ -55,11 +64,13 @@ class IndexConsumer:
                 error_code="INDEX_EVENT_INVALID",
             )
             await message.reject(requeue=False)
+            INDEX_JOBS.labels(status="invalid").inc()
             return
         job = await self.repository.start(event.job_id)
         if not job:
             await self.rabbitmq.publish(message.body, routing_key=self.rabbitmq.dead_routing_key)
             await message.ack()
+            INDEX_JOBS.labels(status="missing").inc()
             return
         if job.status in {
             IndexJobStatus.INDEXED,
@@ -68,6 +79,7 @@ class IndexConsumer:
             IndexJobStatus.STALE,
         }:
             await message.ack()
+            INDEX_JOBS.labels(status="idempotent_replay").inc()
             return
         await self._audit(event, "index.started", status=IndexJobStatus.RUNNING)
         with self.tracer.start_span(
@@ -83,6 +95,10 @@ class IndexConsumer:
             try:
                 result = await self.handlers.handle(event)
                 await self.repository.finish(event.job_id, result.status)
+                INDEX_JOBS.labels(status=result.status).inc()
+                INDEX_JOB_DURATION.labels(
+                    entity_type=event.entity_type, status=result.status
+                ).observe(monotonic() - started)
                 span.set_output({"status": result.status})
                 action = (
                     "index.degraded"
@@ -91,6 +107,9 @@ class IndexConsumer:
                 )
                 await self._audit(event, action, status=result.status)
                 if event.entity_type == EntityType.DIAGNOSIS_CASE:
+                    GRAPH_PROJECTION.labels(
+                        status=("degraded" if result.graph_degraded else str(result.status).lower())
+                    ).inc()
                     graph_action = (
                         "graph.tombstoned"
                         if result.status == IndexJobStatus.TOMBSTONED
@@ -102,6 +121,10 @@ class IndexConsumer:
                 await message.ack()
             except StaleIndexEventError:
                 await self.repository.finish(event.job_id, IndexJobStatus.STALE)
+                INDEX_JOBS.labels(status=IndexJobStatus.STALE).inc()
+                INDEX_JOB_DURATION.labels(
+                    entity_type=event.entity_type, status=IndexJobStatus.STALE
+                ).observe(monotonic() - started)
                 span.set_output({"status": IndexJobStatus.STALE})
                 await message.ack()
             except Exception as exc:
@@ -122,6 +145,15 @@ class IndexConsumer:
                     error_message=type(exc).__name__,
                     retry_delay_ms=None if dead else self.retry_delay_ms,
                 )
+                INDEX_JOBS.labels(status=IndexJobStatus.FAILED if dead else "retrying").inc()
+                INDEX_JOB_DURATION.labels(
+                    entity_type=event.entity_type,
+                    status=IndexJobStatus.FAILED if dead else "retrying",
+                ).observe(monotonic() - started)
+                if dead:
+                    INDEX_DEAD_LETTERS.labels(entity_type=event.entity_type).inc()
+                else:
+                    INDEX_RETRIES.labels(entity_type=event.entity_type).inc()
                 span.record_error(exc)
                 if dead:
                     await self._audit(

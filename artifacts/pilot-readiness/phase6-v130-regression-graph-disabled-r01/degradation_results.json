@@ -1,0 +1,25 @@
+[
+  {
+    "profile": "observed_configuration",
+    "status": "EXECUTED",
+    "retrieval_mode": "hybrid",
+    "rerank_mode": "http",
+    "graph_mode": "disabled",
+    "technical_gate": "FAILED"
+  },
+  {
+    "profile": "full_hybrid",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  },
+  {
+    "profile": "keyword_only",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  },
+  {
+    "profile": "hybrid_without_reranker",
+    "status": "NOT_EXECUTED",
+    "reason": "Requires a separate controlled evaluation run."
+  }
+]

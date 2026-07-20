@@ -88,6 +88,11 @@ class Neo4jProvider:
             SET f.name = $fault_cause
             MERGE (x:Action {id: $resolution_action})
             SET x.name = $resolution_action
+            WITH d, a, c, f, x
+            OPTIONAL MATCH (f)-[:RELATES_TO {source_type: 'template'}]->(
+                component:Component
+            )
+            WITH d, a, c, f, x, head(collect(component)) AS component
             MERGE (c)-[cf:CONFIRMS {source_type: 'case', source_id: $case_id}]->(f)
             SET cf.source_version = $case_version, cf.case_id = $case_id,
                 cf.case_version = $case_version, cf.active = true
@@ -99,6 +104,10 @@ class Neo4jProvider:
             MERGE (f)-[fx:MITIGATED_BY {source_type: 'case',
                                         source_id: $case_id}]->(x)
             SET fx.source_version = $case_version, fx.active = true
+            FOREACH (_ IN CASE WHEN component IS NULL THEN [] ELSE [1] END |
+              MERGE (f)-[fc:RELATES_TO {source_type: 'case',
+                                        source_id: $case_id}]->(component)
+              SET fc.source_version = $case_version, fc.active = true)
             """,
             {
                 "case_id": case_id,
@@ -145,21 +154,33 @@ class Neo4jProvider:
         del relation_depth
         query = """
         MATCH (d:DeviceType)-[da:HAS_ALARM]->(a:Alarm)-[af:MAY_BE_CAUSED_BY]->(f:FaultCause)
-        OPTIONAL MATCH (f)-[:RELATES_TO]->(c:Component)
-        OPTIONAL MATCH (f)-[:MITIGATED_BY]->(x:Action)
-        OPTIONAL MATCH (support:Case)-[sc:CONFIRMS {active: true}]->(f)
         WHERE (toLower(a.name) CONTAINS toLower($alarm_name) OR
                toLower($alarm_name) CONTAINS toLower(a.name) OR
                toLower(a.id) CONTAINS toLower($alarm_name))
           AND ($device_type IS NULL OR d.id = $device_type)
-          AND ($component IS NULL OR c.id = $component OR c.name = $component)
-        RETURN a.name AS alarm_name, f.name AS fault_cause, c.name AS component,
-               collect(DISTINCT x.name)[0..10] AS actions,
-               collect(DISTINCT support.id) AS support_case_ids,
-               count(DISTINCT support) AS support_count,
-               [source_id IN collect(
-                 DISTINCT CASE WHEN af.source_type = 'template' THEN af.source_id END
-               ) WHERE source_id IS NOT NULL] AS template_ids
+        WITH a, f,
+             [source_id IN collect(
+               DISTINCT CASE WHEN af.source_type = 'template' THEN af.source_id END
+             ) WHERE source_id IS NOT NULL] AS template_ids
+        OPTIONAL MATCH (f)-[:RELATES_TO]->(component_node:Component)
+        WITH a, f, template_ids, collect(DISTINCT component_node) AS components
+        WHERE $component IS NULL OR any(
+          component_node IN components
+          WHERE component_node.id = $component OR component_node.name = $component
+        )
+        CALL (f) {
+          OPTIONAL MATCH (f)-[:MITIGATED_BY]->(action:Action)
+          RETURN collect(DISTINCT action.name)[0..10] AS actions
+        }
+        CALL (f) {
+          OPTIONAL MATCH (support:Case)-[:CONFIRMS {active: true}]->(f)
+          RETURN [case_id IN collect(DISTINCT support.id) WHERE case_id IS NOT NULL]
+                 AS support_case_ids,
+                 count(DISTINCT support) AS support_count
+        }
+        RETURN a.name AS alarm_name, f.name AS fault_cause,
+               CASE WHEN size(components) > 0 THEN components[0].name ELSE NULL END AS component,
+               actions, support_case_ids, support_count, template_ids
         ORDER BY support_count DESC, fault_cause
         LIMIT $top_k
         """

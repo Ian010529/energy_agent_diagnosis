@@ -36,6 +36,7 @@ from energy_agent.indexing.contracts import (
     IndexJobCreate,
     IndexOperation,
 )
+from energy_agent.observability.metrics import HUMAN_REVIEWS
 from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.audit import AuditRepository
 from energy_agent.persistence.repositories.cases import CaseRepository
@@ -227,6 +228,7 @@ class CaseService:
                 "manual_override": bool(payload.override_reason),
             },
         )
+        HUMAN_REVIEWS.labels(decision=payload.review_result).inc()
         return DiagnosisReviewResponse(
             review_id=review_id,
             session_id=session_id,

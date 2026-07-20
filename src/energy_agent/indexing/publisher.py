@@ -5,6 +5,7 @@ import logging
 from energy_agent.core.context import ServiceActorContext
 from energy_agent.indexing.repository import IndexRepository
 from energy_agent.observability.logging import log_event
+from energy_agent.observability.metrics import OUTBOX_PUBLISH
 from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.audit import AuditRepository
 from energy_agent.providers.rabbitmq import RabbitMQProvider
@@ -39,6 +40,7 @@ class OutboxPublisher:
                 ):
                     await self.rabbitmq.publish(json.dumps(payload, separators=(",", ":")).encode())
                 await self.repository.mark_published(row.id, row.job_id)
+                OUTBOX_PUBLISH.labels(status="published").inc()
                 await self._audit_queued(
                     job_id=row.job_id,
                     trace_id=trace_id,
@@ -46,6 +48,7 @@ class OutboxPublisher:
                 )
                 published += 1
             except Exception:
+                OUTBOX_PUBLISH.labels(status="failed").inc()
                 await self.repository.mark_publish_failed(row.id, "INDEX_OUTBOX_PUBLISH_FAILED")
                 log_event(
                     logger,

@@ -11,12 +11,12 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_5_ASYNC_INDEX_GRAPH_AND_SCENARIO_EXPANSION
+  id: PHASE_6_EVALUATION_RISK_AND_PILOT_HARDENING
   status: COMPLETED
   objective: >
-    完成 RabbitMQ 异步索引闭环、索引任务与 outbox、重试和 DLQ、
-    Neo4j 模板与审核案例关系投影、图谱补充 Tool，以及 PCS 和
-    光伏逆变器五类优先告警的模板化诊断。
+    建立离线评估、质量回归 Gate、四层 Guardrail、依赖熔断、
+    节点驱动 SSE、重复告警合并、试点访问控制、Prometheus/Grafana、
+    降级演练、Docker、CI 和可审计的试点就绪决策。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -58,32 +58,124 @@ last_completed:
   - phase_3_complete_rag
   - phase_4_human_collaboration_and_case_lifecycle
   - phase_5_async_index_graph_and_scenario_expansion
+  - phase_6_evaluation_risk_and_pilot_hardening
 
 current_task: []
 
 data_assets:
   pilot_medium_v1:
-    status: BLOCKED
-    dataset_version: 1.2.0
-    generator_version: 1.2.0
+    status: EXTERNAL_VALIDATION_PASSED
+    dataset_version: 1.3.0
+    generator_version: 1.3.0
     seed: 20260719
-    validation: FAILED_INDEPENDENT_REVIEW
-    phase6_eligible: false
-    manifest_path: artifacts/synthetic-data/pilot_medium_v1-1.2.0/manifest.json
-    independent_review_path: artifacts/synthetic-data/pilot_medium_v1-1.2.0/reports/independent_repository_review.md
-    blockers:
-      - "BGE-M3 nearest-neighbor similarity >0.95 is 1715/3510 (48.86%), above the accepted limit."
+    validation: PASSED
+    phase6_eligible: true
+    waiver_id: null
+    manifest_path: artifacts/synthetic-data/pilot_medium_v1-1.3.0/manifest.json
+    independent_review_path: artifacts/synthetic-data/pilot_medium_v1-1.3.0/reports/independent_review.md
+    external_readback_path: artifacts/pilot-readiness/data-1.3.0/external_load_readback.json
+    real_bge_validation_path: artifacts/pilot-readiness/data-1.3.0/real_bge_m3_validation.json
+    index_graph_readback_path: artifacts/pilot-readiness/data-1.3.0/index_graph_readback.json
 
 next_phase:
-  id: PHASE_6_EVALUATION_RISK_AND_PILOT_HARDENING
+  id: PHASE_7_REAL_PILOT_AND_FEEDBACK
   status: NOT_STARTED
 
 next_task:
-  - wait_for_phase_6_prompt
+  - confirm_business_accuracy_thresholds
+  - select_real_pilot_site
+  - confirm_real_user_allowlist
+  - validate_real_pilot_manuals
+  - wait_for_phase_7_prompt
 
-blockers: []
+phase6_validation:
+  latest_calibration_run_id: phase6-v130-calibration-r03
+  latest_regression_run_id: phase6-v130-regression-r01
+  latest_holdout_run_id: phase6-v130-holdout-r01
+  sensitivity_matrix_path: artifacts/pilot-readiness/data-1.3.0/sensitivity_matrix.json
+  technical_gate: PASSED
+  business_thresholds: NOT_CONFIGURED
+  recommendation: CONDITIONAL_GO
+  metrics:
+    calibration:
+      tool_success_rate: 0.9616666666666667
+      full_diagnosis_p95_seconds: 72.64687445783056
+      top1: 0.21
+      top3: 0.52
+      gold_leak_count: 0
+      invalid_evidence_reference_count: 0
+      unsupported_strong_claim_count: 0
+    regression:
+      tool_success_rate: 0.9583333333333334
+      full_diagnosis_p95_seconds: 41.59910945803858
+      top1: 0.17
+      top3: 0.5
+      gold_leak_count: 0
+      invalid_evidence_reference_count: 0
+      unsupported_strong_claim_count: 0
+    holdout:
+      sample_count: 50
+      tool_success_rate: 0.96
+      full_diagnosis_p95_seconds: 32.04534025024623
+      top1: 0.1
+      top3: 0.44
+      session_failure_rate: 0.0
+      answerable_session_failure_rate: 0.0
+      gold_leak_count: 0
+      invalid_evidence_reference_count: 0
+      unsupported_strong_claim_count: 0
+      high_risk_confirmation_coverage: 1.0
+      all_candidate_evidence_coverage: 1.0
+      key_conclusion_evidence_coverage: 1.0
+    sensitivity:
+      full_hybrid: PASSED
+      keyword_only: PASSED
+      hybrid_without_reranker: PASSED
+      graph_disabled:
+        technical_gate: FAILED
+        failed_check: tool_success_rate
+        degradation_behavior: PASSED
+        reason: expected_graph_degraded_attempts_are_counted_in_the_unadjusted_tool_success_rate
+  passed_checks:
+    - immutable_design_unchanged
+    - static_analysis
+    - unit_and_contract_tests
+    - phase5_real_dependency_regression
+    - phase6_reliability_and_degradation_tests
+    - dependency_and_static_security_audit
+    - docker_build_and_import_smoke
+    - pilot_credentials_configured
+    - openai_model_live_validation
+    - siliconflow_embedding_and_reranker_live_validation
+    - langfuse_live_validation
+    - dataset_1_3_0_external_storage_readback
+    - dataset_1_3_0_real_bge_m3_gate
+    - dataset_1_3_0_rabbit_milvus_neo4j_readback
+    - dataset_1_3_0_calibration_technical_gate
+    - dataset_1_3_0_regression_technical_gate
+    - dataset_1_3_0_four_profile_sensitivity_execution
+    - graph_disabled_non_blocking_degradation_behavior
+    - dataset_1_3_0_holdout_technical_gate
+  report_path: artifacts/pilot-readiness/phase6-v130-holdout-r01/evaluation_report.json
+
+blockers:
+  - "Business pilot accuracy thresholds remain NOT_CONFIGURED, so the highest readiness recommendation is CONDITIONAL_GO."
+  - "Holdout Top-1/Top-3 are 0.10/0.44 and require project-owner business acceptance before a real pilot."
+  - "Graph-disabled preserves the main path but fails the unadjusted aggregate tool-success Gate because expected DEGRADED graph attempts remain in its denominator."
+
+pilot_readiness:
+  technical_gate: PASSED
+  business_thresholds: NOT_CONFIGURED
+  recommendation: CONDITIONAL_GO
+  waiver_id: null
+  evaluation_run_id: phase6-v130-holdout-r01
+  report_path: artifacts/pilot-readiness/phase6-v130-holdout-r01/evaluation_report.json
+  sensitivity_matrix_path: artifacts/pilot-readiness/data-1.3.0/sensitivity_matrix.json
 
 external_validation:
+  pilot_credentials:
+    status: PASSED
+    reason: trusted_header_allowlist_model_embedding_reranker_and_langfuse_settings_loaded
   langfuse:
     status: PASSED
     reason: authenticated_rag_and_async_worker_traces_flushed
@@ -92,7 +184,7 @@ external_validation:
     reason: openai_responses_strict_structured_output
   embedding:
     status: PASSED
-    reason: siliconflow_bge_m3_batch_1024_dimensions
+    reason: siliconflow_bge_m3_batch_1024_dimensions_and_2_9802_percent_duplicate_gate
   reranker:
     status: PASSED
     reason: siliconflow_bge_reranker_v2_m3_scores_aligned
@@ -104,10 +196,10 @@ external_validation:
     reason: new_session_recalled_approved_indexed_active_case_with_versioned_citation
   rabbitmq_index:
     status: PASSED
-    reason: persistent_confirmed_publish_manual_ack_retry_dlq_and_live_async_entities_verified
+    reason: dataset_1_3_0_persistent_publish_2218_jobs_zero_failures_and_live_readback
   neo4j:
     status: PASSED
-    reason: schema_template_bootstrap_case_projection_query_and_tombstone_verified
+    reason: dataset_1_3_0_case_projection_415_nodes_1000_relationships
   graph_tool:
     status: PASSED
     reason: real_neo4j_relation_query_and_non_blocking_degradation_verified
@@ -115,4 +207,4 @@ external_validation:
     status: PASSED
     reason: five_templates_across_pcs_and_pv_inverter_completed_with_shared_langgraph
 
-updated_at: "2026-07-19T07:18:48Z"
+updated_at: "2026-07-20T16:55:00Z"

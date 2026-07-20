@@ -42,9 +42,13 @@ async def live() -> LiveResponse:
     return LiveResponse(status="alive", trace_id=context.trace_id)
 
 
-async def _dependency_status(check: Awaitable[object]) -> str:
+async def _dependency_status(
+    check: Awaitable[object],
+    *,
+    timeout_seconds: float = 1.0,
+) -> str:
     try:
-        async with asyncio.timeout(1.0):
+        async with asyncio.timeout(timeout_seconds):
             await check
     except Exception:
         return "down"
@@ -67,14 +71,26 @@ async def ready(request: Request, response: Response) -> ReadyResponse:
     settings = request.app.state.settings
     if settings.retrieval_mode == "hybrid":
         minio, milvus, embedding = await asyncio.gather(
-            _dependency_status(request.app.state.minio_provider.health()),
-            _dependency_status(request.app.state.milvus_provider.health()),
-            _dependency_status(request.app.state.embedding_provider.health()),
+            _dependency_status(
+                request.app.state.minio_provider.health(),
+                timeout_seconds=3.0,
+            ),
+            _dependency_status(
+                request.app.state.milvus_provider.health(),
+                timeout_seconds=3.0,
+            ),
+            _dependency_status(
+                request.app.state.embedding_provider.health(),
+                timeout_seconds=min(settings.embedding_timeout_seconds, 10.0),
+            ),
         )
     else:
         minio = milvus = embedding = "optional"
     reranker = (
-        await _dependency_status(request.app.state.reranker_provider.health())
+        await _dependency_status(
+            request.app.state.reranker_provider.health(),
+            timeout_seconds=min(settings.rerank_timeout_seconds, 10.0),
+        )
         if request.app.state.reranker_provider
         else "optional"
     )

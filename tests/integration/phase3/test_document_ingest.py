@@ -21,7 +21,7 @@ from energy_agent.retrieval.ingestion.service import DocumentIngestionService
 
 pytestmark = pytest.mark.integration
 
-MYSQL_DSN = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
+MYSQL_DSN = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
 
 
 class DeterministicTestEmbedding:

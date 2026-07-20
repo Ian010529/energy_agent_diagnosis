@@ -1,5 +1,10 @@
+import asyncio
+from datetime import datetime
+from time import monotonic
+
 from fastapi import Request
 
+from energy_agent.agent.events import DiagnosisEventEmitter, NoopDiagnosisEventEmitter
 from energy_agent.agent.state import (
     AlarmContext,
     DeviceContext,
@@ -21,6 +26,7 @@ from energy_agent.contracts.diagnosis import (
     StepLogCreate,
     StructuredDiagnosisResult,
 )
+from energy_agent.contracts.events import SSEEventType
 from energy_agent.core.context import ActorContext, get_context
 from energy_agent.core.errors import (
     ClarificationAlreadyAnsweredError,
@@ -35,7 +41,18 @@ from energy_agent.core.ids import new_id
 from energy_agent.core.time import utc_now
 from energy_agent.memory.session_store import RedisSessionStore
 from energy_agent.model.gateway import ModelGateway
+from energy_agent.observability.metrics import (
+    ALARM_DEDUP,
+    DIAGNOSIS_DURATION,
+    DIAGNOSIS_PHASE,
+    DIAGNOSIS_RUNS,
+    FIRST_EVENT_LATENCY,
+    HIGH_RISK_ACTIONS,
+    HUMAN_ESCALATIONS,
+    SESSION_FAILURES,
+)
 from energy_agent.observability.tracing import Tracer
+from energy_agent.persistence.repositories.alarm_dedup import AlarmDedupRepository
 from energy_agent.persistence.repositories.audit import AuditRepository
 from energy_agent.persistence.repositories.diagnosis_run import (
     DiagnosisResultRepository,
@@ -47,6 +64,8 @@ from energy_agent.persistence.repositories.diagnosis_session import (
 from energy_agent.persistence.repositories.diagnosis_step_log import (
     DiagnosisStepLogRepository,
 )
+from energy_agent.reliability.registry import CircuitBreakerRegistry
+from energy_agent.tools.contracts import ToolResult
 from energy_agent.tools.executor import ToolExecutor
 from energy_agent.tools.registry import ToolRegistry
 
@@ -64,6 +83,8 @@ class DiagnosisService:
         tracer: Tracer,
         model_gateway: ModelGateway | None = None,
         audit: AuditRepository | None = None,
+        alarm_dedup: AlarmDedupRepository | None = None,
+        circuit_breakers: CircuitBreakerRegistry | None = None,
     ) -> None:
         self.sessions = sessions
         self.runs = runs
@@ -74,6 +95,8 @@ class DiagnosisService:
         self.tracer = tracer
         self.model_gateway = model_gateway
         self.audit = audit
+        self.alarm_dedup = alarm_dedup
+        self.circuit_breakers = circuit_breakers
 
     @classmethod
     def from_request(cls, request: Request) -> "DiagnosisService":
@@ -88,6 +111,8 @@ class DiagnosisService:
             tracer=state.tracer,
             model_gateway=state.model_gateway,
             audit=state.audit_repository,
+            alarm_dedup=state.alarm_dedup_repository,
+            circuit_breakers=state.circuit_breakers,
         )
 
     @staticmethod
@@ -102,6 +127,41 @@ class DiagnosisService:
         actor: ActorContext | None = None,
     ) -> CreateSessionResponse:
         trace_id = self._trace_id()
+        if (
+            payload.source.value == "alarm"
+            and payload.device_id
+            and payload.alarm_id
+            and payload.alarm_name
+            and self.alarm_dedup
+        ):
+            hit = await self.alarm_dedup.hit(
+                payload.device_id, payload.alarm_name, payload.alarm_id
+            )
+            if hit:
+                existing_session = await self.sessions.get(hit.session_id, trace_id=trace_id)
+                assert existing_session is not None
+                ALARM_DEDUP.labels(outcome="merged").inc()
+                if actor and self.audit:
+                    await self.audit.write(
+                        actor=actor,
+                        action="diagnosis.alarm_merged",
+                        resource_type="diagnosis",
+                        resource_id=hit.session_id,
+                        session_id=hit.session_id,
+                        trace_id=trace_id,
+                        snapshot={
+                            "alarm_id": payload.alarm_id,
+                            "duplicate_count": hit.hit_count,
+                        },
+                    )
+                return CreateSessionResponse(
+                    session_id=hit.session_id,
+                    run_id=existing_session.run_id,
+                    phase=existing_session.phase,
+                    trace_id=existing_session.trace_id,
+                    merged=True,
+                    duplicate_count=hit.hit_count,
+                )
         session_id, run_id = new_id(), new_id()
         fingerprint = request_fingerprint("create_session", payload.model_dump(mode="json"))
         if idempotency_key:
@@ -166,6 +226,20 @@ class DiagnosisService:
                 or None,
             )
         )
+        if (
+            payload.source.value == "alarm"
+            and payload.device_id
+            and payload.alarm_id
+            and payload.alarm_name
+            and self.alarm_dedup
+        ):
+            await self.alarm_dedup.register(
+                device_id=payload.device_id,
+                alarm_category=payload.alarm_name,
+                alarm_id=payload.alarm_id,
+                session_id=session_id,
+            )
+            ALARM_DEDUP.labels(outcome="new").inc()
         if actor and self.audit:
             await self.audit.write(
                 actor=actor,
@@ -188,7 +262,9 @@ class DiagnosisService:
         payload: DiagnosisChatRequest,
         idempotency_key: str | None = None,
         actor: ActorContext | None = None,
+        event_emitter: DiagnosisEventEmitter | None = None,
     ) -> DiagnosisResponse:
+        diagnosis_started = monotonic()
         trace_id = self._trace_id()
         session = await self.sessions.get(payload.session_id, trace_id=trace_id)
         if session is None:
@@ -321,6 +397,7 @@ class DiagnosisService:
                     {
                         "tool_name": str(item.get("tool_name", "")),
                         "status": str(item.get("status", "OK")),
+                        "has_usable_data": bool(item.get("has_usable_data", False)),
                         "result_ref": item.get("result_ref"),
                         "summary": item.get("summary"),
                     }
@@ -341,8 +418,10 @@ class DiagnosisService:
             name: str,
             output: dict[str, object] | None,
             error: BaseException | None,
+            started_at: datetime,
+            ended_at: datetime,
+            duration_ms: int,
         ) -> None:
-            now = utc_now()
             await self.step_logs.create(
                 StepLogCreate(
                     session_id=state.session_id,
@@ -352,9 +431,9 @@ class DiagnosisService:
                     step_status="FAILED" if error else "OK",
                     output_snapshot=output,
                     error_code=type(error).__name__ if error else None,
-                    started_at=now,
-                    ended_at=now,
-                    duration_ms=0,
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    duration_ms=duration_ms,
                 )
             )
 
@@ -369,20 +448,75 @@ class DiagnosisService:
                     )
                 )
 
-        executor = ToolExecutor(self.tools, self.tracer)
+        async def log_tool(
+            name: str,
+            tool_result: ToolResult,
+            started_at: datetime,
+            ended_at: datetime,
+        ) -> None:
+            await self.step_logs.create(
+                StepLogCreate(
+                    session_id=initial.session_id,
+                    run_id=run_id,
+                    trace_id=trace_id,
+                    step_name=f"tool.{name}",
+                    step_status=tool_result.status,
+                    output_snapshot={
+                        "status": tool_result.status,
+                        "error_code": tool_result.error_code,
+                        "attempts": tool_result.meta.attempts,
+                        "provider_latency_ms": tool_result.meta.latency_ms,
+                    },
+                    error_code=tool_result.error_code,
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    duration_ms=tool_result.meta.latency_ms,
+                )
+            )
+
+        emitter = event_emitter or NoopDiagnosisEventEmitter()
+        executor = ToolExecutor(
+            self.tools,
+            self.tracer,
+            tool_logger=log_tool,
+            circuit_breakers=self.circuit_breakers,
+        )
         graph = build_diagnosis_graph(
             executor,
             self.tracer,
             memory_writer=write_memory,
             step_logger=log_step,
             model_gateway=self.model_gateway,
+            event_emitter=emitter,
         )
-        with self.tracer.start_span(
-            "diagnosis.workflow",
-            trace_id=trace_id,
-            metadata={"session_id": payload.session_id, "run_id": run_id},
-        ):
-            output = await graph.ainvoke(initial)
+        try:
+            with self.tracer.start_span(
+                "diagnosis.workflow",
+                trace_id=trace_id,
+                metadata={"session_id": payload.session_id, "run_id": run_id},
+            ):
+                output = await graph.ainvoke(initial)
+        except asyncio.CancelledError:
+            await self.runs.finish(run_id, initial.phase, "cancelled")
+            SESSION_FAILURES.labels(category="cancelled").inc()
+            raise
+        except Exception:
+            await self.runs.finish(run_id, DiagnosisPhase.FAILED, "failed")
+            await self.runs.set_hardening_outcome(
+                run_id,
+                first_event_at=getattr(emitter, "first_event_at", None),
+                guardrail_status=None,
+                failure_category="workflow_exception",
+            )
+            await self.sessions.update(
+                payload.session_id,
+                DiagnosisSessionUpdate(phase=DiagnosisPhase.FAILED, run_id=run_id),
+                trace_id=trace_id,
+            )
+            DIAGNOSIS_RUNS.labels(template="unknown", status="FAILED").inc()
+            DIAGNOSIS_PHASE.labels(phase="FAILED").inc()
+            SESSION_FAILURES.labels(category="workflow_exception").inc()
+            raise
         state = DiagnosisState.model_validate(output)
         await self.runs.set_template(
             run_id,
@@ -390,23 +524,15 @@ class DiagnosisService:
             template_version=state.diagnosis_template_version,
             alarm_category=state.alarm_category,
         )
-        for summary in state.tool_results:
-            now = utc_now()
-            await self.step_logs.create(
-                StepLogCreate(
-                    session_id=state.session_id,
-                    run_id=run_id,
-                    trace_id=trace_id,
-                    step_name=f"tool.{summary.tool_name}",
-                    step_status=summary.status,
-                    output_snapshot=summary.model_dump(),
-                    started_at=now,
-                    ended_at=now,
-                    duration_ms=0,
-                )
-            )
         status = "completed" if state.phase == DiagnosisPhase.COMPLETED else "waiting_input"
         await self.runs.finish(run_id, state.phase, status)
+        await self.runs.set_hardening_outcome(
+            run_id,
+            first_event_at=getattr(emitter, "first_event_at", None),
+            guardrail_status=(
+                state.guardrail_decision.status if state.guardrail_decision else None
+            ),
+        )
         result = (
             StructuredDiagnosisResult.model_validate(state.final_response)
             if state.final_response
@@ -427,6 +553,24 @@ class DiagnosisService:
             trace_id=trace_id,
         )
         await self.memory.save(self._memory_payload(state, result))
+        template_label = state.diagnosis_template_id or "unknown"
+        DIAGNOSIS_RUNS.labels(template=template_label, status=state.phase).inc()
+        DIAGNOSIS_DURATION.labels(template=template_label).observe(monotonic() - diagnosis_started)
+        DIAGNOSIS_PHASE.labels(phase=state.phase).inc()
+        first_event_latency = emitter.first_event_latency_seconds
+        if first_event_latency is not None:
+            FIRST_EVENT_LATENCY.labels(template=template_label).observe(first_event_latency)
+        if state.phase == DiagnosisPhase.NEED_USER_INPUT:
+            reason = "guardrail" if state.guardrail_decision else "evidence_gap"
+            HUMAN_ESCALATIONS.labels(reason=reason).inc()
+        if result:
+            for action in result.recommended_actions:
+                if action.risk_level.value in {"high", "critical"}:
+                    HIGH_RISK_ACTIONS.labels(
+                        confirmation=(
+                            "required" if action.requires_human_confirmation else "missing"
+                        )
+                    ).inc()
         if actor and self.audit and payload.clarification_answers:
             await self.audit.write(
                 actor=actor,
@@ -440,7 +584,14 @@ class DiagnosisService:
                     "answer_lengths": [len(item.answer) for item in payload.clarification_answers],
                 },
             )
-        return self._response(state, result)
+        response = self._response(state, result)
+        if state.phase == DiagnosisPhase.COMPLETED:
+            await emitter.emit(
+                SSEEventType.COMPLETED,
+                state,
+                result=response.model_dump(mode="json"),
+            )
+        return response
 
     def _memory_payload(
         self, state: DiagnosisState, result: StructuredDiagnosisResult | None
@@ -511,6 +662,7 @@ class DiagnosisService:
             phase=state.phase,
             intent=state.intent,
             result=result,
+            evidence=state.evidence,
             evidence_refs=state.evidence_refs,
             tool_summaries=[item.model_dump(mode="json") for item in state.tool_results],
             clarification_questions=state.clarification_questions,
@@ -532,6 +684,7 @@ class DiagnosisService:
                 phase=memory.phase,
                 intent=memory.intent,
                 result=memory.final_result,
+                evidence=memory.evidence,
                 evidence_refs=memory.evidence_refs,
                 tool_summaries=memory.tool_summaries,
                 clarification_questions=memory.clarification_questions,
@@ -552,6 +705,7 @@ class DiagnosisService:
                 if result
                 else None
             ),
+            evidence=result.evidence if result else [],
             evidence_refs=[item.evidence_id for item in result.evidence] if result else [],
             degraded_components=result.degraded_components if result else [],
         )
@@ -608,6 +762,7 @@ class DiagnosisService:
             phase=DiagnosisPhase.COMPLETED,
             intent=DiagnosisIntent.FOLLOWUP_CLARIFICATION,
             result=result,
+            evidence=result.evidence,
             evidence_refs=[item.evidence_id for item in result.evidence],
             memory_revision=memory.memory_revision if memory else None,
         )

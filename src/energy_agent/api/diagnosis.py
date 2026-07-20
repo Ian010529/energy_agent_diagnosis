@@ -1,11 +1,14 @@
 import json
 from collections.abc import AsyncIterator
 
+import anyio
 from fastapi import APIRouter, Header, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
+from energy_agent.agent.events import QueueDiagnosisEventEmitter
 from energy_agent.agent.service import DiagnosisService
-from energy_agent.api.auth import actor_from_request, require_roles
+from energy_agent.api.auth import actor_from_request, require_pilot_write, require_roles
+from energy_agent.api.errors import error_response
 from energy_agent.contracts.diagnosis import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -13,8 +16,9 @@ from energy_agent.contracts.diagnosis import (
     DiagnosisResponse,
     SessionMessageRequest,
 )
-from energy_agent.contracts.events import SSEEventType
+from energy_agent.contracts.events import SSEEvent
 from energy_agent.core.context import ActorRole
+from energy_agent.observability.metrics import RATE_LIMIT_REJECTIONS
 
 router = APIRouter(prefix="/api/v1/diagnosis", tags=["diagnosis"])
 
@@ -27,6 +31,7 @@ async def create_session(
 ) -> CreateSessionResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await DiagnosisService.from_request(request).create_session(
         payload, idempotency_key, actor
     )
@@ -40,6 +45,7 @@ async def chat(
 ) -> DiagnosisResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await DiagnosisService.from_request(request).diagnose(payload, idempotency_key, actor)
 
 
@@ -52,6 +58,7 @@ async def session_message(
 ) -> DiagnosisResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
     return await DiagnosisService.from_request(request).diagnose(
         DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
         idempotency_key,
@@ -59,8 +66,11 @@ async def session_message(
     )
 
 
-def _sse(event: SSEEventType, data: dict[str, object]) -> str:
-    return f"event: {event.value}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
+def _sse(event: SSEEvent) -> str:
+    data = event.model_dump(mode="json", exclude={"event"})
+    return (
+        f"event: {event.event.value}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
+    )
 
 
 @router.post("/sessions/{session_id}/messages/stream")
@@ -68,39 +78,59 @@ async def stream_message(
     session_id: str,
     payload: SessionMessageRequest,
     request: Request,
-) -> StreamingResponse:
-    async def events() -> AsyncIterator[str]:
-        actor = actor_from_request(request)
-        require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
-        yield _sse(SSEEventType.INTENT_IDENTIFIED, {"session_id": session_id})
-        yield _sse(SSEEventType.DATA_FETCH_STARTED, {"session_id": session_id})
-        result = await DiagnosisService.from_request(request).diagnose(
-            DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
-            actor=actor,
-        )
-        yield _sse(
-            SSEEventType.RETRIEVAL_COMPLETED,
-            {"session_id": session_id, "evidence_refs": result.evidence_refs},
-        )
-        if result.phase.value == "NEED_USER_INPUT":
-            yield _sse(
-                SSEEventType.NEED_USER_INPUT,
-                {
-                    "session_id": session_id,
-                    "questions": [
-                        item.model_dump(mode="json") for item in result.clarification_questions
-                    ],
-                },
+) -> Response:
+    actor = actor_from_request(request)
+    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_pilot_write(request, actor)
+    settings = request.app.state.settings
+    stream_acquired = False
+    if settings.rate_limit_enabled:
+        try:
+            stream_acquired = await request.app.state.rate_limiter.acquire_stream(
+                actor.actor_id, settings.rate_limit_stream_concurrent
             )
-            return
-        yield _sse(
-            SSEEventType.DRAFT_GENERATED,
-            {"session_id": session_id, "run_id": result.run_id},
-        )
-        yield _sse(
-            SSEEventType.COMPLETED,
-            result.model_dump(mode="json"),
-        )
+        except Exception:
+            if settings.pilot_mode:
+                return error_response(
+                    code="RATE_LIMIT_UNAVAILABLE",
+                    message="Pilot streams are closed while rate limiting is unavailable",
+                    status_code=503,
+                    retryable=True,
+                )
+        if not stream_acquired:
+            RATE_LIMIT_REJECTIONS.labels(group="stream").inc()
+            response = error_response(
+                code="RATE_LIMITED",
+                message="Concurrent stream limit exceeded",
+                status_code=429,
+                retryable=True,
+            )
+            response.headers["Retry-After"] = "1"
+            return response
+    emitter = QueueDiagnosisEventEmitter()
+
+    async def run_workflow() -> None:
+        try:
+            await DiagnosisService.from_request(request).diagnose(
+                DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
+                actor=actor,
+                event_emitter=emitter,
+            )
+        finally:
+            await emitter.close()
+
+    async def events() -> AsyncIterator[str]:
+        try:
+            async with anyio.create_task_group() as task_group:
+                task_group.start_soon(run_workflow)
+                async for event in emitter.events():
+                    if await request.is_disconnected():
+                        task_group.cancel_scope.cancel()
+                        return
+                    yield _sse(event)
+        finally:
+            if settings.rate_limit_enabled and stream_acquired:
+                await request.app.state.rate_limiter.release_stream(actor.actor_id)
 
     return StreamingResponse(events(), media_type="text/event-stream")
 

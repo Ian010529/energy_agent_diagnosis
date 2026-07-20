@@ -1,0 +1,63 @@
+groups:
+  - name: energy-agent-pilot
+    rules:
+      - alert: EnergyToolSuccessLow
+        expr: sum(rate(energy_tool_calls_total{status=~"OK|PARTIAL_SUCCESS"}[15m])) / clamp_min(sum(rate(energy_tool_calls_total[15m])), 1) < 0.95
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: Tool success below 95%
+          description: Tool attempts have remained below the Phase 6 gate for 15 minutes.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyDiagnosisP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(energy_diagnosis_duration_seconds_bucket[15m]))) > 180
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: Diagnosis p95 exceeds 180 seconds
+          description: Full diagnosis latency violates the pilot technical gate.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyUnsupportedClaim
+        expr: increase(energy_unsupported_claims_total[5m]) > 0
+        labels: {severity: critical}
+        annotations:
+          summary: Unsupported strong claim detected
+          description: Guardrail observed a strong claim without valid evidence.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyHighRiskUnconfirmed
+        expr: increase(energy_high_risk_actions_total{confirmation="missing"}[5m]) > 0
+        labels: {severity: critical}
+        annotations:
+          summary: High-risk action lacks confirmation
+          description: A high-risk recommendation was emitted without confirmation control.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyIndexDLQGrowth
+        expr: increase(energy_index_dead_letters_total[15m]) > 0
+        labels: {severity: warning}
+        annotations:
+          summary: Index DLQ is growing
+          description: One or more indexing jobs entered the dead-letter queue.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyOutboxBacklog
+        expr: sum(increase(energy_outbox_publish_total{status!="published"}[15m])) > 10
+        labels: {severity: warning}
+        annotations:
+          summary: Index outbox is accumulating
+          description: Publish failures indicate an outbox backlog risk.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md
+      - alert: EnergyCircuitOpen
+        expr: energy_circuit_breaker_state == 1
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: Dependency circuit remains open
+          description: A dependency circuit breaker has stayed open for five minutes.
+          runbook: docs/pilot/DEGRADATION_MATRIX.md
+      - alert: EnergySessionFailureHigh
+        expr: sum(rate(energy_session_failures_total[15m])) / clamp_min(sum(rate(energy_diagnosis_runs_total[15m])), 1) > 0.05
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: Session failure rate exceeds 5%
+          description: Answerable diagnosis sessions are failing above the Phase 6 limit.
+          runbook: docs/pilot/INCIDENT_RUNBOOK.md

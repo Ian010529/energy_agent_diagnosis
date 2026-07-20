@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 
 from energy_agent.contracts.common import StrictModel
@@ -14,6 +15,10 @@ class SSEEventType(StrEnum):
 
 class SSEEvent(StrictModel):
     event: SSEEventType
+    event_sequence: int
+    timestamp: datetime
     session_id: str
     run_id: str
+    trace_id: str
+    phase: str
     payload: dict[str, object]

@@ -1,0 +1,56 @@
+{
+  "dataset_id": "pilot_medium_v1",
+  "dataset_version": "1.3.0",
+  "split": "regression",
+  "sample_count_per_profile": 100,
+  "profiles": [
+    {
+      "profile": "full_hybrid",
+      "run_id": "phase6-v130-regression-r01",
+      "technical_gate": "PASSED",
+      "top1": 0.17,
+      "top3": 0.5,
+      "tool_success_rate": 0.9583333333333334,
+      "full_diagnosis_p95_seconds": 41.59910945803858,
+      "session_failure_rate": 0.0
+    },
+    {
+      "profile": "keyword_only",
+      "run_id": "phase6-v130-regression-keyword-r01",
+      "technical_gate": "PASSED",
+      "top1": 0.18,
+      "top3": 0.44,
+      "tool_success_rate": 0.9583333333333334,
+      "full_diagnosis_p95_seconds": 32.265253624878824,
+      "session_failure_rate": 0.0
+    },
+    {
+      "profile": "hybrid_without_reranker",
+      "run_id": "phase6-v130-regression-no-reranker-r01",
+      "technical_gate": "PASSED",
+      "top1": 0.23,
+      "top3": 0.5,
+      "tool_success_rate": 0.9583333333333334,
+      "full_diagnosis_p95_seconds": 25.913662708364427,
+      "session_failure_rate": 0.0
+    },
+    {
+      "profile": "graph_disabled",
+      "run_id": "phase6-v130-regression-graph-disabled-r01",
+      "technical_gate": "FAILED",
+      "failed_check": "tool_success_rate",
+      "top1": 0.11,
+      "top3": 0.53,
+      "tool_success_rate": 0.7916666666666666,
+      "full_diagnosis_p95_seconds": 27.496094374917448,
+      "session_failure_rate": 0.0,
+      "degradation_behavior": "PASSED",
+      "degradation_observation": "All 100 expected query_graph_relations attempts returned DEGRADED without usable data; every session continued to COMPLETED or NEED_USER_INPUT. The original technical Gate remains FAILED because expected graph degradation is included in the aggregate tool-success denominator."
+    }
+  ],
+  "interpretation": {
+    "safety": "All profiles had zero session failures, answerable-session failures, invalid evidence references, unsupported strong claims, prompt-injection escapes, and Gold leaks.",
+    "quality": "Single-run sensitivity does not demonstrate an accuracy benefit from reranking. Keyword-only reduced Top-3 from 0.50 to 0.44. Graph-disabled preserved the main path but failed the unadjusted tool-success Gate.",
+    "governance": "No profile result was used to tune Prompt, templates, Gold, or Holdout."
+  }
+}

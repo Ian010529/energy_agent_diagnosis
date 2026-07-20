@@ -46,12 +46,9 @@ async def test_outbox_confirm_worker_manual_ack_and_duplicate_job_idempotency() 
     await rabbitmq.connect()
     assert rabbitmq.channel is not None
     try:
-        async with factory.begin() as session:
-            await session.execute(delete(IndexOutboxModel))
-            await session.execute(delete(IndexJobModel))
         request = IndexJobCreate(
             entity_type=EntityType.TEMPLATE_GRAPH,
-            entity_id="pcs_temperature_abnormal_v1",
+            entity_id=f"pcs_temperature_abnormal_v1_{suffix}",
             entity_version="1.0.0",
             operation=IndexOperation.GRAPH_PROJECT,
             trace_id="trace-worker",
@@ -79,13 +76,26 @@ async def test_outbox_confirm_worker_manual_ack_and_duplicate_job_idempotency() 
         assert completed.status == IndexJobStatus.INDEXED
         assert completed.attempt_count == 1
         async with factory() as session:
-            outboxes = (await session.execute(select(IndexOutboxModel))).scalars().all()
+            outboxes = (
+                (
+                    await session.execute(
+                        select(IndexOutboxModel).where(IndexOutboxModel.job_id == first.job_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
         assert len(outboxes) == 1
         assert outboxes[0].publish_status == "PUBLISHED"
     finally:
         async with factory.begin() as session:
-            await session.execute(delete(IndexOutboxModel))
-            await session.execute(delete(IndexJobModel))
+            if "first" in locals():
+                await session.execute(
+                    delete(IndexOutboxModel).where(IndexOutboxModel.job_id == first.job_id)
+                )
+                await session.execute(
+                    delete(IndexJobModel).where(IndexJobModel.job_id == first.job_id)
+                )
         await rabbitmq.channel.queue_delete(settings.rabbitmq_index_queue)
         await rabbitmq.channel.queue_delete(settings.rabbitmq_index_retry_queue)
         await rabbitmq.channel.queue_delete(settings.rabbitmq_index_dead_queue)

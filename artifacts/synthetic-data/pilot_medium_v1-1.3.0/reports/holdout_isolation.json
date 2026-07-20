@@ -1,0 +1,6 @@
+{
+  "dataset_version": "1.3.0",
+  "holdout_device_count": 10,
+  "leaking_ticket_ids": [],
+  "ticket_device_leak_count": 0
+}

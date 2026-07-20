@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+  - job_name: energy-agent-backend
+    metrics_path: /metrics
+    authorization:
+      credentials: pilot-local-key
+    static_configs:
+      - targets: ["backend:8000"]
+  - job_name: energy-agent-index-worker
+    static_configs:
+      - targets: ["index-worker:9101"]

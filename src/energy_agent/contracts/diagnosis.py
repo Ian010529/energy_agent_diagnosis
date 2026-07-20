@@ -10,6 +10,7 @@ from energy_agent.contracts.common import (
     SessionSource,
     StrictModel,
 )
+from energy_agent.guardrails.contracts import GuardrailDecision, RecommendedAction
 
 
 class DiagnosisSessionCreate(StrictModel):
@@ -46,6 +47,9 @@ class DiagnosisRunCreate(StrictModel):
     diagnosis_template_id: str | None = None
     diagnosis_template_version: str | None = None
     alarm_category: str | None = None
+    first_event_at: datetime | None = None
+    guardrail_status: str | None = None
+    failure_category: str | None = None
 
 
 class DiagnosisRunRecord(DiagnosisRunCreate):
@@ -66,6 +70,8 @@ class StructuredDiagnosisResult(StrictModel):
     risk_level: RiskLevel = RiskLevel.UNKNOWN
     warnings: list[str] = Field(default_factory=list)
     degraded_components: list[str] = Field(default_factory=list)
+    recommended_actions: list[RecommendedAction] = Field(default_factory=list)
+    guardrail_decision: GuardrailDecision | None = None
 
 
 class DiagnosisResultCreate(StructuredDiagnosisResult):
@@ -97,6 +103,8 @@ class CreateSessionResponse(StrictModel):
     run_id: str
     phase: DiagnosisPhase
     trace_id: str
+    merged: bool = False
+    duplicate_count: int = 1
 
 
 class ClarificationAnswer(StrictModel):
@@ -126,6 +134,7 @@ class DiagnosisResponse(StrictModel):
     phase: DiagnosisPhase
     intent: DiagnosisIntent | None = None
     result: StructuredDiagnosisResult | None = None
+    evidence: list[Evidence] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
     tool_summaries: list[dict[str, object]] = Field(default_factory=list)
     clarification_questions: list[ClarificationQuestion] = Field(default_factory=list)

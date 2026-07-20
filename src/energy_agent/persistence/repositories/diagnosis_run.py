@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -33,6 +35,9 @@ class DiagnosisRunRepository:
             diagnosis_template_id=model.diagnosis_template_id,
             diagnosis_template_version=model.diagnosis_template_version,
             alarm_category=model.alarm_category,
+            first_event_at=ensure_utc(model.first_event_at) if model.first_event_at else None,
+            guardrail_status=model.guardrail_status,
+            failure_category=model.failure_category,
             started_at=ensure_utc(model.started_at),
             ended_at=ensure_utc(model.ended_at) if model.ended_at else None,
             created_at=ensure_utc(model.created_at),
@@ -126,6 +131,25 @@ class DiagnosisRunRepository:
         except Exception as exc:
             raise DependencyUnavailableError("MySQL diagnosis template update failed") from exc
 
+    async def set_hardening_outcome(
+        self,
+        run_id: str,
+        *,
+        first_event_at: datetime | None,
+        guardrail_status: str | None,
+        failure_category: str | None = None,
+    ) -> None:
+        try:
+            async with self.session_factory.begin() as session:
+                model = await session.get(DiagnosisRunModel, run_id)
+                if model:
+                    model.first_event_at = first_event_at
+                    model.guardrail_status = guardrail_status
+                    model.failure_category = failure_category
+                    model.updated_at = utc_now()
+        except Exception as exc:
+            raise DependencyUnavailableError("MySQL hardening outcome update failed") from exc
+
 
 class DiagnosisResultRepository:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession], tracer: Tracer) -> None:
@@ -148,6 +172,8 @@ class DiagnosisResultRepository:
                 "risk_level": model.risk_level,
                 "warnings": model.warnings,
                 "degraded_components": model.degraded_components,
+                "recommended_actions": model.recommended_actions,
+                "guardrail_decision": model.guardrail_decision,
                 "created_at": ensure_utc(model.created_at),
                 "updated_at": ensure_utc(model.updated_at),
             }

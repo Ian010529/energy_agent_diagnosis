@@ -82,7 +82,11 @@ class FakeMySQL:
 
 
 class FakeEmbedding:
+    def __init__(self) -> None:
+        self.calls: list[list[str]] = []
+
     async def embed(self, texts: list[str]) -> list[list[float]]:
+        self.calls.append(texts)
         return [[1.0] + [0.0] * 1023 for _ in texts]
 
 
@@ -141,10 +145,11 @@ async def test_hybrid_manual_ticket_merge_rerank_score_and_fallbacks() -> None:
         "manufacturer": "EnergyCo",
         "alarm_name": "温度告警",
     }
+    embedding = FakeEmbedding()
     service = RetrievalService(
         mysql=FakeMySQL(),  # type: ignore[arg-type]
         tracer=LocalTracer(),
-        embedding=FakeEmbedding(),  # type: ignore[arg-type]
+        embedding=embedding,  # type: ignore[arg-type]
         milvus=FakeMilvus(),  # type: ignore[arg-type]
         reranker=FakeReranker(),  # type: ignore[arg-type]
         default_mode=RetrievalMode.HYBRID,
@@ -170,6 +175,8 @@ async def test_hybrid_manual_ticket_merge_rerank_score_and_fallbacks() -> None:
     assert manual.retrieval_metadata.degraded_components == []
     assert manual.ranked_evidence[0].final_score > 0.45
     assert ticket.ranked_evidence[0].source_type == SourceType.TICKET
+    assert len(embedding.calls) == 1
+    assert len(embedding.calls[0]) == 2
 
     degraded = RetrievalService(
         mysql=FakeMySQL(),  # type: ignore[arg-type]

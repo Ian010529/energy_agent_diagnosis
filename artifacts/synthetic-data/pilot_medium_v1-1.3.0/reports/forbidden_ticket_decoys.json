@@ -1,0 +1,1252 @@
+[
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-29127340057e08cdc97e",
+    "sample_id": "SAMPLE-pilot_medium_v1-29127340057e08cdc97e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-865ce317b28edc281360",
+    "sample_id": "SAMPLE-pilot_medium_v1-865ce317b28edc281360",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6d3302c57f646f160d61",
+    "sample_id": "SAMPLE-pilot_medium_v1-6d3302c57f646f160d61",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-ea71dfd5deb19fd5bc9c",
+    "sample_id": "SAMPLE-pilot_medium_v1-ea71dfd5deb19fd5bc9c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-15b78f4f125e25dac2c8",
+    "sample_id": "SAMPLE-pilot_medium_v1-15b78f4f125e25dac2c8",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c47d06092331e47f0913",
+    "sample_id": "SAMPLE-pilot_medium_v1-c47d06092331e47f0913",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3e2d600c2501cc485bd4",
+    "sample_id": "SAMPLE-pilot_medium_v1-3e2d600c2501cc485bd4",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-466f8e5e2d7aac39e871",
+    "sample_id": "SAMPLE-pilot_medium_v1-466f8e5e2d7aac39e871",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9c8e4c8c78865499f26a",
+    "sample_id": "SAMPLE-pilot_medium_v1-9c8e4c8c78865499f26a",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6082d48bbdc6017f7641",
+    "sample_id": "SAMPLE-pilot_medium_v1-6082d48bbdc6017f7641",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-20fc0e3674ebdc7a4b4c",
+    "sample_id": "SAMPLE-pilot_medium_v1-20fc0e3674ebdc7a4b4c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-7a0d7d04f72388e56fe2",
+    "sample_id": "SAMPLE-pilot_medium_v1-7a0d7d04f72388e56fe2",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f1577def234f214f3d7f",
+    "sample_id": "SAMPLE-pilot_medium_v1-f1577def234f214f3d7f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-78d2a9ff4e53642d7017",
+    "sample_id": "SAMPLE-pilot_medium_v1-0c9846bbc56b427eb5fb",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-bf7525f69497b58b1e6c",
+    "sample_id": "SAMPLE-pilot_medium_v1-78d2a9ff4e53642d7017",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6d62cc9731cf5cb49d26",
+    "sample_id": "SAMPLE-pilot_medium_v1-bf7525f69497b58b1e6c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-97980ea577c407ec3eff",
+    "sample_id": "SAMPLE-pilot_medium_v1-6d62cc9731cf5cb49d26",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-74ac75d5f43c0e85a5aa",
+    "sample_id": "SAMPLE-pilot_medium_v1-97980ea577c407ec3eff",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-09bda9512b3ba8c5ca25",
+    "sample_id": "SAMPLE-pilot_medium_v1-74ac75d5f43c0e85a5aa",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-290de8ad5ce77f51f815",
+    "sample_id": "SAMPLE-pilot_medium_v1-09bda9512b3ba8c5ca25",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-241b375dcd821e5f4277",
+    "sample_id": "SAMPLE-pilot_medium_v1-290de8ad5ce77f51f815",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a78139e6029fcee42176",
+    "sample_id": "SAMPLE-pilot_medium_v1-241b375dcd821e5f4277",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f652bb9f60f26791c717",
+    "sample_id": "SAMPLE-pilot_medium_v1-a78139e6029fcee42176",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-59e9331404709c1721f8",
+    "sample_id": "SAMPLE-pilot_medium_v1-f652bb9f60f26791c717",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2c08ea415981f920099f",
+    "sample_id": "SAMPLE-pilot_medium_v1-59e9331404709c1721f8",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-42615af703ed83fd7a30",
+    "sample_id": "SAMPLE-pilot_medium_v1-2c08ea415981f920099f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c2be594daf5c936d13ec",
+    "sample_id": "SAMPLE-pilot_medium_v1-42615af703ed83fd7a30",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-ced43e26398aec6fce0d",
+    "sample_id": "SAMPLE-pilot_medium_v1-c2be594daf5c936d13ec",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-0e73dc9244cb1f79cade",
+    "sample_id": "SAMPLE-pilot_medium_v1-ced43e26398aec6fce0d",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-0be1c90b5a8381dfb9eb",
+    "sample_id": "SAMPLE-pilot_medium_v1-0e73dc9244cb1f79cade",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f618ee50901e7d6e3aba",
+    "sample_id": "SAMPLE-pilot_medium_v1-0be1c90b5a8381dfb9eb",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-fbcaff1f44dda87a0e60",
+    "sample_id": "SAMPLE-pilot_medium_v1-f618ee50901e7d6e3aba",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8e09b146d0aae31aaafb",
+    "sample_id": "SAMPLE-pilot_medium_v1-fbcaff1f44dda87a0e60",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c0a40456fe3e3f09d4ca",
+    "sample_id": "SAMPLE-pilot_medium_v1-8e09b146d0aae31aaafb",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-92533e9aedefe9c32955",
+    "sample_id": "SAMPLE-pilot_medium_v1-c0a40456fe3e3f09d4ca",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c36f3b6be477d917fa76",
+    "sample_id": "SAMPLE-pilot_medium_v1-92533e9aedefe9c32955",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5b41f37f7018b2f6d178",
+    "sample_id": "SAMPLE-pilot_medium_v1-c36f3b6be477d917fa76",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-81744322416206fa699b",
+    "sample_id": "SAMPLE-pilot_medium_v1-5b41f37f7018b2f6d178",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a752ce442739b32a527c",
+    "sample_id": "SAMPLE-pilot_medium_v1-81744322416206fa699b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8fc7fe39fb957414866b",
+    "sample_id": "SAMPLE-pilot_medium_v1-a752ce442739b32a527c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1b709bed039ebff30e13",
+    "sample_id": "SAMPLE-pilot_medium_v1-8fc7fe39fb957414866b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3acaecf629ebfd7a937e",
+    "sample_id": "SAMPLE-pilot_medium_v1-1b709bed039ebff30e13",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b29960766fc56388089d",
+    "sample_id": "SAMPLE-pilot_medium_v1-3acaecf629ebfd7a937e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6106d4d148ae66efddf0",
+    "sample_id": "SAMPLE-pilot_medium_v1-b29960766fc56388089d",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8b63be751cf8dab9bb9b",
+    "sample_id": "SAMPLE-pilot_medium_v1-6106d4d148ae66efddf0",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8fb78f6f90c51f6fc2c6",
+    "sample_id": "SAMPLE-pilot_medium_v1-8b63be751cf8dab9bb9b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b1419012d4c26a351c3e",
+    "sample_id": "SAMPLE-pilot_medium_v1-8fb78f6f90c51f6fc2c6",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-bb21c054d3639a593d14",
+    "sample_id": "SAMPLE-pilot_medium_v1-b1419012d4c26a351c3e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9f363cc2815b1f63f74e",
+    "sample_id": "SAMPLE-pilot_medium_v1-bb21c054d3639a593d14",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-fbb83255386ac102c181",
+    "sample_id": "SAMPLE-pilot_medium_v1-9f363cc2815b1f63f74e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b9175783a3516344be1d",
+    "sample_id": "SAMPLE-pilot_medium_v1-fbb83255386ac102c181",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-37dad1a0f1425978bd7e",
+    "sample_id": "SAMPLE-pilot_medium_v1-b9175783a3516344be1d",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b19c71ffe02709b5c459",
+    "sample_id": "SAMPLE-pilot_medium_v1-37dad1a0f1425978bd7e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5c3741a0302d16c8367f",
+    "sample_id": "SAMPLE-pilot_medium_v1-b19c71ffe02709b5c459",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6e0fa4e9b5e8f8ce7898",
+    "sample_id": "SAMPLE-pilot_medium_v1-5c3741a0302d16c8367f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-dcb93d12458eff9f28cd",
+    "sample_id": "SAMPLE-pilot_medium_v1-6e0fa4e9b5e8f8ce7898",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-fa3e99a10e8bf0d19d77",
+    "sample_id": "SAMPLE-pilot_medium_v1-dcb93d12458eff9f28cd",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-14e6a8c6fc11bf937cbd",
+    "sample_id": "SAMPLE-pilot_medium_v1-fa3e99a10e8bf0d19d77",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-75049da73664e4278604",
+    "sample_id": "SAMPLE-pilot_medium_v1-14e6a8c6fc11bf937cbd",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-18c3c10594b7fd297b6f",
+    "sample_id": "SAMPLE-pilot_medium_v1-75049da73664e4278604",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-cdf288aced7ed56707a9",
+    "sample_id": "SAMPLE-pilot_medium_v1-18c3c10594b7fd297b6f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-127e42f2da779046a6bc",
+    "sample_id": "SAMPLE-pilot_medium_v1-cdf288aced7ed56707a9",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-45871d05578b1ed51c7f",
+    "sample_id": "SAMPLE-pilot_medium_v1-127e42f2da779046a6bc",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-bdca3792bb673ba65aa3",
+    "sample_id": "SAMPLE-pilot_medium_v1-45871d05578b1ed51c7f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3d486d28c311fcb92c0b",
+    "sample_id": "SAMPLE-pilot_medium_v1-bdca3792bb673ba65aa3",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-96529635292181d1c2cf",
+    "sample_id": "SAMPLE-pilot_medium_v1-3d486d28c311fcb92c0b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-03cddc04b63647b97521",
+    "sample_id": "SAMPLE-pilot_medium_v1-96529635292181d1c2cf",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b549f68a3ea649bf5bdb",
+    "sample_id": "SAMPLE-pilot_medium_v1-03cddc04b63647b97521",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5b3b0634cf337e9c36bc",
+    "sample_id": "SAMPLE-pilot_medium_v1-b549f68a3ea649bf5bdb",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-10a372432d4f03705924",
+    "sample_id": "SAMPLE-pilot_medium_v1-5b3b0634cf337e9c36bc",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-4c38324e87f2a9dad748",
+    "sample_id": "SAMPLE-pilot_medium_v1-10a372432d4f03705924",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6a7171233c8f29e031e7",
+    "sample_id": "SAMPLE-pilot_medium_v1-4c38324e87f2a9dad748",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b17a10d8165d31bc51ad",
+    "sample_id": "SAMPLE-pilot_medium_v1-6a7171233c8f29e031e7",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-280ea4f86b0197e04b53",
+    "sample_id": "SAMPLE-pilot_medium_v1-b17a10d8165d31bc51ad",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-61be943af17ba110a2ce",
+    "sample_id": "SAMPLE-pilot_medium_v1-280ea4f86b0197e04b53",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-521bf2553bc5acb565d3",
+    "sample_id": "SAMPLE-pilot_medium_v1-61be943af17ba110a2ce",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1d6397652212af959247",
+    "sample_id": "SAMPLE-pilot_medium_v1-521bf2553bc5acb565d3",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d130d5381dfb2cd981b6",
+    "sample_id": "SAMPLE-pilot_medium_v1-1d6397652212af959247",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8be869f16eb05ba63d3b",
+    "sample_id": "SAMPLE-pilot_medium_v1-d130d5381dfb2cd981b6",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a15a5c9a38ca11435e1f",
+    "sample_id": "SAMPLE-pilot_medium_v1-8be869f16eb05ba63d3b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-75921be5f9674bbd87e6",
+    "sample_id": "SAMPLE-pilot_medium_v1-e2faef690b79aa668c9e",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-79926872d052d8c1ada8",
+    "sample_id": "SAMPLE-pilot_medium_v1-a15a5c9a38ca11435e1f",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8020d472d0aab582db56",
+    "sample_id": "SAMPLE-pilot_medium_v1-75921be5f9674bbd87e6",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f51064c18b17f14cae17",
+    "sample_id": "SAMPLE-pilot_medium_v1-79926872d052d8c1ada8",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-39213c379ff1a58252d3",
+    "sample_id": "SAMPLE-pilot_medium_v1-8020d472d0aab582db56",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f6ee9de263acab64218b",
+    "sample_id": "SAMPLE-pilot_medium_v1-f51064c18b17f14cae17",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-fc4ed00211454b0b449d",
+    "sample_id": "SAMPLE-pilot_medium_v1-39213c379ff1a58252d3",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c355d1541c3628795306",
+    "sample_id": "SAMPLE-pilot_medium_v1-f6ee9de263acab64218b",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b1697370dd3ecf460fa2",
+    "sample_id": "SAMPLE-pilot_medium_v1-fc4ed00211454b0b449d",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1c0225cd52faec2e8f98",
+    "sample_id": "SAMPLE-pilot_medium_v1-c355d1541c3628795306",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6e32c068daedc1340ccc",
+    "sample_id": "SAMPLE-pilot_medium_v1-b1697370dd3ecf460fa2",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-74c5dd79d677770c9d61",
+    "sample_id": "SAMPLE-pilot_medium_v1-1c0225cd52faec2e8f98",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-aca81c5ba130c40e9c8c",
+    "sample_id": "SAMPLE-pilot_medium_v1-6e32c068daedc1340ccc",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-711b2058b1eaac5d26c1",
+    "sample_id": "SAMPLE-pilot_medium_v1-74c5dd79d677770c9d61",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6e4086e599fd76927daa",
+    "sample_id": "SAMPLE-pilot_medium_v1-aca81c5ba130c40e9c8c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f6d3fa6197198da65ab8",
+    "sample_id": "SAMPLE-pilot_medium_v1-711b2058b1eaac5d26c1",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2844f76ab2e3ce32222c",
+    "sample_id": "SAMPLE-pilot_medium_v1-6e4086e599fd76927daa",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a31f78cdc18e1a199068",
+    "sample_id": "SAMPLE-pilot_medium_v1-f6d3fa6197198da65ab8",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-74b79b491b585fe5d87d",
+    "sample_id": "SAMPLE-pilot_medium_v1-2844f76ab2e3ce32222c",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e0915470c7b6467f8a74",
+    "sample_id": "SAMPLE-pilot_medium_v1-a31f78cdc18e1a199068",
+    "split": "calibration"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b064012a90ae3ba2e32b",
+    "sample_id": "SAMPLE-pilot_medium_v1-74b79b491b585fe5d87d",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-81a83c162b1e9ff6edcd",
+    "sample_id": "SAMPLE-pilot_medium_v1-e0915470c7b6467f8a74",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-de0c84e2599913d4dd53",
+    "sample_id": "SAMPLE-pilot_medium_v1-b064012a90ae3ba2e32b",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f261c9e1a36551ee36be",
+    "sample_id": "SAMPLE-pilot_medium_v1-81a83c162b1e9ff6edcd",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5efcf6473dde2f0d2e68",
+    "sample_id": "SAMPLE-pilot_medium_v1-4011862d28085db334fc",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d5b30de69c0393c7248f",
+    "sample_id": "SAMPLE-pilot_medium_v1-e64eceb420ce1c075d51",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f7b3f30660c968b08cc9",
+    "sample_id": "SAMPLE-pilot_medium_v1-de0c84e2599913d4dd53",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-76bbfbf1db02a37b92db",
+    "sample_id": "SAMPLE-pilot_medium_v1-f261c9e1a36551ee36be",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-0a5f56a730adf31e14af",
+    "sample_id": "SAMPLE-pilot_medium_v1-5efcf6473dde2f0d2e68",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-754f1455f3d4178cb070",
+    "sample_id": "SAMPLE-pilot_medium_v1-d5b30de69c0393c7248f",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9c49d22d541aa65638fb",
+    "sample_id": "SAMPLE-pilot_medium_v1-f7b3f30660c968b08cc9",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-df86dd136710e2af905b",
+    "sample_id": "SAMPLE-pilot_medium_v1-76bbfbf1db02a37b92db",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-57d63037499a8740bb46",
+    "sample_id": "SAMPLE-pilot_medium_v1-0a5f56a730adf31e14af",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9fd7f8078ccab7ab4e8e",
+    "sample_id": "SAMPLE-pilot_medium_v1-754f1455f3d4178cb070",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d5be37b8bdc39fe0031e",
+    "sample_id": "SAMPLE-pilot_medium_v1-9c49d22d541aa65638fb",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-80a1a9969056eaf65437",
+    "sample_id": "SAMPLE-pilot_medium_v1-df86dd136710e2af905b",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a2034ca43085390980ca",
+    "sample_id": "SAMPLE-pilot_medium_v1-57d63037499a8740bb46",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6b783e3e220b63dd9f2e",
+    "sample_id": "SAMPLE-pilot_medium_v1-280d18912ffdf13a3872",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-964e043b505291d110f3",
+    "sample_id": "SAMPLE-pilot_medium_v1-9fd7f8078ccab7ab4e8e",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6cc0ed67876a9820df85",
+    "sample_id": "SAMPLE-pilot_medium_v1-d5be37b8bdc39fe0031e",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-db434fc8837a62da24f8",
+    "sample_id": "SAMPLE-pilot_medium_v1-80a1a9969056eaf65437",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-54356e72dd7d2c049470",
+    "sample_id": "SAMPLE-pilot_medium_v1-a2034ca43085390980ca",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1466ef654a3f38594411",
+    "sample_id": "SAMPLE-pilot_medium_v1-6b783e3e220b63dd9f2e",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-7a35aebe0d0d2dd54543",
+    "sample_id": "SAMPLE-pilot_medium_v1-964e043b505291d110f3",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5609f1f4a05d836002d6",
+    "sample_id": "SAMPLE-pilot_medium_v1-6cc0ed67876a9820df85",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-00e3e8d81b528ec08214",
+    "sample_id": "SAMPLE-pilot_medium_v1-db434fc8837a62da24f8",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9d4e3ea370542a5d69ac",
+    "sample_id": "SAMPLE-pilot_medium_v1-54356e72dd7d2c049470",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-18b181be499ce95ed2de",
+    "sample_id": "SAMPLE-pilot_medium_v1-1466ef654a3f38594411",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-07e5a0b5c1de9f1176aa",
+    "sample_id": "SAMPLE-pilot_medium_v1-7a35aebe0d0d2dd54543",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-4411f4691698b36a7742",
+    "sample_id": "SAMPLE-pilot_medium_v1-5609f1f4a05d836002d6",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6840b4f756f0ca4c2341",
+    "sample_id": "SAMPLE-pilot_medium_v1-00e3e8d81b528ec08214",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-ab984c593753fdf79794",
+    "sample_id": "SAMPLE-pilot_medium_v1-9d4e3ea370542a5d69ac",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6c1a080665dc7bbe36ea",
+    "sample_id": "SAMPLE-pilot_medium_v1-18b181be499ce95ed2de",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-4d53b5185ed7c76b4a11",
+    "sample_id": "SAMPLE-pilot_medium_v1-07e5a0b5c1de9f1176aa",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f99d0a8b5ccfcbdb49e6",
+    "sample_id": "SAMPLE-pilot_medium_v1-4411f4691698b36a7742",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-85eb985d348398ae8c39",
+    "sample_id": "SAMPLE-pilot_medium_v1-6840b4f756f0ca4c2341",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9acb8d95aec5f57c79a7",
+    "sample_id": "SAMPLE-pilot_medium_v1-ab984c593753fdf79794",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-296f987e6b94cd81645a",
+    "sample_id": "SAMPLE-pilot_medium_v1-6c1a080665dc7bbe36ea",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-dbb900a29c352cf04591",
+    "sample_id": "SAMPLE-pilot_medium_v1-4d53b5185ed7c76b4a11",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6f5b8de40a1cd276b870",
+    "sample_id": "SAMPLE-pilot_medium_v1-f99d0a8b5ccfcbdb49e6",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-789b7fc22ccf3f245f1b",
+    "sample_id": "SAMPLE-pilot_medium_v1-85eb985d348398ae8c39",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d53cf9eb04e93a5aec64",
+    "sample_id": "SAMPLE-pilot_medium_v1-9acb8d95aec5f57c79a7",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-faaa84ff1e3675841c59",
+    "sample_id": "SAMPLE-pilot_medium_v1-296f987e6b94cd81645a",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6d3d4afb4fdb857df6dd",
+    "sample_id": "SAMPLE-pilot_medium_v1-dbb900a29c352cf04591",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c8abaaa3839efa6bdf3f",
+    "sample_id": "SAMPLE-pilot_medium_v1-6f5b8de40a1cd276b870",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-29e1cfc90c72f8be77ac",
+    "sample_id": "SAMPLE-pilot_medium_v1-789b7fc22ccf3f245f1b",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-ecccae41c7b83de0f805",
+    "sample_id": "SAMPLE-pilot_medium_v1-d53cf9eb04e93a5aec64",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1b6cf7f9da2d796d67a5",
+    "sample_id": "SAMPLE-pilot_medium_v1-faaa84ff1e3675841c59",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8ba71951c246855cc38e",
+    "sample_id": "SAMPLE-pilot_medium_v1-6d3d4afb4fdb857df6dd",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c19d59086f3e03ef9dfa",
+    "sample_id": "SAMPLE-pilot_medium_v1-c8abaaa3839efa6bdf3f",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-08dc8b6d51eb8622e5e4",
+    "sample_id": "SAMPLE-pilot_medium_v1-29e1cfc90c72f8be77ac",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-14bd7c7a9e8db0884843",
+    "sample_id": "SAMPLE-pilot_medium_v1-ecccae41c7b83de0f805",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-473cac016c0cfc8563ee",
+    "sample_id": "SAMPLE-pilot_medium_v1-1b6cf7f9da2d796d67a5",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-024127225b7c7a318935",
+    "sample_id": "SAMPLE-pilot_medium_v1-8ba71951c246855cc38e",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-4096ddbaa99b012d1dc5",
+    "sample_id": "SAMPLE-pilot_medium_v1-c19d59086f3e03ef9dfa",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8fba1dd0c69ca6214b12",
+    "sample_id": "SAMPLE-pilot_medium_v1-08dc8b6d51eb8622e5e4",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6e908fa345cc38e23bef",
+    "sample_id": "SAMPLE-pilot_medium_v1-14bd7c7a9e8db0884843",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-46fba42d9e9d62f4f25c",
+    "sample_id": "SAMPLE-pilot_medium_v1-473cac016c0cfc8563ee",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c2a391af1f6172405004",
+    "sample_id": "SAMPLE-pilot_medium_v1-024127225b7c7a318935",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-7d280efe4a4d2650545c",
+    "sample_id": "SAMPLE-pilot_medium_v1-4096ddbaa99b012d1dc5",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-730600d0372762559adf",
+    "sample_id": "SAMPLE-pilot_medium_v1-8fba1dd0c69ca6214b12",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-221dddaba4600f7f0a48",
+    "sample_id": "SAMPLE-pilot_medium_v1-6e908fa345cc38e23bef",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-7f683db284b04e1b247c",
+    "sample_id": "SAMPLE-pilot_medium_v1-46fba42d9e9d62f4f25c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2ea9b801e36bb432ff27",
+    "sample_id": "SAMPLE-pilot_medium_v1-c2a391af1f6172405004",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e42efac99ae93dd04086",
+    "sample_id": "SAMPLE-pilot_medium_v1-7d280efe4a4d2650545c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-773238a1223a15b406dc",
+    "sample_id": "SAMPLE-pilot_medium_v1-730600d0372762559adf",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-45ad1a78d596817d04b2",
+    "sample_id": "SAMPLE-pilot_medium_v1-221dddaba4600f7f0a48",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d9467d1d9a1ceb12c3ee",
+    "sample_id": "SAMPLE-pilot_medium_v1-7f683db284b04e1b247c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-56e875d9b22d7197f25c",
+    "sample_id": "SAMPLE-pilot_medium_v1-2ea9b801e36bb432ff27",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f42c778a2a0fa2d6f3a7",
+    "sample_id": "SAMPLE-pilot_medium_v1-e42efac99ae93dd04086",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-593a25b9ec1ecfa7da8d",
+    "sample_id": "SAMPLE-pilot_medium_v1-773238a1223a15b406dc",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f310878dd696c93dda4d",
+    "sample_id": "SAMPLE-pilot_medium_v1-5f806693ca32a735699b",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8664b65a795985cfd681",
+    "sample_id": "SAMPLE-pilot_medium_v1-45ad1a78d596817d04b2",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-b3c98b4db238afd3051d",
+    "sample_id": "SAMPLE-pilot_medium_v1-d9467d1d9a1ceb12c3ee",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-27197c8a2da424f56326",
+    "sample_id": "SAMPLE-pilot_medium_v1-56e875d9b22d7197f25c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-77017f91398d627e8392",
+    "sample_id": "SAMPLE-pilot_medium_v1-f42c778a2a0fa2d6f3a7",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e3fedb8144ef20d71677",
+    "sample_id": "SAMPLE-pilot_medium_v1-593a25b9ec1ecfa7da8d",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-007fa79abd641056d3b4",
+    "sample_id": "SAMPLE-pilot_medium_v1-f310878dd696c93dda4d",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a068906636fe38defa02",
+    "sample_id": "SAMPLE-pilot_medium_v1-8664b65a795985cfd681",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2d43f67366cbcc344289",
+    "sample_id": "SAMPLE-pilot_medium_v1-b3c98b4db238afd3051d",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-48f7ca72a6dcfdebeabe",
+    "sample_id": "SAMPLE-pilot_medium_v1-27197c8a2da424f56326",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d1e5aa420ffcdc86520a",
+    "sample_id": "SAMPLE-pilot_medium_v1-77017f91398d627e8392",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-bb72119ac7bf42bb5f15",
+    "sample_id": "SAMPLE-pilot_medium_v1-e3fedb8144ef20d71677",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-80e6ebbc1e16c78029db",
+    "sample_id": "SAMPLE-pilot_medium_v1-007fa79abd641056d3b4",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-c4cec84598b2e307f26c",
+    "sample_id": "SAMPLE-pilot_medium_v1-a068906636fe38defa02",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-da06c75b3e5596af136b",
+    "sample_id": "SAMPLE-pilot_medium_v1-2d43f67366cbcc344289",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-893db1fdccd3ab59d6df",
+    "sample_id": "SAMPLE-pilot_medium_v1-48f7ca72a6dcfdebeabe",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-838e8d66d4a4c6a8a17a",
+    "sample_id": "SAMPLE-pilot_medium_v1-d1e5aa420ffcdc86520a",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-f2a2080f775c46904e1a",
+    "sample_id": "SAMPLE-pilot_medium_v1-bb72119ac7bf42bb5f15",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-1eaac7972b31b7cee4ba",
+    "sample_id": "SAMPLE-pilot_medium_v1-80e6ebbc1e16c78029db",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-40c374ae2f5f220cf11c",
+    "sample_id": "SAMPLE-pilot_medium_v1-c4cec84598b2e307f26c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e990ff773e44a529df80",
+    "sample_id": "SAMPLE-pilot_medium_v1-da06c75b3e5596af136b",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-328325f315228027f742",
+    "sample_id": "SAMPLE-pilot_medium_v1-893db1fdccd3ab59d6df",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-bb3482cd242f38271c6f",
+    "sample_id": "SAMPLE-pilot_medium_v1-838e8d66d4a4c6a8a17a",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-5391031135c81bca0856",
+    "sample_id": "SAMPLE-pilot_medium_v1-f2a2080f775c46904e1a",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-651ab5fe814b5f3c5b4e",
+    "sample_id": "SAMPLE-pilot_medium_v1-1eaac7972b31b7cee4ba",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-34c02c1150906e9cd26e",
+    "sample_id": "SAMPLE-pilot_medium_v1-777bb3239ab1cdc83636",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-10194eeaa018beffc411",
+    "sample_id": "SAMPLE-pilot_medium_v1-40c374ae2f5f220cf11c",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-377734a69fdf0dac2dd9",
+    "sample_id": "SAMPLE-pilot_medium_v1-e990ff773e44a529df80",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-29b6a5505cf78fd6fea3",
+    "sample_id": "SAMPLE-pilot_medium_v1-328325f315228027f742",
+    "split": "regression"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-0b49208d2712df1236e7",
+    "sample_id": "SAMPLE-pilot_medium_v1-bb3482cd242f38271c6f",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-29e36a2617a85faf3546",
+    "sample_id": "SAMPLE-pilot_medium_v1-5391031135c81bca0856",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6f492f4a493a5891bc02",
+    "sample_id": "SAMPLE-pilot_medium_v1-651ab5fe814b5f3c5b4e",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-78f96ac5fdfe390d1100",
+    "sample_id": "SAMPLE-pilot_medium_v1-34c02c1150906e9cd26e",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-29541bf8d899a534fbcc",
+    "sample_id": "SAMPLE-pilot_medium_v1-10194eeaa018beffc411",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8107fb79d52cf0a94bc4",
+    "sample_id": "SAMPLE-pilot_medium_v1-377734a69fdf0dac2dd9",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-91e6a5bca61206d9bef1",
+    "sample_id": "SAMPLE-pilot_medium_v1-29b6a5505cf78fd6fea3",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-67e3c7a67349ac42e2df",
+    "sample_id": "SAMPLE-pilot_medium_v1-0b49208d2712df1236e7",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-dd12acf898f1c1028b22",
+    "sample_id": "SAMPLE-pilot_medium_v1-8753a94ad1c8d8624cc3",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-02501fdadd7d14e05722",
+    "sample_id": "SAMPLE-pilot_medium_v1-29e36a2617a85faf3546",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9514e6bffc3e5bf136f8",
+    "sample_id": "SAMPLE-pilot_medium_v1-6f492f4a493a5891bc02",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2e828bd8348d156b2149",
+    "sample_id": "SAMPLE-pilot_medium_v1-78f96ac5fdfe390d1100",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9ae2f955eb051a7fa795",
+    "sample_id": "SAMPLE-pilot_medium_v1-29541bf8d899a534fbcc",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-79bdad56b7a385336259",
+    "sample_id": "SAMPLE-pilot_medium_v1-8107fb79d52cf0a94bc4",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-105c92ba6babbc34d1e3",
+    "sample_id": "SAMPLE-pilot_medium_v1-91e6a5bca61206d9bef1",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-45951345b37a0283895a",
+    "sample_id": "SAMPLE-pilot_medium_v1-67e3c7a67349ac42e2df",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e14c300c159fe5954445",
+    "sample_id": "SAMPLE-pilot_medium_v1-dd12acf898f1c1028b22",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8af68fafd4f8f65c11a9",
+    "sample_id": "SAMPLE-pilot_medium_v1-02501fdadd7d14e05722",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-13cf2334d6834aa66921",
+    "sample_id": "SAMPLE-pilot_medium_v1-9514e6bffc3e5bf136f8",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-9c5871fd91ca827f8b07",
+    "sample_id": "SAMPLE-pilot_medium_v1-2e828bd8348d156b2149",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-abeda63c6595609cdc5c",
+    "sample_id": "SAMPLE-pilot_medium_v1-9ae2f955eb051a7fa795",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-67eab5b0f638c23ae426",
+    "sample_id": "SAMPLE-pilot_medium_v1-d924064d7b48465a6f00",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e605813808aa46ed44e1",
+    "sample_id": "SAMPLE-pilot_medium_v1-79bdad56b7a385336259",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-0441a0dfeb2b8b7b3402",
+    "sample_id": "SAMPLE-pilot_medium_v1-105c92ba6babbc34d1e3",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3cc3a5217203471f46dd",
+    "sample_id": "SAMPLE-pilot_medium_v1-45951345b37a0283895a",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-e63a19a20fbefb2d4c3a",
+    "sample_id": "SAMPLE-pilot_medium_v1-e14c300c159fe5954445",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a8b675958fb4090d03ed",
+    "sample_id": "SAMPLE-pilot_medium_v1-8af68fafd4f8f65c11a9",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-caf9e4a4d8ce1ad56903",
+    "sample_id": "SAMPLE-pilot_medium_v1-13cf2334d6834aa66921",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-a1db989435c9b3e96b51",
+    "sample_id": "SAMPLE-pilot_medium_v1-9c5871fd91ca827f8b07",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-779549e3cdae1f5e899c",
+    "sample_id": "SAMPLE-pilot_medium_v1-abeda63c6595609cdc5c",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-afc5d31e91706b76e429",
+    "sample_id": "SAMPLE-pilot_medium_v1-67eab5b0f638c23ae426",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-8c9db886f09749ba2a37",
+    "sample_id": "SAMPLE-pilot_medium_v1-e605813808aa46ed44e1",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3c3ae667cc2c582507d7",
+    "sample_id": "SAMPLE-pilot_medium_v1-0441a0dfeb2b8b7b3402",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6d72aef54cee5bdd5177",
+    "sample_id": "SAMPLE-pilot_medium_v1-3cc3a5217203471f46dd",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-458ad4b0289de9d87d38",
+    "sample_id": "SAMPLE-pilot_medium_v1-e63a19a20fbefb2d4c3a",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-d9588dc86689c7c23ffd",
+    "sample_id": "SAMPLE-pilot_medium_v1-a8b675958fb4090d03ed",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3b6ba5f18afc24a3b155",
+    "sample_id": "SAMPLE-pilot_medium_v1-caf9e4a4d8ce1ad56903",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-00db05ec08afc24fd049",
+    "sample_id": "SAMPLE-pilot_medium_v1-a1db989435c9b3e96b51",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-cd39e88b1f8f831514b6",
+    "sample_id": "SAMPLE-pilot_medium_v1-779549e3cdae1f5e899c",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3809a7aa8b3bbd45c9ab",
+    "sample_id": "SAMPLE-pilot_medium_v1-afc5d31e91706b76e429",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-285f7d558b48877d4691",
+    "sample_id": "SAMPLE-pilot_medium_v1-8c9db886f09749ba2a37",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-389ea884b5aca779f210",
+    "sample_id": "SAMPLE-pilot_medium_v1-3c3ae667cc2c582507d7",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-6e447d8398377ab05185",
+    "sample_id": "SAMPLE-pilot_medium_v1-6d72aef54cee5bdd5177",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3f4133f0c68669e97ff6",
+    "sample_id": "SAMPLE-pilot_medium_v1-458ad4b0289de9d87d38",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-627d6525b9ce2945d228",
+    "sample_id": "SAMPLE-pilot_medium_v1-d9588dc86689c7c23ffd",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-44ebaae85924fec78ecb",
+    "sample_id": "SAMPLE-pilot_medium_v1-3b6ba5f18afc24a3b155",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-91dff06b09b92b73e8ad",
+    "sample_id": "SAMPLE-pilot_medium_v1-00db05ec08afc24fd049",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-315767a89f36146abab0",
+    "sample_id": "SAMPLE-pilot_medium_v1-2d6af35a807e4cb868d8",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-3ace851683e148331cfd",
+    "sample_id": "SAMPLE-pilot_medium_v1-cd39e88b1f8f831514b6",
+    "split": "holdout"
+  },
+  {
+    "decoy_ticket_id": "TICKET-pilot_medium_v1-2c0047ad52de944723c3",
+    "sample_id": "SAMPLE-pilot_medium_v1-3809a7aa8b3bbd45c9ab",
+    "split": "holdout"
+  }
+]

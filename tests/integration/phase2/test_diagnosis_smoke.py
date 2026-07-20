@@ -12,6 +12,7 @@ from energy_agent.core.config import Settings
 from energy_agent.persistence.models import (
     AlarmEventModel,
     DeviceProfileModel,
+    DiagnosisAlarmDedupModel,
     DiagnosisResultModel,
     DiagnosisRunModel,
     DiagnosisSessionModel,
@@ -21,7 +22,7 @@ from energy_agent.persistence.models import (
 )
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 
-MYSQL_DSN = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
+MYSQL_DSN = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "energy-token"
 INFLUX_ORG = "energy"
@@ -37,18 +38,8 @@ async def _seed_mysql() -> None:
     engine = create_mysql_engine(MYSQL_DSN)
     factory = create_session_factory(engine)
     trigger = datetime.now(UTC).replace(tzinfo=None)
+    await _clean_mysql()
     async with factory.begin() as session:
-        for model in (
-            DiagnosisResultModel,
-            DiagnosisStepLogModel,
-            DiagnosisRunModel,
-            DiagnosisSessionModel,
-            MaintenanceTicketModel,
-            ManualChunkModel,
-            AlarmEventModel,
-            DeviceProfileModel,
-        ):
-            await session.execute(delete(model))
         session.add_all(
             [
                 DeviceProfileModel(
@@ -139,17 +130,48 @@ async def _clean_mysql() -> None:
     engine = create_mysql_engine(MYSQL_DSN)
     factory = create_session_factory(engine)
     async with factory.begin() as session:
-        for model in (
-            DiagnosisResultModel,
-            DiagnosisStepLogModel,
-            DiagnosisRunModel,
-            DiagnosisSessionModel,
-            MaintenanceTicketModel,
-            ManualChunkModel,
-            AlarmEventModel,
-            DeviceProfileModel,
-        ):
-            await session.execute(delete(model))
+        session_ids = (
+            await session.execute(
+                DiagnosisSessionModel.__table__.select()
+                .with_only_columns(DiagnosisSessionModel.id)
+                .where(DiagnosisSessionModel.device_id.in_((DEVICE, DEVICE_NO_DATA)))
+            )
+        ).scalars()
+        ids = list(session_ids)
+        if ids:
+            await session.execute(
+                delete(DiagnosisResultModel).where(DiagnosisResultModel.session_id.in_(ids))
+            )
+            await session.execute(
+                delete(DiagnosisStepLogModel).where(DiagnosisStepLogModel.session_id.in_(ids))
+            )
+            await session.execute(
+                delete(DiagnosisAlarmDedupModel).where(DiagnosisAlarmDedupModel.session_id.in_(ids))
+            )
+            await session.execute(
+                delete(DiagnosisRunModel).where(DiagnosisRunModel.session_id.in_(ids))
+            )
+            await session.execute(
+                delete(DiagnosisSessionModel).where(DiagnosisSessionModel.id.in_(ids))
+            )
+        await session.execute(
+            delete(MaintenanceTicketModel).where(
+                MaintenanceTicketModel.ticket_id.in_(
+                    ("TICKET-PHASE2-VERIFIED", "TICKET-PHASE2-UNVERIFIED")
+                )
+            )
+        )
+        await session.execute(
+            delete(ManualChunkModel).where(ManualChunkModel.chunk_id == "CHUNK-PHASE2-1")
+        )
+        await session.execute(
+            delete(AlarmEventModel).where(AlarmEventModel.alarm_id.in_((ALARM, ALARM_NO_DATA)))
+        )
+        await session.execute(
+            delete(DeviceProfileModel).where(
+                DeviceProfileModel.device_id.in_((DEVICE, DEVICE_NO_DATA))
+            )
+        )
     await engine.dispose()
 
 
@@ -199,11 +221,17 @@ def phase2_data() -> None:
     client.close()
 
 
-def _create(client: TestClient, device_id: str, alarm_id: str) -> dict[str, object]:
+def _create(
+    client: TestClient,
+    device_id: str,
+    alarm_id: str,
+    *,
+    source: str = "alarm",
+) -> dict[str, object]:
     response = client.post(
         "/api/v1/diagnosis/sessions",
         json={
-            "source": "alarm",
+            "source": source,
             "site_id": "SITE-01",
             "device_id": device_id,
             "alarm_id": alarm_id,
@@ -270,7 +298,7 @@ def test_completed_readback_sse_and_step_logs(phase2_data: None) -> None:
         assert readback.status_code == 200
         assert readback.json()["result"]["summary"] == body["result"]["summary"]
 
-        stream_created = _create(client, DEVICE, ALARM)
+        stream_created = _create(client, DEVICE, ALARM, source="chat")
         with client.stream(
             "POST",
             f"/api/v1/diagnosis/sessions/{stream_created['session_id']}/messages/stream",

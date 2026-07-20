@@ -10,6 +10,7 @@ from energy_agent.core.errors import (
     EmbeddingUnavailableError,
 )
 from energy_agent.observability.logging import log_event
+from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 
 class OpenAICompatibleEmbeddingProvider:
@@ -25,11 +26,13 @@ class OpenAICompatibleEmbeddingProvider:
         timeout_seconds: float,
         batch_size: int,
         max_retries: int = 2,
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         self.model = model
         self.dimension = dimension
         self.batch_size = batch_size
         self.max_retries = max_retries
+        self.circuit_breaker = circuit_breaker
         self.client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             headers={"Authorization": f"Bearer {api_key}"},
@@ -38,6 +41,11 @@ class OpenAICompatibleEmbeddingProvider:
 
     async def _batch(self, texts: list[str]) -> list[list[float]]:
         started = monotonic()
+        if self.circuit_breaker:
+            try:
+                self.circuit_breaker.allow()
+            except CircuitOpenError as exc:
+                raise EmbeddingUnavailableError("Embedding circuit is open") from exc
         for attempt in range(1, self.max_retries + 2):
             try:
                 response = await self.client.post(
@@ -69,11 +77,19 @@ class OpenAICompatibleEmbeddingProvider:
                     latency_ms=int((monotonic() - started) * 1000),
                     attempt=attempt,
                 )
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_success()
                 return typed
             except (httpx.TimeoutException, httpx.NetworkError, EmbeddingUnavailableError) as exc:
                 if attempt > self.max_retries:
+                    if self.circuit_breaker:
+                        self.circuit_breaker.record_failure()
                     raise EmbeddingUnavailableError("Embedding provider unavailable") from exc
                 await asyncio.sleep(0.05 * attempt)
+            except (EmbeddingResponseError, EmbeddingDimensionError):
+                if self.circuit_breaker:
+                    self.circuit_breaker.record_failure(countable=False)
+                raise
         raise EmbeddingUnavailableError("Embedding provider unavailable")
 
     async def embed(self, texts: list[str]) -> list[list[float]]:

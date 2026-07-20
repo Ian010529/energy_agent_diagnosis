@@ -13,6 +13,7 @@ from energy_agent.core.config import Settings
 from energy_agent.persistence.models import (
     AlarmEventModel,
     DeviceProfileModel,
+    DiagnosisAlarmDedupModel,
     DiagnosisResultModel,
     DiagnosisRunModel,
     DiagnosisSessionModel,
@@ -24,7 +25,7 @@ from energy_agent.persistence.mysql import create_mysql_engine, create_session_f
 
 pytestmark = pytest.mark.integration
 
-MYSQL_DSN = "mysql+asyncmy://energy:energy_dev@localhost:3306/energy_agent"
+MYSQL_DSN = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "energy-token"
 INFLUX_ORG = "energy"
@@ -99,17 +100,50 @@ async def _clean_mysql() -> None:
     engine = create_mysql_engine(MYSQL_DSN)
     factory = create_session_factory(engine)
     async with factory.begin() as session:
-        for model in (
-            DiagnosisResultModel,
-            DiagnosisStepLogModel,
-            DiagnosisRunModel,
-            DiagnosisSessionModel,
-            MaintenanceTicketModel,
-            ManualChunkModel,
-            AlarmEventModel,
-            DeviceProfileModel,
-        ):
-            await session.execute(delete(model))
+        device_ids = [f"PHASE5-DEVICE-{index}" for index in range(len(TEMPLATES))]
+        session_ids = list(
+            (
+                await session.execute(
+                    DiagnosisSessionModel.__table__.select()
+                    .with_only_columns(DiagnosisSessionModel.id)
+                    .where(DiagnosisSessionModel.device_id.in_(device_ids))
+                )
+            ).scalars()
+        )
+        if session_ids:
+            await session.execute(
+                delete(DiagnosisResultModel).where(DiagnosisResultModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisStepLogModel).where(
+                    DiagnosisStepLogModel.session_id.in_(session_ids)
+                )
+            )
+            await session.execute(
+                delete(DiagnosisAlarmDedupModel).where(
+                    DiagnosisAlarmDedupModel.session_id.in_(session_ids)
+                )
+            )
+            await session.execute(
+                delete(DiagnosisRunModel).where(DiagnosisRunModel.session_id.in_(session_ids))
+            )
+            await session.execute(
+                delete(DiagnosisSessionModel).where(DiagnosisSessionModel.id.in_(session_ids))
+            )
+        await session.execute(
+            delete(MaintenanceTicketModel).where(
+                MaintenanceTicketModel.ticket_id.like("PHASE5-TICKET-%")
+            )
+        )
+        await session.execute(
+            delete(ManualChunkModel).where(ManualChunkModel.chunk_id.like("PHASE5-CHUNK-%"))
+        )
+        await session.execute(
+            delete(AlarmEventModel).where(AlarmEventModel.alarm_id.like("PHASE5-ALARM-%"))
+        )
+        await session.execute(
+            delete(DeviceProfileModel).where(DeviceProfileModel.device_id.like("PHASE5-DEVICE-%"))
+        )
     await engine.dispose()
 
 

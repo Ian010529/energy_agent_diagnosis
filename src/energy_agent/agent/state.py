@@ -11,6 +11,7 @@ from energy_agent.contracts.common import (
 )
 from energy_agent.core.errors import InvalidStateTransitionError
 from energy_agent.core.time import utc_now
+from energy_agent.guardrails.contracts import GuardrailDecision, RecommendedAction
 
 
 class DeviceContext(StrictModel):
@@ -49,6 +50,7 @@ class PlanStep(StrictModel):
 class ToolResultSummary(StrictModel):
     tool_name: str
     status: str
+    has_usable_data: bool = False
     result_ref: str | None = None
     summary: str | None = None
 
@@ -125,6 +127,8 @@ class DiagnosisState(StrictModel):
     errors: list[str] = Field(default_factory=list)
     degraded_components: list[str] = Field(default_factory=list)
     final_response: dict[str, object] | None = None
+    recommended_actions: list[RecommendedAction] = Field(default_factory=list)
+    guardrail_decision: GuardrailDecision | None = None
     prompt_version: str = "diag.response_generator.v1.0"
     started_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
