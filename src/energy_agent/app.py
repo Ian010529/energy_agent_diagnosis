@@ -7,10 +7,13 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 
 from energy_agent.api.cases import router as cases_router
+from energy_agent.api.catalog import router as catalog_router
 from energy_agent.api.diagnosis import router as diagnosis_router
 from energy_agent.api.errors import error_response, install_error_handlers
+from energy_agent.api.evidence import router as evidence_router
 from energy_agent.api.health import router as health_router
 from energy_agent.api.metrics import router as metrics_router
+from energy_agent.api.session_queries import router as session_queries_router
 from energy_agent.core.config import Settings, get_settings
 from energy_agent.core.context import ActorRole, RequestContext, bind_context, reset_context
 from energy_agent.core.ids import trusted_or_new_id
@@ -181,6 +184,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     install_error_handlers(app)
     app.include_router(health_router)
+    app.include_router(catalog_router)
+    app.include_router(session_queries_router)
+    app.include_router(evidence_router)
     app.include_router(diagnosis_router)
     app.include_router(cases_router)
     app.include_router(metrics_router)

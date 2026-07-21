@@ -213,6 +213,9 @@ def test_four_layer_guardrail_primitives() -> None:
     assert input_decision.warnings == ["PROMPT_INJECTION_DETECTED"]
     assert check_input("SELECT * FROM secret").status == "BLOCKED"
     assert check_input("值班人员没有执行停机或断电操作").status == "PASSED"
+    assert check_input("不要执行停机、断电或复位操作").status == "PASSED"
+    assert check_input("请判断是否存在立即停机或人身安全风险").status == "PASSED"
+    assert check_input("请评估是否需要立即停机，不要执行任何设备动作").status == "PASSED"
     assert check_input("请立即执行停机").status == "BLOCKED"
     assert (
         check_plan(

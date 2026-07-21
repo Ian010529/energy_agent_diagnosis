@@ -1,0 +1,11 @@
+{
+  "system.name": { "source": "project_defined", "confidence": "intentional" },
+  "surface.panel": { "source": "official_codex_screenshot_visual_inference", "confidence": "medium" },
+  "surface.canvas": { "source": "official_codex_screenshot_visual_inference", "confidence": "medium" },
+  "layout.sidebarWidth": { "source": "multi_screenshot_measurement", "confidence": "medium" },
+  "layout.inspectorWidth": { "source": "project_workflow_requirement", "confidence": "high" },
+  "border.subtle": { "source": "official_codex_screenshot_visual_inference", "confidence": "medium" },
+  "font.family": { "source": "legal_system_font_substitute", "confidence": "intentional_substitute" },
+  "status.colors": { "source": "energy_diagnosis_semantics", "confidence": "high" },
+  "responsive.breakpoints": { "source": "phase7_product_requirement", "confidence": "high" }
+}

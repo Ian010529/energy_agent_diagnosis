@@ -1,3 +1,4 @@
+import re
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import Any, cast
@@ -37,6 +38,19 @@ from energy_agent.tools.contracts import ToolResult, ToolStatus
 from energy_agent.tools.executor import ToolExecutor
 
 MEMORY_WRITER = Callable[[DiagnosisState], Awaitable[None]]
+_ALARM_ID = re.compile(r"(?<![A-Za-z0-9_.:-])((?:EVAL-)?ALARM-[A-Za-z0-9_.:-]+)", re.I)
+_DEVICE_ID = re.compile(
+    r"(?<![A-Za-z0-9_.:-])([A-Za-z0-9_.:-]*(?:PCS|PV_INVERTER|PV)-[A-Za-z0-9_.:-]+)",
+    re.I,
+)
+
+
+def _extract_entity_ids(text: str) -> tuple[str | None, str | None]:
+    alarm_match = _ALARM_ID.search(text)
+    without_alarm = _ALARM_ID.sub(" ", text)
+    device_candidates = _DEVICE_ID.findall(without_alarm)
+    device_id = max(device_candidates, key=len) if device_candidates else None
+    return device_id, alarm_match.group(1) if alarm_match else None
 
 
 def _has_usable_tool_data(data: object) -> bool:
@@ -112,11 +126,21 @@ def build_diagnosis_graph(
                 "warnings": input_decision.warnings,
                 "guardrail_decision": input_decision,
             }
-        if not state.device_context or not state.alarm_context:
+        entity_text = " ".join([state.user_message, *(item.answer for item in state.user_feedback)])
+        device_id, alarm_id = _extract_entity_ids(entity_text)
+        device_context = state.device_context or (
+            DeviceContext(device_id=device_id) if device_id else None
+        )
+        alarm_context = state.alarm_context or (
+            AlarmContext(alarm_id=alarm_id, alarm_name="") if alarm_id else None
+        )
+        if not device_context or not alarm_context:
             questions = [
                 ClarificationQuestion(
                     question_id="missing_entity",
-                    question="请补充设备编号和告警编号。",
+                    question=(
+                        "请补充可核验的设备编号和告警编号，例如：设备 PCS-001，告警 ALARM-001。"
+                    ),
                     reason="诊断需要可追溯的设备与告警实体",
                 )
             ]
@@ -126,6 +150,8 @@ def build_diagnosis_graph(
                 "errors": ["设备或告警实体缺失"],
             }
         return {
+            "device_context": device_context,
+            "alarm_context": alarm_context,
             "warnings": [*state.warnings, *input_decision.warnings],
             "guardrail_decision": input_decision,
         }
@@ -574,21 +600,30 @@ def build_diagnosis_graph(
             if state.diagnosis_template_id
             else None
         )
-        questions = []
-        for index, gap in enumerate(state.errors[:3], 1):
-            text = (
-                template.clarification_rules[min(index - 1, len(template.clarification_rules) - 1)]
-                if "时序" in gap and template
-                else "请补充对应设备或现场检查信息。"
-            )
-            questions.append(
-                ClarificationQuestion(
-                    question_id=f"gap_{index}",
-                    question=text,
-                    reason=gap,
+        questions = list(state.clarification_questions)
+        if not questions:
+            for index, gap in enumerate(state.errors[:3], 1):
+                text = (
+                    template.clarification_rules[
+                        min(index - 1, len(template.clarification_rules) - 1)
+                    ]
+                    if "时序" in gap and template
+                    else "请补充对应设备或现场检查信息。"
                 )
-            )
-        if model_gateway and questions:
+                questions.append(
+                    ClarificationQuestion(
+                        question_id=f"gap_{index}",
+                        question=text,
+                        reason=gap,
+                    )
+                )
+        preserve_template_questions = bool(template) and any("时序" in gap for gap in state.errors)
+        if (
+            model_gateway
+            and questions
+            and not state.clarification_questions
+            and not preserve_template_questions
+        ):
             enhanced = await model_gateway.generate(
                 trace_id=state.trace_id,
                 session_id=state.session_id,

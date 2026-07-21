@@ -25,6 +25,13 @@
 	docker-smoke pilot-credentials-check pilot-readiness-report phase6-check pilot-gate \
 	reload-pilot-data drain-pilot-index validate-pilot-manual-vectors
 
+.PHONY: backend-dev up-phase7-dev-deps frontend-install frontend-dev frontend-lint frontend-typecheck frontend-test \
+	frontend-build frontend-e2e frontend-visual frontend-visual-update openapi-export \
+	frontend-generate-client frontend-contract-check test-unit-phase7 test-contract-phase7 \
+	test-integration-catalog test-integration-timeline test-integration-evidence \
+	test-integration-frontend-api up-phase7 down-phase7 frontend-docker-build \
+	frontend-docker-smoke prepare-phase7-e2e-data phase7-check
+
 LOCAL_TEST_ENV = APP_ENV=test AUTH_MODE=development_headers INTERNAL_API_KEY= \
 	PILOT_MODE=false PILOT_ALLOWED_ACTORS= INDEX_EXECUTION_MODE=sync \
 	GRAPH_MODE=disabled RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
@@ -310,7 +317,7 @@ dependency-audit:
 static-security-check:
 	uv run bandit -q -ll -r src
 	! git grep -I -nE '(sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|BEGIN (RSA|OPENSSH) PRIVATE KEY)' -- \
-		src migrations docs deploy .github pyproject.toml compose.yaml Dockerfile .env.example
+		src frontend migrations docs deploy .github pyproject.toml compose.yaml Dockerfile .env.example
 
 docker-build:
 	docker build -t energy-agent:phase6 .
@@ -334,3 +341,106 @@ phase6-check: verify-design lint typecheck phase5-check test-unit-phase6 \
 
 pilot-gate: pilot-credentials-check phase6-check up-phase6 migrate \
 	evaluate-holdout pilot-readiness-report
+
+frontend-install:
+	cd frontend && pnpm install --frozen-lockfile
+
+up-phase7-dev-deps:
+	docker compose up -d --wait mysql redis influxdb minio etcd milvus
+
+backend-dev:
+	INDEX_EXECUTION_MODE=sync GRAPH_MODE=disabled uv run uvicorn energy_agent.app:app --reload --host 0.0.0.0 --port 8000
+
+frontend-dev:
+	set -a; if test -f ./.env; then . ./.env; fi; set +a; \
+	export BACKEND_INTERNAL_API_KEY="$${INTERNAL_API_KEY:-}"; \
+	export FRONTEND_LOCAL_VIEWER_ACTOR_ID="$${FRONTEND_LOCAL_VIEWER_ACTOR_ID:-local-viewer}"; \
+	export FRONTEND_LOCAL_OPERATOR_ACTOR_ID="$${FRONTEND_LOCAL_OPERATOR_ACTOR_ID:-pilot-operator}"; \
+	export FRONTEND_LOCAL_REVIEWER_ACTOR_ID="$${FRONTEND_LOCAL_REVIEWER_ACTOR_ID:-pilot-reviewer}"; \
+	export FRONTEND_LOCAL_ADMIN_ACTOR_ID="$${FRONTEND_LOCAL_ADMIN_ACTOR_ID:-phase6-evaluator}"; \
+	cd frontend && pnpm dev
+
+frontend-lint:
+	cd frontend && pnpm lint
+
+frontend-typecheck:
+	cd frontend && pnpm typecheck
+
+frontend-test:
+	cd frontend && pnpm test
+
+frontend-build:
+	cd frontend && pnpm build
+	! grep -R -E 'BACKEND_INTERNAL_API_KEY|X-Internal-API-Key' frontend/.next/static
+
+frontend-e2e:
+	set -a; if test -f ./.env; then . ./.env; fi; set +a; \
+		cd frontend && \
+		BACKEND_INTERNAL_API_KEY="$$INTERNAL_API_KEY" \
+		FRONTEND_APP_ENV="$${FRONTEND_APP_ENV:-local}" \
+		FRONTEND_LOCAL_VIEWER_ACTOR_ID="$${FRONTEND_LOCAL_VIEWER_ACTOR_ID:-local-viewer}" \
+		FRONTEND_LOCAL_OPERATOR_ACTOR_ID="$${FRONTEND_LOCAL_OPERATOR_ACTOR_ID:-pilot-operator}" \
+		FRONTEND_LOCAL_REVIEWER_ACTOR_ID="$${FRONTEND_LOCAL_REVIEWER_ACTOR_ID:-pilot-reviewer}" \
+		FRONTEND_LOCAL_ADMIN_ACTOR_ID="$${FRONTEND_LOCAL_ADMIN_ACTOR_ID:-phase6-evaluator}" \
+		PHASE7_REAL_E2E=1 pnpm e2e
+
+prepare-phase7-e2e-data:
+	uv run python -m energy_agent.evaluation.reload_dataset --replace-all
+
+frontend-visual:
+	cd frontend && pnpm visual
+
+frontend-visual-update:
+	cd frontend && pnpm visual:update
+
+openapi-export:
+	uv run python -m energy_agent.openapi
+
+frontend-generate-client:
+	cd frontend && pnpm generate:api
+
+frontend-contract-check:
+	set -e; contract_tmp=$$(mktemp -d); trap 'rm -rf "$$contract_tmp"' EXIT; \
+		cp frontend/openapi/backend.json $$contract_tmp/backend.json; \
+		cp frontend/lib/api/generated.ts $$contract_tmp/generated.ts; \
+		$(MAKE) openapi-export frontend-generate-client; \
+		diff -u $$contract_tmp/backend.json frontend/openapi/backend.json; \
+		diff -u $$contract_tmp/generated.ts frontend/lib/api/generated.ts
+	! grep -R -E '^(export )?(interface|type) (DiagnosisResponse|StructuredDiagnosisResult|DiagnosisCase|Evidence)([[:space:]=]|$$)' \
+		frontend/app frontend/components frontend/lib --exclude=generated.ts --exclude=types.ts
+
+test-unit-phase7:
+	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase7_frontend_api.py
+
+test-contract-phase7:
+	$(LOCAL_TEST_ENV) uv run pytest tests/contract/test_phase7_contracts.py
+
+test-integration-catalog:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase7/test_frontend_api.py -k catalog
+
+test-integration-timeline:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase7/test_frontend_api.py -k timeline
+
+test-integration-evidence:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase7/test_frontend_api.py -k evidence
+
+test-integration-frontend-api:
+	$(LOCAL_TEST_ENV) uv run pytest -m integration tests/integration/phase7
+
+up-phase7:
+	docker compose --profile phase7 up -d --wait
+
+down-phase7:
+	docker compose --profile phase7 down
+
+frontend-docker-build:
+	docker build -t energy-agent-frontend:phase7 frontend
+
+frontend-docker-smoke: frontend-docker-build
+	docker run --rm energy-agent-frontend:phase7 node -e "require('./server.js')" & \
+		container_pid=$$!; sleep 3; kill $$container_pid
+
+phase7-check: verify-design up-phase7 migrate phase6-check test-unit-phase7 test-contract-phase7 \
+	test-integration-frontend-api frontend-contract-check frontend-lint frontend-typecheck \
+	frontend-test frontend-build prepare-phase7-e2e-data frontend-e2e frontend-visual \
+	frontend-docker-smoke

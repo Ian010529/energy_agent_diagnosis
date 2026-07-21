@@ -117,7 +117,8 @@ async def stream_message(
                 event_emitter=emitter,
             )
         finally:
-            await emitter.close()
+            with anyio.CancelScope(shield=True):
+                await emitter.close()
 
     async def events() -> AsyncIterator[str]:
         try:
@@ -137,4 +138,9 @@ async def stream_message(
 
 @router.get("/sessions/{session_id}", response_model=DiagnosisResponse)
 async def get_session(session_id: str, request: Request) -> DiagnosisResponse:
+    actor = actor_from_request(request)
+    require_roles(
+        actor,
+        {ActorRole.VIEWER, ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN},
+    )
     return await DiagnosisService.from_request(request).get_session(session_id)

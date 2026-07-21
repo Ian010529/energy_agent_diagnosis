@@ -11,12 +11,11 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_6_EVALUATION_RISK_AND_PILOT_HARDENING
+  id: PHASE_7_FRONTEND_MVP_AND_PRODUCT_VALIDATION
   status: COMPLETED
   objective: >
-    建立离线评估、质量回归 Gate、四层 Guardrail、依赖熔断、
-    节点驱动 SSE、重复告警合并、试点访问控制、Prometheus/Grafana、
-    降级演练、Docker、CI 和可审计的试点就绪决策。
+    完成 Codex-inspired 前端、BFF、真实 SSE 诊断线程、证据审查、
+    人工审核、案例管理、系统状态和跨设备响应式设计。
 
 must_preserve:
   - langgraph_explicit_workflow
@@ -59,8 +58,7 @@ last_completed:
   - phase_4_human_collaboration_and_case_lifecycle
   - phase_5_async_index_graph_and_scenario_expansion
   - phase_6_evaluation_risk_and_pilot_hardening
-
-current_task: []
+  - phase_7_frontend_mvp_and_product_validation
 
 data_assets:
   pilot_medium_v1:
@@ -78,15 +76,15 @@ data_assets:
     index_graph_readback_path: artifacts/pilot-readiness/data-1.3.0/index_graph_readback.json
 
 next_phase:
-  id: PHASE_7_REAL_PILOT_AND_FEEDBACK
+  id: PHASE_8_ACCURACY_OPTIMIZATION_AND_BUSINESS_THRESHOLDS
   status: NOT_STARTED
 
 next_task:
-  - confirm_business_accuracy_thresholds
-  - select_real_pilot_site
-  - confirm_real_user_allowlist
-  - validate_real_pilot_manuals
-  - wait_for_phase_7_prompt
+  - review_frontend_user_feedback
+  - analyze_phase6_failure_examples
+  - configure_business_accuracy_thresholds
+  - optimize_existing_five_templates
+  - wait_for_phase_8_prompt
 
 phase6_validation:
   latest_calibration_run_id: phase6-v130-calibration-r03
@@ -207,4 +205,4 @@ external_validation:
     status: PASSED
     reason: five_templates_across_pcs_and_pv_inverter_completed_with_shared_langgraph
 
-updated_at: "2026-07-20T16:55:00Z"
+updated_at: "2026-07-21T05:55:00Z"

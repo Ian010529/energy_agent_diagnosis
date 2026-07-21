@@ -35,6 +35,21 @@ class DiagnosisReviewRepository:
             session.add(model)
         return model
 
+    async def list_by_session(self, session_id: str) -> list[DiagnosisReviewModel]:
+        async with self.session_factory() as session:
+            rows = (
+                (
+                    await session.execute(
+                        select(DiagnosisReviewModel)
+                        .where(DiagnosisReviewModel.session_id == session_id)
+                        .order_by(DiagnosisReviewModel.created_at, DiagnosisReviewModel.review_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        return list(rows)
+
     @staticmethod
     def created_at(model: DiagnosisReviewModel) -> datetime:
         return ensure_utc(model.created_at)

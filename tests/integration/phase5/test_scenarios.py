@@ -18,6 +18,7 @@ from energy_agent.persistence.models import (
     DiagnosisRunModel,
     DiagnosisSessionModel,
     DiagnosisStepLogModel,
+    DiagnosisTimelineEventModel,
     MaintenanceTicketModel,
     ManualChunkModel,
 )
@@ -111,6 +112,11 @@ async def _clean_mysql() -> None:
             ).scalars()
         )
         if session_ids:
+            await session.execute(
+                delete(DiagnosisTimelineEventModel).where(
+                    DiagnosisTimelineEventModel.session_id.in_(session_ids)
+                )
+            )
             await session.execute(
                 delete(DiagnosisResultModel).where(DiagnosisResultModel.session_id.in_(session_ids))
             )

@@ -95,7 +95,7 @@ class RetrievalService:
     ) -> RetrievalResult:
         started = monotonic()
         selected_mode = mode or self.default_mode
-        rewrite_key = f"{trace_id}:{query}:{sorted(filters.items())}"
+        rewrite_key = _rewrite_cache_key(trace_id, query, filters)
         with self.tracer.start_span(
             "retrieval.query_rewrite",
             trace_id=trace_id,
@@ -361,6 +361,14 @@ class RetrievalService:
 
 def _string(value: object) -> str | None:
     return str(value) if value else None
+
+
+def _rewrite_cache_key(trace_id: str, query: str, filters: dict[str, object]) -> str:
+    rewrite_context = tuple(
+        (name, _string(filters.get(name)))
+        for name in ("alarm_name", "device_type", "device_model", "manufacturer")
+    )
+    return f"{trace_id}:{query}:{rewrite_context}"
 
 
 def _identity(candidate: RetrievalCandidate) -> str:

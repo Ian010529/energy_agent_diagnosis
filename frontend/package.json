@@ -1,0 +1,49 @@
+{
+  "name": "energy-diagnosis-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test tests/e2e --project=chromium --workers=1",
+    "visual": "playwright test tests/visual --workers=1 --timeout=180000",
+    "visual:update": "playwright test tests/visual --workers=1 --timeout=180000 --update-snapshots",
+    "generate:api": "jq -r -f scripts/openapi-to-ts.jq openapi/backend.json > lib/api/generated.ts",
+    "generate:api:full": "openapi-typescript openapi/backend.json -o lib/api/generated.full.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "5.2.2",
+    "@radix-ui/react-dialog": "1.1.15",
+    "@radix-ui/react-tabs": "1.1.13",
+    "@tanstack/react-query": "5.101.3",
+    "lucide-react": "1.25.0",
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-hook-form": "7.71.1",
+    "recharts": "3.9.2",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "22.19.13",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.4",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.2.10",
+    "jsdom": "27.4.0",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

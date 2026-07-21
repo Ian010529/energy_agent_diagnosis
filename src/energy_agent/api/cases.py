@@ -45,9 +45,12 @@ async def list_cases(
     alarm_name: str | None = None,
     created_by: str | None = None,
     is_active: bool | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = None,
+    sort: str = Query(default="updated_at_desc", pattern="^updated_at_(asc|desc)$"),
 ) -> CaseListResponse:
     actor_from_request(request)
-    items = await CaseService.from_request(request).list_cases(
+    items, total, next_cursor = await CaseService.from_request(request).list_case_page(
         {
             key: value
             for key, value in locals().items()
@@ -61,9 +64,14 @@ async def list_cases(
                 "is_active",
             }
             and value is not None
-        }
+        },
+        limit=limit,
+        cursor=cursor,
+        sort=sort,
     )
-    return CaseListResponse(items=items, total=len(items))
+    return CaseListResponse(
+        items=items, total=total, next_cursor=next_cursor, has_more=next_cursor is not None
+    )
 
 
 @router.get("/api/v1/cases/{case_id}", response_model=DiagnosisCase)

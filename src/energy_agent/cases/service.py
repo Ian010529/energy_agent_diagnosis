@@ -44,6 +44,8 @@ from energy_agent.persistence.repositories.diagnosis_run import DiagnosisResultR
 from energy_agent.persistence.repositories.diagnosis_session import DiagnosisSessionRepository
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
 from energy_agent.providers.milvus import MilvusVectorProvider
+from energy_agent.timeline.contracts import TimelineEventCreate, TimelineEventType
+from energy_agent.timeline.repository import TimelineRepository, timeline_event_id
 from energy_agent.tools.executor import ToolExecutor
 from energy_agent.tools.registry import ToolRegistry
 
@@ -92,6 +94,7 @@ class CaseService:
         milvus: MilvusVectorProvider | None,
         index_execution_mode: str = "sync",
         index_max_attempts: int = 3,
+        timeline: TimelineRepository | None = None,
     ) -> None:
         self.cases = cases
         self.sessions = sessions
@@ -103,6 +106,7 @@ class CaseService:
         self.milvus = milvus
         self.index_execution_mode = index_execution_mode
         self.index_max_attempts = index_max_attempts
+        self.timeline = timeline
 
     @classmethod
     def from_request(cls, request: Request) -> "CaseService":
@@ -118,6 +122,7 @@ class CaseService:
             milvus=state.milvus_provider,
             index_execution_mode=state.settings.index_execution_mode,
             index_max_attempts=state.settings.index_max_attempts,
+            timeline=state.timeline_repository,
         )
 
     @staticmethod
@@ -229,6 +234,39 @@ class CaseService:
             },
         )
         HUMAN_REVIEWS.labels(decision=payload.review_result).inc()
+        if self.timeline:
+            await self.timeline.append(
+                TimelineEventCreate(
+                    event_id=timeline_event_id(session_id, "review_submitted", review_id),
+                    session_id=session_id,
+                    run_id=result.run_id,
+                    event_type=TimelineEventType.REVIEW_SUBMITTED,
+                    actor_id=actor.actor_id,
+                    actor_role=actor.actor_role,
+                    payload={
+                        "review_id": review_id,
+                        "review_result": payload.review_result,
+                        "comments": payload.comments or "",
+                        "evidence_refs": payload.evidence_refs,
+                    },
+                )
+            )
+            if case:
+                await self.timeline.append(
+                    TimelineEventCreate(
+                        event_id=timeline_event_id(session_id, "case_created", case.case_id),
+                        session_id=session_id,
+                        run_id=result.run_id,
+                        event_type=TimelineEventType.CASE_CREATED,
+                        actor_id=actor.actor_id,
+                        actor_role=actor.actor_role,
+                        payload={
+                            "case_id": case.case_id,
+                            "case_status": case.review_status,
+                            "case_version": case.case_version,
+                        },
+                    )
+                )
         return DiagnosisReviewResponse(
             review_id=review_id,
             session_id=session_id,
@@ -315,6 +353,11 @@ class CaseService:
 
     async def list_cases(self, filters: dict[str, object]) -> list[DiagnosisCase]:
         return await self.cases.list_cases(filters)
+
+    async def list_case_page(
+        self, filters: dict[str, object], *, limit: int, cursor: str | None, sort: str
+    ) -> tuple[list[DiagnosisCase], int, str | None]:
+        return await self.cases.list_page(filters, limit=limit, cursor=cursor, sort=sort)
 
     async def patch(
         self, case_id: str, payload: CasePatchRequest, actor: ActorContext

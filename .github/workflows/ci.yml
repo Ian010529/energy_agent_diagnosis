@@ -16,3 +16,22 @@ jobs:
       - run: uv run python -m compileall migrations/control/versions
       - run: make dependency-audit static-security-check
       - run: make docker-build
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {python-version: "3.12"}
+      - uses: pnpm/action-setup@v4
+        with: {version: "11.9.0"}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: make frontend-contract-check frontend-lint frontend-typecheck frontend-test frontend-build
+      - run: make frontend-docker-build

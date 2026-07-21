@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from energy_agent.contracts.diagnosis import (
@@ -12,7 +12,13 @@ from energy_agent.contracts.diagnosis import (
 from energy_agent.core.errors import DependencyUnavailableError
 from energy_agent.core.time import ensure_utc, utc_now
 from energy_agent.observability.tracing import Tracer
-from energy_agent.persistence.models import DiagnosisResultModel, DiagnosisRunModel
+from energy_agent.persistence.models import (
+    DiagnosisResultModel,
+    DiagnosisRunModel,
+    DiagnosisSessionModel,
+    DiagnosisTimelineEventModel,
+)
+from energy_agent.timeline.contracts import TimelineEventCreate
 
 
 class DiagnosisRunRepository:
@@ -44,7 +50,11 @@ class DiagnosisRunRepository:
             updated_at=ensure_utc(model.updated_at),
         )
 
-    async def create(self, payload: DiagnosisRunCreate) -> DiagnosisRunRecord:
+    async def create(
+        self,
+        payload: DiagnosisRunCreate,
+        timeline_event: TimelineEventCreate | None = None,
+    ) -> DiagnosisRunRecord:
         now = utc_now()
         model = DiagnosisRunModel(
             **payload.model_dump(mode="json"), started_at=now, created_at=now, updated_at=now
@@ -52,6 +62,36 @@ class DiagnosisRunRepository:
         try:
             async with self.session_factory.begin() as session:
                 session.add(model)
+                if timeline_event:
+                    await session.execute(
+                        select(DiagnosisSessionModel.id)
+                        .where(DiagnosisSessionModel.id == timeline_event.session_id)
+                        .with_for_update()
+                    )
+                    sequence = (
+                        int(
+                            (
+                                await session.execute(
+                                    select(
+                                        func.coalesce(
+                                            func.max(DiagnosisTimelineEventModel.sequence), 0
+                                        )
+                                    ).where(
+                                        DiagnosisTimelineEventModel.session_id
+                                        == timeline_event.session_id
+                                    )
+                                )
+                            ).scalar_one()
+                        )
+                        + 1
+                    )
+                    session.add(
+                        DiagnosisTimelineEventModel(
+                            **timeline_event.model_dump(mode="json"),
+                            sequence=sequence,
+                            created_at=now,
+                        )
+                    )
         except Exception as exc:
             raise DependencyUnavailableError("MySQL diagnosis run write failed") from exc
         return self._run(model)
@@ -96,6 +136,23 @@ class DiagnosisRunRepository:
                     .limit(1)
                 )
                 model = result.scalar_one_or_none()
+        except Exception as exc:
+            raise DependencyUnavailableError("MySQL diagnosis run read failed") from exc
+        return self._run(model) if model else None
+
+    async def get_for_session(
+        self, run_id: str, session_id: str, *, trace_id: str
+    ) -> DiagnosisRunRecord | None:
+        try:
+            async with self.session_factory() as session:
+                model = (
+                    await session.execute(
+                        select(DiagnosisRunModel).where(
+                            DiagnosisRunModel.id == run_id,
+                            DiagnosisRunModel.session_id == session_id,
+                        )
+                    )
+                ).scalar_one_or_none()
         except Exception as exc:
             raise DependencyUnavailableError("MySQL diagnosis run read failed") from exc
         return self._run(model) if model else None

@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from influxdb_client.client.influxdb_client import InfluxDBClient
 
 from energy_agent.api.rate_limit import RedisRateLimiter
+from energy_agent.catalog.repository import CatalogRepository
 from energy_agent.core.config import Settings
 from energy_agent.core.context import get_context
 from energy_agent.core.ids import new_id
@@ -48,6 +49,7 @@ from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.retrieval.contracts import QueryRewrite, RetrievalMode
 from energy_agent.retrieval.scoring import ScoreWeights
 from energy_agent.retrieval.service import RetrievalService
+from energy_agent.timeline.repository import TimelineRepository
 from energy_agent.tools.implementations.graph_tools import register_graph_tool
 from energy_agent.tools.implementations.read_tools import build_registry
 from energy_agent.tools.implementations.review_tools import register_review_tool
@@ -247,6 +249,7 @@ def build_lifespan(
         app.state.circuit_breakers = circuit_breakers
         app.state.tracer = tracer
         app.state.mysql_engine = engine
+        app.state.mysql_session_factory = session_factory
         app.state.redis = redis
         app.state.rate_limiter = RedisRateLimiter(redis)
         app.state.influx_client = influx_client
@@ -269,6 +272,8 @@ def build_lifespan(
         app.state.index_repository = IndexRepository(session_factory, tracer)
         app.state.case_repository = CaseRepository(session_factory, app.state.index_repository)
         app.state.review_repository = DiagnosisReviewRepository(session_factory)
+        app.state.catalog_repository = CatalogRepository(session_factory)
+        app.state.timeline_repository = TimelineRepository(session_factory)
         app.state.tool_registry = build_registry(
             mysql_provider, timeseries_provider, tracer, retrieval_service
         )

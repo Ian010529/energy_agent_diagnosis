@@ -8,12 +8,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/app/.venv/bin:${PATH}"
 
 WORKDIR /app
+RUN groupadd --system energy && useradd --system --gid energy --home-dir /app energy
+
 COPY pyproject.toml uv.lock README.md ./
-COPY src ./src
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY --chown=energy:energy src ./src
 RUN uv sync --frozen --no-dev
 
-RUN groupadd --system energy && useradd --system --gid energy --home-dir /app energy \
-    && chown -R energy:energy /app
 USER energy
 
 EXPOSE 8000

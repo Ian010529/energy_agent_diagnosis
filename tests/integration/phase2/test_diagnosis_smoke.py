@@ -17,6 +17,7 @@ from energy_agent.persistence.models import (
     DiagnosisRunModel,
     DiagnosisSessionModel,
     DiagnosisStepLogModel,
+    DiagnosisTimelineEventModel,
     MaintenanceTicketModel,
     ManualChunkModel,
 )
@@ -140,6 +141,11 @@ async def _clean_mysql() -> None:
         ids = list(session_ids)
         if ids:
             await session.execute(
+                delete(DiagnosisTimelineEventModel).where(
+                    DiagnosisTimelineEventModel.session_id.in_(ids)
+                )
+            )
+            await session.execute(
                 delete(DiagnosisResultModel).where(DiagnosisResultModel.session_id.in_(ids))
             )
             await session.execute(
@@ -195,7 +201,7 @@ def _seed_influx() -> None:
                 .tag("site_id", "SITE-01")
                 .tag("device_model", "SC5000")
                 .tag("metric_name", metric)
-                .field("value", value)
+                .field("value", float(value))
                 .time(now + timedelta(minutes=offset))
             )
     client.write_api(write_options=SYNCHRONOUS).write(

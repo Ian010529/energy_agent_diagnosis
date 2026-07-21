@@ -1,0 +1,36 @@
+@media (max-width: 89.9375rem) {
+  :root { --sidebar-width: 15rem; --inspector-width: 20rem; }
+}
+@media (max-width: 68.6875rem) {
+  .workspace { grid-template-columns: minmax(14rem, 15.5rem) minmax(0, 1fr); }
+  .workspace > .inspector { position: fixed; right: 0; top: 0; bottom: 0; width: min(24rem, 88vw); z-index: 20; box-shadow: -12px 0 32px rgba(0,0,0,.12); }
+  .workspace > .inspector[data-collapsed="true"] { display: none; }
+}
+@media (max-width: 47.9375rem) {
+  .app-frame { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 3.75rem; }
+  .navigation-rail { grid-row: 2; grid-column: 1; border-right: 0; border-top: 1px solid var(--border-subtle); flex-direction: row; justify-content: space-around; padding: .35rem .65rem; }
+  .main-surface { grid-row: 1; }
+  .brand-mark, .rail-spacer, .theme-rail { display: none; }
+  .rail-link { width: 2.75rem; height: 2.75rem; }
+  .workspace { display: block; }
+  .workspace > .session-panel { display: none; }
+  .workspace > .thread-panel { height: 100%; }
+  .workspace > .inspector { width: 100%; }
+  .page-header { padding: 0 var(--space-3); }
+  .content-scroll { padding: var(--space-3); }
+  .list-row { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); }
+  .list-row > :nth-child(2) { display: none; }
+  .thread { padding: var(--space-4) var(--space-3) 7.5rem; }
+  .composer { padding: var(--space-3); }
+  .command-trigger { right: var(--space-3); bottom: 4.25rem; width: 2.75rem; padding: 0; justify-content: center; }
+  .command-trigger span, .command-trigger kbd { display: none; }
+  .reviews-layout { grid-template-columns: 1fr; gap: var(--space-5); }
+  .responsive-drawer { width: 100vw !important; }
+}
+@media (pointer: coarse) {
+  .button, .input, .tab, .rail-link, .icon-button { min-height: 2.75rem; }
+  .list-row { min-height: 4.25rem; }
+}
+@container (max-width: 36rem) {
+  .cause-head { align-items: flex-start; flex-direction: column; gap: var(--space-1); }
+}

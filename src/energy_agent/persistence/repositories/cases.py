@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from energy_agent.catalog.repository import decode_cursor, encode_cursor, query_datetime
 from energy_agent.contracts.cases import (
     CaseIndexStatus,
     CaseReviewEvent,
@@ -11,6 +12,7 @@ from energy_agent.core.errors import (
     CaseNotEditableError,
     CaseNotFoundError,
     CaseStateConflictError,
+    InvalidRequestError,
 )
 from energy_agent.core.time import ensure_utc, utc_now
 from energy_agent.indexing.contracts import IndexJobCreate
@@ -60,6 +62,21 @@ class CaseRepository:
             ).scalar_one_or_none()
         return case_record(model) if model else None
 
+    async def list_by_session(self, session_id: str) -> list[DiagnosisCase]:
+        async with self.session_factory() as session:
+            rows = (
+                (
+                    await session.execute(
+                        select(DiagnosisCaseModel)
+                        .where(DiagnosisCaseModel.source_session_id == session_id)
+                        .order_by(DiagnosisCaseModel.created_at, DiagnosisCaseModel.case_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        return [case_record(row) for row in rows]
+
     async def list_cases(self, filters: dict[str, object]) -> list[DiagnosisCase]:
         query = select(DiagnosisCaseModel)
         for name in (
@@ -77,6 +94,71 @@ class CaseRepository:
         async with self.session_factory() as session:
             rows = (await session.execute(query)).scalars().all()
         return [case_record(row) for row in rows]
+
+    async def list_page(
+        self,
+        filters: dict[str, object],
+        *,
+        limit: int,
+        cursor: str | None,
+        sort: str,
+    ) -> tuple[list[DiagnosisCase], int, str | None]:
+        conditions = []
+        for name in (
+            "review_status",
+            "device_type",
+            "device_model",
+            "alarm_name",
+            "created_by",
+            "is_active",
+        ):
+            value = filters.get(name)
+            if value is not None:
+                conditions.append(getattr(DiagnosisCaseModel, name) == value)
+        query = select(DiagnosisCaseModel).where(*conditions)
+        descending = sort != "updated_at_asc"
+        after = decode_cursor(cursor)
+        if after:
+            parts = after.split("|", 1)
+            if len(parts) != 2:
+                raise InvalidRequestError("Cursor is invalid")
+            try:
+                timestamp = query_datetime(parts[0])
+            except ValueError as exc:
+                raise InvalidRequestError("Cursor is invalid") from exc
+            query = query.where(
+                or_(
+                    DiagnosisCaseModel.updated_at < timestamp
+                    if descending
+                    else DiagnosisCaseModel.updated_at > timestamp,
+                    (DiagnosisCaseModel.updated_at == timestamp)
+                    & (DiagnosisCaseModel.case_id > parts[1]),
+                )
+            )
+        ordering = (
+            DiagnosisCaseModel.updated_at.desc()
+            if descending
+            else DiagnosisCaseModel.updated_at.asc()
+        )
+        query = query.order_by(ordering, DiagnosisCaseModel.case_id).limit(limit + 1)
+        async with self.session_factory() as session:
+            rows = (await session.execute(query)).scalars().all()
+            total = int(
+                (
+                    await session.execute(
+                        select(func.count()).select_from(DiagnosisCaseModel).where(*conditions)
+                    )
+                ).scalar_one()
+            )
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [case_record(row) for row in rows]
+        next_cursor = (
+            encode_cursor(f"{items[-1].updated_at.isoformat()}|{items[-1].case_id}")
+            if has_more and items
+            else None
+        )
+        return items, total, next_cursor
 
     async def update_draft(
         self, case_id: str, values: dict[str, object], actor_id: str, *, privileged: bool

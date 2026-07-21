@@ -48,6 +48,30 @@ class DiagnosisStepLogModel(Base):
     duration_ms: Mapped[int | None] = mapped_column(Integer)
 
 
+class DiagnosisTimelineEventModel(Base):
+    __tablename__ = "diagnosis_timeline_event"
+    __table_args__ = (
+        UniqueConstraint("event_id", name="uq_timeline_event_id"),
+        UniqueConstraint("session_id", "sequence", name="uq_timeline_session_sequence"),
+        Index("ix_timeline_session_sequence", "session_id", "sequence"),
+        Index("ix_timeline_run_id", "run_id"),
+        Index("ix_timeline_created_at", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    event_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("diagnosis_session.id"), nullable=False
+    )
+    run_id: Mapped[str | None] = mapped_column(String(64))
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_id: Mapped[str | None] = mapped_column(String(128))
+    actor_role: Mapped[str | None] = mapped_column(String(32))
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
 class DiagnosisRunModel(Base):
     __tablename__ = "diagnosis_run"
 

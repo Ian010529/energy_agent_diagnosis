@@ -25,6 +25,7 @@ from energy_agent.retrieval.scoring import (
     score_candidate,
     verification_score,
 )
+from energy_agent.retrieval.service import _rewrite_cache_key
 from energy_agent.retrieval.tokenization import tokenize
 from energy_agent.tools.contracts import ManualSearchInput, TicketSearchInput, ToolContext
 
@@ -75,6 +76,29 @@ async def test_model_rewrite_failure_falls_back_to_rules() -> None:
     result = await rewrite_query("PCS 温度高", mode="model_enhanced", model_rewrite=broken)
     assert result.rewrite_mode == "rules"
     assert result.warnings == ["QUERY_REWRITE_FAILED"]
+
+
+def test_rewrite_cache_ignores_source_only_candidate_filters() -> None:
+    shared = {
+        "device_type": "PCS",
+        "device_model": "HY-PCS-500",
+        "manufacturer": "华岳",
+        "alarm_name": "PCS机柜温度异常",
+    }
+    manual = _rewrite_cache_key(
+        "trace-1",
+        "诊断温度告警",
+        {**shared, "effective_only": True, "section_type": ["维护步骤"]},
+    )
+    ticket = _rewrite_cache_key(
+        "trace-1",
+        "诊断温度告警",
+        {**shared, "exclude_ticket_ids": ["T-1"], "exclude_session_id": "S-1"},
+    )
+    assert manual == ticket
+    assert manual != _rewrite_cache_key(
+        "trace-1", "诊断温度告警", {**shared, "device_model": "QH-PCS-630"}
+    )
 
 
 def test_tokenizer_and_bm25_reward_exact_alarm_and_title_matches() -> None:

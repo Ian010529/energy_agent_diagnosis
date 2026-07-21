@@ -1,0 +1,21 @@
+[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-canvas: #141413;
+  --surface-panel: #1a1a19;
+  --surface-subtle: #20201f;
+  --surface-hover: #272725;
+  --surface-selected: #2d2d2a;
+  --text-primary: #f3f3ef;
+  --text-secondary: #c0c0b9;
+  --text-muted: #8b8b84;
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --selection: rgba(128, 174, 147, 0.22);
+  --focus: #8bb49b;
+  --status-running: #76a9c2;
+  --status-complete: #78a98c;
+  --status-warning: #d29a52;
+  --status-danger: #df7b72;
+  --status-info: #91aed0;
+  --status-muted: #92928b;
+}

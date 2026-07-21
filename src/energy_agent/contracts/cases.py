@@ -138,6 +138,8 @@ class CaseRevisionRequest(CasePatchRequest):
 class CaseListResponse(StrictModel):
     items: list[DiagnosisCase]
     total: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class CaseReviewEvent(StrictModel):

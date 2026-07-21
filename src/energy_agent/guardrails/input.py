@@ -13,12 +13,22 @@ _HIGH_RISK_COMMAND = re.compile(
     r"(立即|马上|请|执行|自动|远程).{0,8}"
     r"(停机|断电|合闸|分闸|回路切换|保护旁路|修改保护参数|解除联锁|高压设备.{0,4}复位)"
 )
+_RISK_ASSESSMENT = re.compile(
+    r"(?:判断|评估|分析|确认).{0,4}(?:是否|有无|需不需要)|"
+    r"是否(?:存在|需要|应当|应该|有必要)?"
+)
 
 
 def _contains_high_risk_command(message: str) -> bool:
     for match in _HIGH_RISK_COMMAND.finditer(message):
-        prefix = message[max(0, match.start() - 8) : match.start()]
-        if any(negation in prefix for negation in ("没有", "未", "尚未", "禁止")):
+        prefix = message[max(0, match.start() - 16) : match.start()]
+        if any(
+            negation in prefix
+            for negation in ("没有", "未", "尚未", "禁止", "不要", "不得", "不应", "无需", "避免")
+        ):
+            continue
+        context = message[max(0, match.start() - 16) : match.end()]
+        if _RISK_ASSESSMENT.search(context):
             continue
         return True
     return False

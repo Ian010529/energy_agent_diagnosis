@@ -135,7 +135,7 @@ services:
       - energy_neo4j_data:/data
 
   index-worker:
-    profiles: ["phase5", "phase6", "pilot"]
+    profiles: ["phase5", "phase6", "phase7", "pilot"]
     build: .
     command: ["python", "-m", "energy_agent.indexing.worker"]
     environment:
@@ -175,7 +175,7 @@ services:
         condition: service_healthy
 
   backend:
-    profiles: ["phase2", "phase3", "phase5", "phase6", "pilot"]
+    profiles: ["phase2", "phase3", "phase5", "phase6", "phase7", "pilot"]
     build: .
     environment:
       APP_ENV: ${APP_ENV:-local}
@@ -232,12 +232,53 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-}
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       influxdb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["phase7", "pilot"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      BACKEND_BASE_URL: http://backend:8000
+      BACKEND_INTERNAL_API_KEY: ${INTERNAL_API_KEY:-}
+      FRONTEND_DEFAULT_ACTOR_ID: ${FRONTEND_DEFAULT_ACTOR_ID:-local-operator}
+      FRONTEND_DEFAULT_ACTOR_ROLE: ${FRONTEND_DEFAULT_ACTOR_ROLE:-operator}
+      FRONTEND_LOCAL_VIEWER_ACTOR_ID: ${FRONTEND_LOCAL_VIEWER_ACTOR_ID:-local-viewer}
+      FRONTEND_LOCAL_OPERATOR_ACTOR_ID: ${FRONTEND_LOCAL_OPERATOR_ACTOR_ID:-pilot-operator}
+      FRONTEND_LOCAL_REVIEWER_ACTOR_ID: ${FRONTEND_LOCAL_REVIEWER_ACTOR_ID:-pilot-reviewer}
+      FRONTEND_LOCAL_ADMIN_ACTOR_ID: ${FRONTEND_LOCAL_ADMIN_ACTOR_ID:-phase6-evaluator}
+      FRONTEND_APP_ENV: ${FRONTEND_APP_ENV:-local}
+      GRAFANA_URL: ${GRAFANA_URL:-http://localhost:3001}
+      LANGFUSE_URL: ${LANGFUSE_URL:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
         condition: service_healthy
 
   prometheus:

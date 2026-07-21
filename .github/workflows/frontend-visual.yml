@@ -1,0 +1,37 @@
+name: Frontend Visual
+on:
+  workflow_dispatch:
+    inputs:
+      full_matrix:
+        description: Run every viewport and browser
+        type: boolean
+        default: false
+
+jobs:
+  screenshots:
+    # Visual snapshots are intentionally generated and reviewed on Darwin.
+    # Keeping CI on the same OS avoids accepting platform-specific font and
+    # browser rasterisation noise as product regressions.
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: "11.9.0"}
+      - uses: actions/setup-node@v4
+        with: {node-version: "22", cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml}
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+        working-directory: frontend
+      - run: pnpm visual
+        working-directory: frontend
+        env:
+          VISUAL_FULL_MATRIX: ${{ inputs.full_matrix && '1' || '0' }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-visual-artifacts
+          path: |
+            frontend/playwright-report
+            frontend/test-results

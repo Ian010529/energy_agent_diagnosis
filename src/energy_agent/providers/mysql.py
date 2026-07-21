@@ -1,3 +1,7 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+import anyio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -12,6 +16,18 @@ from energy_agent.persistence.models import (
 )
 
 
+@asynccontextmanager
+async def _session(
+    factory: async_sessionmaker[AsyncSession],
+) -> AsyncIterator[AsyncSession]:
+    session = factory()
+    try:
+        yield session
+    finally:
+        with anyio.CancelScope(shield=True):
+            await session.close()
+
+
 class MySQLDiagnosisProvider:
     provider_type = "real"
 
@@ -19,7 +35,7 @@ class MySQLDiagnosisProvider:
         self.session_factory = session_factory
 
     async def get_device(self, device_id: str) -> dict[str, object] | None:
-        async with self.session_factory() as session:
+        async with _session(self.session_factory) as session:
             model = await session.get(DeviceProfileModel, device_id)
             if model is None:
                 return None
@@ -29,7 +45,7 @@ class MySQLDiagnosisProvider:
             }
 
     async def get_alarm(self, alarm_id: str, device_id: str | None) -> dict[str, object] | None:
-        async with self.session_factory() as session:
+        async with _session(self.session_factory) as session:
             query = select(AlarmEventModel).where(AlarmEventModel.alarm_id == alarm_id)
             if device_id:
                 query = query.where(AlarmEventModel.device_id == device_id)
@@ -72,7 +88,7 @@ class MySQLDiagnosisProvider:
                 ManualDocumentModel.effective.is_(True),
                 ManualDocumentModel.index_status == "INDEXED",
             )
-        async with self.session_factory() as session:
+        async with _session(self.session_factory) as session:
             rows = (await session.execute(query)).scalars().all()
         return [
             {
@@ -95,7 +111,7 @@ class MySQLDiagnosisProvider:
         excluded = filters.get("exclude_ticket_ids")
         if isinstance(excluded, list) and excluded:
             query = query.where(MaintenanceTicketModel.ticket_id.not_in(excluded))
-        async with self.session_factory() as session:
+        async with _session(self.session_factory) as session:
             rows = (await session.execute(query)).scalars().all()
         return [
             {
@@ -119,7 +135,7 @@ class MySQLDiagnosisProvider:
                 query = query.where(getattr(DiagnosisCaseModel, name) == value)
         if exclude_session_id:
             query = query.where(DiagnosisCaseModel.source_session_id != exclude_session_id)
-        async with self.session_factory() as session:
+        async with _session(self.session_factory) as session:
             rows = (await session.execute(query)).scalars().all()
         return [
             {

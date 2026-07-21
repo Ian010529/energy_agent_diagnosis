@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from time import monotonic
 
+import anyio
 from fastapi import Request
 
 from energy_agent.agent.events import DiagnosisEventEmitter, NoopDiagnosisEventEmitter
@@ -65,6 +66,8 @@ from energy_agent.persistence.repositories.diagnosis_step_log import (
     DiagnosisStepLogRepository,
 )
 from energy_agent.reliability.registry import CircuitBreakerRegistry
+from energy_agent.timeline.contracts import TimelineEventCreate, TimelineEventType
+from energy_agent.timeline.repository import TimelineRepository, timeline_event_id
 from energy_agent.tools.contracts import ToolResult
 from energy_agent.tools.executor import ToolExecutor
 from energy_agent.tools.registry import ToolRegistry
@@ -85,6 +88,7 @@ class DiagnosisService:
         audit: AuditRepository | None = None,
         alarm_dedup: AlarmDedupRepository | None = None,
         circuit_breakers: CircuitBreakerRegistry | None = None,
+        timeline: TimelineRepository | None = None,
     ) -> None:
         self.sessions = sessions
         self.runs = runs
@@ -97,6 +101,7 @@ class DiagnosisService:
         self.audit = audit
         self.alarm_dedup = alarm_dedup
         self.circuit_breakers = circuit_breakers
+        self.timeline = timeline
 
     @classmethod
     def from_request(cls, request: Request) -> "DiagnosisService":
@@ -113,6 +118,7 @@ class DiagnosisService:
             audit=state.audit_repository,
             alarm_dedup=state.alarm_dedup_repository,
             circuit_breakers=state.circuit_breakers,
+            timeline=state.timeline_repository,
         )
 
     @staticmethod
@@ -197,6 +203,8 @@ class DiagnosisService:
                 trace_id=trace_id,
                 idempotency_key=idempotency_key,
                 request_hash=fingerprint,
+                status="initialized",
+                run_type="session_init",
             )
         )
         await self.memory.save(
@@ -340,17 +348,54 @@ class DiagnosisService:
                 seen.add(answer.question_id)
 
         run_id = new_id()
-        await self.runs.create(
-            DiagnosisRunCreate(
-                id=run_id,
+        user_message_event = (
+            TimelineEventCreate(
+                event_id=timeline_event_id(payload.session_id, "user_message", run_id),
                 session_id=payload.session_id,
-                trace_id=trace_id,
-                idempotency_key=idempotency_key,
-                request_hash=fingerprint,
-                parent_run_id=memory.run_id if memory else session.run_id,
-                run_type="clarification" if payload.clarification_answers else "diagnosis",
+                run_id=run_id,
+                event_type=TimelineEventType.USER_MESSAGE,
+                actor_id=actor.actor_id if actor else None,
+                actor_role=actor.actor_role if actor else None,
+                payload={"message": payload.message},
             )
+            if self.timeline
+            else None
         )
+        run_create = DiagnosisRunCreate(
+            id=run_id,
+            session_id=payload.session_id,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+            request_hash=fingerprint,
+            parent_run_id=memory.run_id if memory else session.run_id,
+            run_type="clarification" if payload.clarification_answers else "diagnosis",
+        )
+        if user_message_event:
+            await self.runs.create(run_create, timeline_event=user_message_event)
+        else:
+            await self.runs.create(run_create)
+        await self.sessions.update(
+            payload.session_id,
+            DiagnosisSessionUpdate(phase=DiagnosisPhase.INIT, run_id=run_id),
+            trace_id=trace_id,
+        )
+        if self.timeline:
+            for answer in payload.clarification_answers:
+                await self.timeline.append(
+                    TimelineEventCreate(
+                        event_id=timeline_event_id(
+                            payload.session_id,
+                            "clarification_answer",
+                            f"{run_id}:{answer.question_id}",
+                        ),
+                        session_id=payload.session_id,
+                        run_id=run_id,
+                        event_type=TimelineEventType.CLARIFICATION_ANSWER,
+                        actor_id=actor.actor_id if actor else None,
+                        actor_role=actor.actor_role if actor else None,
+                        payload={"question_id": answer.question_id, "answer": answer.answer},
+                    )
+                )
         feedback = [
             *(
                 [
@@ -436,6 +481,33 @@ class DiagnosisService:
                     duration_ms=duration_ms,
                 )
             )
+            if error or output is None:
+                return
+            state_updates = {
+                key: value
+                for key, value in output.items()
+                if key in DiagnosisState.model_fields
+            }
+            progress = DiagnosisState.model_validate(
+                state.model_copy(update=state_updates).model_dump()
+            )
+            if progress.diagnosis_template_id:
+                await self.runs.set_template(
+                    progress.run_id,
+                    template_id=progress.diagnosis_template_id,
+                    template_version=progress.diagnosis_template_version,
+                    alarm_category=progress.alarm_category,
+                )
+            await self.sessions.update(
+                progress.session_id,
+                DiagnosisSessionUpdate(phase=progress.phase, run_id=progress.run_id),
+                trace_id=progress.trace_id,
+            )
+            await self.memory.save(
+                self._memory_payload(progress, None).model_copy(
+                    update={"last_completed_node": name}
+                )
+            )
 
         async def write_memory(state: DiagnosisState) -> None:
             if state.final_response:
@@ -497,7 +569,31 @@ class DiagnosisService:
             ):
                 output = await graph.ainvoke(initial)
         except asyncio.CancelledError:
-            await self.runs.finish(run_id, initial.phase, "cancelled")
+            with anyio.CancelScope(shield=True):
+                await self.runs.finish(run_id, DiagnosisPhase.FAILED, "cancelled")
+                await self.runs.set_hardening_outcome(
+                    run_id,
+                    first_event_at=getattr(emitter, "first_event_at", None),
+                    guardrail_status=None,
+                    failure_category="stream_disconnected",
+                )
+                await self.sessions.update(
+                    payload.session_id,
+                    DiagnosisSessionUpdate(phase=DiagnosisPhase.FAILED, run_id=run_id),
+                    trace_id=trace_id,
+                )
+                persisted = await self.memory.get(payload.session_id, trace_id=trace_id)
+                if persisted:
+                    await self.memory.save(
+                        persisted.model_copy(
+                            update={
+                                "phase": DiagnosisPhase.FAILED,
+                                "run_id": run_id,
+                                "trace_id": trace_id,
+                                "updated_at": utc_now(),
+                            }
+                        )
+                    )
             SESSION_FAILURES.labels(category="cancelled").inc()
             raise
         except Exception:
@@ -553,6 +649,38 @@ class DiagnosisService:
             trace_id=trace_id,
         )
         await self.memory.save(self._memory_payload(state, result))
+        if self.timeline:
+            for question in state.clarification_questions:
+                await self.timeline.append(
+                    TimelineEventCreate(
+                        event_id=timeline_event_id(
+                            state.session_id,
+                            "clarification_question",
+                            f"{run_id}:{question.question_id}",
+                        ),
+                        session_id=state.session_id,
+                        run_id=run_id,
+                        event_type=TimelineEventType.CLARIFICATION_QUESTION,
+                        payload=question.model_dump(mode="json"),
+                    )
+                )
+            if result:
+                await self.timeline.append(
+                    TimelineEventCreate(
+                        event_id=timeline_event_id(state.session_id, "diagnosis_result", run_id),
+                        session_id=state.session_id,
+                        run_id=run_id,
+                        event_type=TimelineEventType.DIAGNOSIS_RESULT,
+                        payload={
+                            "summary": result.summary,
+                            "risk_level": result.risk_level,
+                            "evidence_refs": [item.evidence_id for item in result.evidence],
+                            "candidate_causes": [
+                                item.model_dump(mode="json") for item in result.candidate_causes
+                            ],
+                        },
+                    )
+                )
         template_label = state.diagnosis_template_id or "unknown"
         DIAGNOSIS_RUNS.labels(template=template_label, status=state.phase).inc()
         DIAGNOSIS_DURATION.labels(template=template_label).observe(monotonic() - diagnosis_started)
