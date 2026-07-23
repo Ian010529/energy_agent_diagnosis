@@ -13,7 +13,7 @@ from energy_agent.core.errors import (
 
 
 def actor_from_request(request: Request, *, explicit: bool = False) -> ActorContext:
-    settings = request.app.state.settings
+    settings = request.app.state.container.settings
     actor_id = request.headers.get("X-Actor-ID")
     role_value = request.headers.get("X-Actor-Role")
     if settings.auth_mode == "trusted_headers":
@@ -41,7 +41,7 @@ def require_roles(actor: ActorContext, roles: Iterable[ActorRole]) -> None:
 
 
 def require_pilot_write(request: Request, actor: ActorContext) -> None:
-    settings = request.app.state.settings
+    settings = request.app.state.container.settings
     if not settings.pilot_mode:
         return
     allowed = {value.strip() for value in settings.pilot_allowed_actors.split(",") if value.strip()}

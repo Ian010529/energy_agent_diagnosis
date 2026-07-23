@@ -4,6 +4,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Request, Response
 
+from energy_agent.api.dependencies import get_container
 from energy_agent.contracts.common import StrictModel
 from energy_agent.core.context import get_context
 from energy_agent.persistence.mysql import mysql_ping
@@ -57,30 +58,32 @@ async def _dependency_status(
 
 @router.get("/ready", response_model=ReadyResponse)
 async def ready(request: Request, response: Response) -> ReadyResponse:
+    container = get_container(request)
+
     async def influx_status() -> object:
-        healthy = await asyncio.to_thread(request.app.state.influx_client.ping)
+        healthy = await asyncio.to_thread(container.providers.influx_client.ping)
         if not healthy:
             raise ConnectionError("InfluxDB ping failed")
         return healthy
 
     mysql, redis, influxdb = await asyncio.gather(
-        _dependency_status(mysql_ping(request.app.state.mysql_engine)),
-        _dependency_status(redis_ping(request.app.state.redis)),
+        _dependency_status(mysql_ping(container.providers.mysql_engine)),
+        _dependency_status(redis_ping(container.providers.redis)),
         _dependency_status(influx_status()),
     )
-    settings = request.app.state.settings
+    settings = container.settings
     if settings.retrieval_mode == "hybrid":
         minio, milvus, embedding = await asyncio.gather(
             _dependency_status(
-                request.app.state.minio_provider.health(),
+                container.providers.minio.health(),  # type: ignore[union-attr]
                 timeout_seconds=3.0,
             ),
             _dependency_status(
-                request.app.state.milvus_provider.health(),
+                container.providers.vector_search.health(),  # type: ignore[union-attr]
                 timeout_seconds=3.0,
             ),
             _dependency_status(
-                request.app.state.embedding_provider.health(),
+                container.providers.embedding.health(),  # type: ignore[union-attr]
                 timeout_seconds=min(settings.embedding_timeout_seconds, 10.0),
             ),
         )
@@ -88,10 +91,10 @@ async def ready(request: Request, response: Response) -> ReadyResponse:
         minio = milvus = embedding = "optional"
     reranker = (
         await _dependency_status(
-            request.app.state.reranker_provider.health(),
+            container.providers.reranker.health(),
             timeout_seconds=min(settings.rerank_timeout_seconds, 10.0),
         )
-        if request.app.state.reranker_provider
+        if container.providers.reranker
         else "optional"
     )
     core = [mysql, redis, influxdb]

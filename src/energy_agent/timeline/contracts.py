@@ -1,9 +1,14 @@
 from datetime import datetime
 from enum import StrEnum
+from hashlib import sha256
 
 from pydantic import Field
 
 from energy_agent.contracts.common import StrictModel
+
+
+def timeline_event_id(session_id: str, event_type: str, key: str) -> str:
+    return sha256(f"{session_id}:{event_type}:{key}".encode()).hexdigest()
 
 
 class TimelineEventType(StrEnum):

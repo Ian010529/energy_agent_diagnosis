@@ -15,10 +15,6 @@ from energy_agent.observability.metrics import (
     RETRIEVAL_QUERIES,
 )
 from energy_agent.observability.tracing import Tracer
-from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
-from energy_agent.providers.milvus import MilvusVectorProvider
-from energy_agent.providers.mysql import MySQLDiagnosisProvider
-from energy_agent.providers.reranker import HttpRerankerProvider
 from energy_agent.retrieval.contracts import (
     QueryRewrite,
     RankedEvidence,
@@ -32,6 +28,12 @@ from energy_agent.retrieval.dedup import deduplicate_and_diversify
 from energy_agent.retrieval.evidence import build_evidence_package
 from energy_agent.retrieval.keyword import LightweightKeywordRetriever
 from energy_agent.retrieval.merge import merge_candidates
+from energy_agent.retrieval.ports import (
+    EmbeddingPort,
+    RerankerPort,
+    RetrievalCandidatePort,
+    VectorSearchPort,
+)
 from energy_agent.retrieval.query_rewrite import rewrite_query
 from energy_agent.retrieval.scoring import (
     DEFAULT_SCORE_WEIGHTS,
@@ -44,11 +46,11 @@ class RetrievalService:
     def __init__(
         self,
         *,
-        mysql: MySQLDiagnosisProvider,
+        mysql: RetrievalCandidatePort,
         tracer: Tracer,
-        embedding: OpenAICompatibleEmbeddingProvider | None = None,
-        milvus: MilvusVectorProvider | None = None,
-        reranker: HttpRerankerProvider | None = None,
+        embedding: EmbeddingPort | None = None,
+        milvus: VectorSearchPort | None = None,
+        reranker: RerankerPort | None = None,
         query_rewrite_mode: str = "rules",
         default_mode: RetrievalMode = RetrievalMode.KEYWORD_ONLY,
         keyword_top_n: int = 20,

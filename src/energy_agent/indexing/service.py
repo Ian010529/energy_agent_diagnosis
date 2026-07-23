@@ -17,6 +17,7 @@ from energy_agent.indexing.handlers import (
     PermanentIndexError,
     StaleIndexEventError,
 )
+from energy_agent.indexing.ports import IndexAuditPort, IndexMessagePort
 from energy_agent.indexing.repository import IndexRepository
 from energy_agent.observability.logging import log_event
 from energy_agent.observability.metrics import (
@@ -27,8 +28,6 @@ from energy_agent.observability.metrics import (
     INDEX_RETRIES,
 )
 from energy_agent.observability.tracing import Tracer
-from energy_agent.persistence.repositories.audit import AuditRepository
-from energy_agent.providers.rabbitmq import RabbitMQProvider
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +38,10 @@ class IndexConsumer:
         *,
         repository: IndexRepository,
         handlers: IndexHandlers,
-        rabbitmq: RabbitMQProvider,
+        rabbitmq: IndexMessagePort,
         tracer: Tracer,
         retry_delay_ms: int,
-        audit: AuditRepository | None = None,
+        audit: IndexAuditPort | None = None,
     ) -> None:
         self.repository = repository
         self.handlers = handlers

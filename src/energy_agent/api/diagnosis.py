@@ -6,8 +6,8 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import Response, StreamingResponse
 
 from energy_agent.agent.events import QueueDiagnosisEventEmitter
-from energy_agent.agent.service import DiagnosisService
 from energy_agent.api.auth import actor_from_request, require_pilot_write, require_roles
+from energy_agent.api.dependencies import DiagnosisServiceDependency
 from energy_agent.api.errors import error_response
 from energy_agent.contracts.diagnosis import (
     CreateSessionRequest,
@@ -27,26 +27,26 @@ router = APIRouter(prefix="/api/v1/diagnosis", tags=["diagnosis"])
 async def create_session(
     payload: CreateSessionRequest,
     request: Request,
+    service: DiagnosisServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> CreateSessionResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await DiagnosisService.from_request(request).create_session(
-        payload, idempotency_key, actor
-    )
+    return await service.create_session(payload, idempotency_key, actor)
 
 
 @router.post("/chat", response_model=DiagnosisResponse)
 async def chat(
     payload: DiagnosisChatRequest,
     request: Request,
+    service: DiagnosisServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await DiagnosisService.from_request(request).diagnose(payload, idempotency_key, actor)
+    return await service.diagnose(payload, idempotency_key, actor)
 
 
 @router.post("/sessions/{session_id}/messages", response_model=DiagnosisResponse)
@@ -54,12 +54,13 @@ async def session_message(
     session_id: str,
     payload: SessionMessageRequest,
     request: Request,
+    service: DiagnosisServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisResponse:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await DiagnosisService.from_request(request).diagnose(
+    return await service.diagnose(
         DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
         idempotency_key,
         actor,
@@ -78,15 +79,17 @@ async def stream_message(
     session_id: str,
     payload: SessionMessageRequest,
     request: Request,
+    service: DiagnosisServiceDependency,
 ) -> Response:
     actor = actor_from_request(request)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    settings = request.app.state.settings
+    container = request.app.state.container
+    settings = container.settings
     stream_acquired = False
     if settings.rate_limit_enabled:
         try:
-            stream_acquired = await request.app.state.rate_limiter.acquire_stream(
+            stream_acquired = await container.rate_limiter.acquire_stream(
                 actor.actor_id, settings.rate_limit_stream_concurrent
             )
         except Exception:
@@ -111,7 +114,7 @@ async def stream_message(
 
     async def run_workflow() -> None:
         try:
-            await DiagnosisService.from_request(request).diagnose(
+            await service.diagnose(
                 DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
                 actor=actor,
                 event_emitter=emitter,
@@ -131,16 +134,20 @@ async def stream_message(
                     yield _sse(event)
         finally:
             if settings.rate_limit_enabled and stream_acquired:
-                await request.app.state.rate_limiter.release_stream(actor.actor_id)
+                await container.rate_limiter.release_stream(actor.actor_id)
 
     return StreamingResponse(events(), media_type="text/event-stream")
 
 
 @router.get("/sessions/{session_id}", response_model=DiagnosisResponse)
-async def get_session(session_id: str, request: Request) -> DiagnosisResponse:
+async def get_session(
+    session_id: str,
+    request: Request,
+    service: DiagnosisServiceDependency,
+) -> DiagnosisResponse:
     actor = actor_from_request(request)
     require_roles(
         actor,
         {ActorRole.VIEWER, ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN},
     )
-    return await DiagnosisService.from_request(request).get_session(session_id)
+    return await service.get_session(session_id)

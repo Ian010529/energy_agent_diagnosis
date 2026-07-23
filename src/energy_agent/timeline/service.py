@@ -1,38 +1,31 @@
-from fastapi import Request
-
 from energy_agent.core.context import ActorContext
 from energy_agent.core.errors import ResourceNotFoundError
-from energy_agent.persistence.repositories.cases import CaseRepository
-from energy_agent.persistence.repositories.diagnosis_review import (
-    DiagnosisReviewRepository,
-)
-from energy_agent.persistence.repositories.diagnosis_run import (
-    DiagnosisResultRepository,
-)
-from energy_agent.persistence.repositories.diagnosis_session import (
-    DiagnosisSessionRepository,
-)
-from energy_agent.persistence.repositories.diagnosis_step_log import (
-    DiagnosisStepLogRepository,
-)
 from energy_agent.timeline.contracts import (
     TimelineEventCreate,
     TimelineEventType,
     TimelineItem,
     TimelineResponse,
+    timeline_event_id,
 )
-from energy_agent.timeline.repository import TimelineRepository, timeline_event_id
+from energy_agent.timeline.ports import (
+    TimelineCasePort,
+    TimelineRepositoryPort,
+    TimelineResultPort,
+    TimelineReviewPort,
+    TimelineSessionPort,
+    TimelineStepPort,
+)
 
 
 class TimelineService:
     def __init__(
         self,
-        repository: TimelineRepository,
-        sessions: DiagnosisSessionRepository,
-        steps: DiagnosisStepLogRepository,
-        results: DiagnosisResultRepository,
-        reviews: DiagnosisReviewRepository,
-        cases: CaseRepository,
+        repository: TimelineRepositoryPort,
+        sessions: TimelineSessionPort,
+        steps: TimelineStepPort,
+        results: TimelineResultPort,
+        reviews: TimelineReviewPort,
+        cases: TimelineCasePort,
     ) -> None:
         self.repository = repository
         self.sessions = sessions
@@ -41,16 +34,24 @@ class TimelineService:
         self.reviews = reviews
         self.cases = cases
 
-    @classmethod
-    def from_request(cls, request: Request) -> "TimelineService":
-        state = request.app.state
-        return cls(
-            state.timeline_repository,
-            state.session_repository,
-            state.step_log_repository,
-            state.result_repository,
-            state.review_repository,
-            state.case_repository,
+    def create(
+        self,
+        session_id: str,
+        event_type: TimelineEventType,
+        key: str,
+        *,
+        run_id: str | None = None,
+        actor: ActorContext | None = None,
+        payload: dict[str, object] | None = None,
+    ) -> TimelineEventCreate:
+        return TimelineEventCreate(
+            event_id=timeline_event_id(session_id, event_type, key),
+            session_id=session_id,
+            run_id=run_id,
+            event_type=event_type,
+            actor_id=actor.actor_id if actor else None,
+            actor_role=actor.actor_role if actor else None,
+            payload=payload or {},
         )
 
     async def append(
@@ -64,14 +65,13 @@ class TimelineService:
         payload: dict[str, object] | None = None,
     ) -> None:
         await self.repository.append(
-            TimelineEventCreate(
-                event_id=timeline_event_id(session_id, event_type, key),
-                session_id=session_id,
+            self.create(
+                session_id,
+                event_type,
+                key,
                 run_id=run_id,
-                event_type=event_type,
-                actor_id=actor.actor_id if actor else None,
-                actor_role=actor.actor_role if actor else None,
-                payload=payload or {},
+                actor=actor,
+                payload=payload,
             )
         )
 

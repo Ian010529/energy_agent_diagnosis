@@ -3,12 +3,11 @@ import json
 import logging
 
 from energy_agent.core.context import ServiceActorContext
+from energy_agent.indexing.ports import IndexAuditPort, IndexMessagePort
 from energy_agent.indexing.repository import IndexRepository
 from energy_agent.observability.logging import log_event
 from energy_agent.observability.metrics import OUTBOX_PUBLISH
 from energy_agent.observability.tracing import Tracer
-from energy_agent.persistence.repositories.audit import AuditRepository
-from energy_agent.providers.rabbitmq import RabbitMQProvider
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +16,9 @@ class OutboxPublisher:
     def __init__(
         self,
         repository: IndexRepository,
-        rabbitmq: RabbitMQProvider,
+        rabbitmq: IndexMessagePort,
         tracer: Tracer,
-        audit: AuditRepository | None = None,
+        audit: IndexAuditPort | None = None,
     ) -> None:
         self.repository = repository
         self.rabbitmq = rabbitmq

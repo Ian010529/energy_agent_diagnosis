@@ -2,8 +2,8 @@ import argparse
 import asyncio
 from pathlib import Path
 
+from energy_agent.bootstrap.lifespan import create_tracer
 from energy_agent.core.config import Settings
-from energy_agent.core.lifecycle import create_tracer
 from energy_agent.indexing.repository import IndexRepository
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 from energy_agent.persistence.repositories.manual_document import ManualDocumentRepository

@@ -2,8 +2,8 @@ import asyncio
 
 from prometheus_client import start_http_server
 
+from energy_agent.bootstrap.lifespan import create_tracer
 from energy_agent.core.config import Settings
-from energy_agent.core.lifecycle import create_tracer
 from energy_agent.graph.service import GraphService
 from energy_agent.indexing.handlers import IndexHandlers
 from energy_agent.indexing.publisher import OutboxPublisher

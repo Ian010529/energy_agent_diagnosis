@@ -17,6 +17,14 @@ current_phase:
     完成 Codex-inspired 前端、BFF、真实 SSE 诊断线程、证据审查、
     人工审核、案例管理、系统状态和跨设备响应式设计。
 
+architecture_boundary_review:
+  status: COMPLETED
+  baseline_commit: "3a9736952dabd8e5d410e853a60935232637d95e"
+  architecture_check: PASSED
+  report_path: docs/development/MODULE_BOUNDARIES.md
+  behavior_change: false
+  openapi_change: false
+
 must_preserve:
   - langgraph_explicit_workflow
   - tool_contracts

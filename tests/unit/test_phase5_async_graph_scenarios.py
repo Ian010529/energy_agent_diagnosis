@@ -22,6 +22,7 @@ from energy_agent.indexing.contracts import (
     should_dead_letter,
 )
 from energy_agent.observability.tracing import LocalTracer
+from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.tools.contracts import (
     GraphRelationsInput,
     TimeseriesWindowInput,
@@ -141,6 +142,28 @@ async def test_graph_tool_success_and_disabled_degradation() -> None:
     )
     assert degraded.status == ToolStatus.DEGRADED
     assert degraded.error_code == "GRAPH_DISABLED"
+
+
+@pytest.mark.asyncio
+async def test_graph_degradation_counts_toward_circuit_breaker() -> None:
+    registry = ToolRegistry()
+    register_graph_tool(registry, GraphService(None))
+    breakers = CircuitBreakerRegistry()
+    payload = GraphRelationsInput(
+        context=_context(),
+        alarm_name="风扇异常",
+        device_type="PCS",
+    ).model_dump()
+
+    for _ in range(3):
+        result = await ToolExecutor(registry, LocalTracer(), circuit_breakers=breakers).execute(
+            "query_graph_relations", payload, "trace"
+        )
+        assert result.status == ToolStatus.DEGRADED
+
+    snapshot = breakers.snapshots()["neo4j"]
+    assert snapshot["state"] == "OPEN"
+    assert snapshot["failure_count"] == 3
 
 
 def test_graph_only_candidate_remains_manual_confirmation() -> None:

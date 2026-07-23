@@ -1,22 +1,18 @@
 import asyncio
 import logging
-from collections.abc import (
-    AsyncIterator,
-    Awaitable,
-    Callable,
-)
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 from influxdb_client.client.influxdb_client import InfluxDBClient
 
-from energy_agent.api.rate_limit import RedisRateLimiter
-from energy_agent.catalog.repository import CatalogRepository
+from energy_agent.bootstrap.container import ApplicationContainer, ProviderContainer
+from energy_agent.bootstrap.repositories import build_repositories
+from energy_agent.bootstrap.services import build_services
 from energy_agent.core.config import Settings
 from energy_agent.core.context import get_context
 from energy_agent.core.ids import new_id
 from energy_agent.graph.service import GraphService
-from energy_agent.indexing.repository import IndexRepository
 from energy_agent.memory.session_store import RedisSessionStore
 from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.langfuse import LangFuseTracer
@@ -24,19 +20,8 @@ from energy_agent.observability.logging import configure_logging, log_event
 from energy_agent.observability.tracing import LocalTracer, Tracer
 from energy_agent.persistence.mysql import create_mysql_engine, create_session_factory
 from energy_agent.persistence.redis import create_redis_client
-from energy_agent.persistence.repositories.alarm_dedup import AlarmDedupRepository
-from energy_agent.persistence.repositories.audit import AuditRepository
-from energy_agent.persistence.repositories.cases import CaseRepository
-from energy_agent.persistence.repositories.diagnosis_review import DiagnosisReviewRepository
-from energy_agent.persistence.repositories.diagnosis_run import (
-    DiagnosisResultRepository,
-    DiagnosisRunRepository,
-)
-from energy_agent.persistence.repositories.diagnosis_session import (
-    DiagnosisSessionRepository,
-)
-from energy_agent.persistence.repositories.diagnosis_step_log import (
-    DiagnosisStepLogRepository,
+from energy_agent.persistence.repositories.review_recorder import (
+    RepositoryDiagnosisReviewRecorder,
 )
 from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
 from energy_agent.providers.influxdb import InfluxTimeseriesProvider
@@ -45,11 +30,11 @@ from energy_agent.providers.minio import MinioDocumentProvider
 from energy_agent.providers.mysql import MySQLDiagnosisProvider
 from energy_agent.providers.neo4j import Neo4jProvider
 from energy_agent.providers.reranker import HttpRerankerProvider
+from energy_agent.reliability.rate_limit import RedisRateLimiter
 from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.retrieval.contracts import QueryRewrite, RetrievalMode
 from energy_agent.retrieval.scoring import ScoreWeights
 from energy_agent.retrieval.service import RetrievalService
-from energy_agent.timeline.repository import TimelineRepository
 from energy_agent.tools.implementations.graph_tools import register_graph_tool
 from energy_agent.tools.implementations.read_tools import build_registry
 from energy_agent.tools.implementations.review_tools import register_review_tool
@@ -79,9 +64,7 @@ async def _close(name: str, operation: Awaitable[object]) -> None:
         log_event(logger, logging.ERROR, "resource_close_failed", error_code=name)
 
 
-def build_lifespan(
-    settings: Settings,
-) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
+def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         configure_logging(settings.log_level, settings.log_format)
@@ -96,14 +79,14 @@ def build_lifespan(
             org=settings.influxdb_org,
             timeout=int(settings.influxdb_query_timeout_seconds * 1000),
         )
-        mysql_provider = MySQLDiagnosisProvider(session_factory)
-        timeseries_provider = InfluxTimeseriesProvider(
+        operational_data = MySQLDiagnosisProvider(session_factory)
+        timeseries = InfluxTimeseriesProvider(
             influx_client,
             settings.influxdb_org,
             settings.influxdb_bucket,
             settings.influxdb_query_timeout_seconds,
         )
-        model_gateway = (
+        model = (
             ModelGateway(
                 base_url=str(
                     settings.openai_base_url
@@ -119,7 +102,7 @@ def build_lifespan(
                 timeout_seconds=settings.model_timeout_seconds,
                 temperature=settings.model_temperature,
                 tracer=tracer,
-                api_mode=("responses" if settings.model_mode == "openai" else "chat_completions"),
+                api_mode="responses" if settings.model_mode == "openai" else "chat_completions",
                 circuit_breaker=circuit_breakers.get("model"),
             )
             if (
@@ -131,7 +114,7 @@ def build_lifespan(
             )
             else None
         )
-        minio_provider = (
+        minio = (
             MinioDocumentProvider(
                 endpoint=settings.minio_endpoint,
                 access_key=settings.minio_access_key,
@@ -142,7 +125,7 @@ def build_lifespan(
             if settings.retrieval_mode == "hybrid"
             else None
         )
-        embedding_provider = (
+        embedding = (
             OpenAICompatibleEmbeddingProvider(
                 base_url=settings.embedding_base_url or "",
                 api_key=settings.embedding_api_key or "",
@@ -155,7 +138,7 @@ def build_lifespan(
             if settings.embedding_mode == "openai_compatible"
             else None
         )
-        milvus_provider = (
+        vector_search = (
             MilvusVectorProvider(
                 uri=settings.milvus_uri,
                 token=settings.milvus_token,
@@ -169,7 +152,7 @@ def build_lifespan(
             if settings.retrieval_mode == "hybrid"
             else None
         )
-        reranker_provider = (
+        reranker = (
             HttpRerankerProvider(
                 base_url=settings.rerank_base_url or "",
                 api_key=settings.rerank_api_key or "",
@@ -180,7 +163,7 @@ def build_lifespan(
             if settings.rerank_mode == "http"
             else None
         )
-        neo4j_provider = (
+        neo4j = (
             Neo4jProvider(
                 uri=settings.neo4j_uri,
                 user=settings.neo4j_user,
@@ -191,17 +174,17 @@ def build_lifespan(
             if settings.graph_mode == "neo4j"
             else None
         )
-        graph_service = GraphService(neo4j_provider)
-        if minio_provider:
-            await minio_provider.ensure_bucket()
-        if milvus_provider:
-            await milvus_provider.ensure_collections()
+        graph = GraphService(neo4j)
+        if minio:
+            await minio.ensure_bucket()
+        if vector_search:
+            await vector_search.ensure_collections()
 
         async def model_rewrite(payload: dict[str, object]) -> object:
-            if not model_gateway:
+            if not model:
                 return payload
             context = get_context()
-            result = await model_gateway.generate(
+            result = await model.generate(
                 trace_id=context.trace_id if context else new_id(),
                 session_id="retrieval",
                 node_name="query_rewrite",
@@ -216,12 +199,12 @@ def build_lifespan(
             )
             return result or payload
 
-        retrieval_service = RetrievalService(
-            mysql=mysql_provider,
+        retrieval = RetrievalService(
+            mysql=operational_data,
             tracer=tracer,
-            embedding=embedding_provider,
-            milvus=milvus_provider,
-            reranker=reranker_provider,
+            embedding=embedding,
+            milvus=vector_search,
+            reranker=reranker,
             query_rewrite_mode=settings.query_rewrite_mode,
             default_mode=RetrievalMode(settings.retrieval_mode),
             keyword_top_n=max(settings.manual_keyword_top_n, settings.ticket_keyword_top_n),
@@ -244,57 +227,58 @@ def build_lifespan(
             if settings.query_rewrite_mode == "model_enhanced"
             else None,
         )
-
-        app.state.settings = settings
-        app.state.circuit_breakers = circuit_breakers
-        app.state.tracer = tracer
-        app.state.mysql_engine = engine
-        app.state.mysql_session_factory = session_factory
-        app.state.redis = redis
-        app.state.rate_limiter = RedisRateLimiter(redis)
-        app.state.influx_client = influx_client
-        app.state.session_repository = DiagnosisSessionRepository(session_factory, tracer)
-        app.state.step_log_repository = DiagnosisStepLogRepository(session_factory, tracer)
-        app.state.run_repository = DiagnosisRunRepository(session_factory, tracer)
-        app.state.result_repository = DiagnosisResultRepository(session_factory, tracer)
-        app.state.mysql_provider = mysql_provider
-        app.state.timeseries_provider = timeseries_provider
-        app.state.minio_provider = minio_provider
-        app.state.embedding_provider = embedding_provider
-        app.state.milvus_provider = milvus_provider
-        app.state.reranker_provider = reranker_provider
-        app.state.retrieval_service = retrieval_service
-        app.state.graph_service = graph_service
-        app.state.audit_repository = AuditRepository(session_factory, tracer)
-        app.state.alarm_dedup_repository = AlarmDedupRepository(
-            session_factory, settings.alarm_dedup_window_seconds
+        providers = ProviderContainer(
+            mysql_engine=engine,
+            mysql_sessions=session_factory,
+            redis=redis,
+            influx_client=influx_client,
+            operational_data=operational_data,
+            timeseries=timeseries,
+            minio=minio,
+            embedding=embedding,
+            vector_search=vector_search,
+            reranker=reranker,
+            model=model,
+            graph=graph,
         )
-        app.state.index_repository = IndexRepository(session_factory, tracer)
-        app.state.case_repository = CaseRepository(session_factory, app.state.index_repository)
-        app.state.review_repository = DiagnosisReviewRepository(session_factory)
-        app.state.catalog_repository = CatalogRepository(session_factory)
-        app.state.timeline_repository = TimelineRepository(session_factory)
-        app.state.tool_registry = build_registry(
-            mysql_provider, timeseries_provider, tracer, retrieval_service
+        repositories = build_repositories(session_factory, settings, tracer)
+        tools = build_registry(operational_data, timeseries, tracer, retrieval)
+        register_graph_tool(tools, graph, tracer)
+        register_review_tool(tools, RepositoryDiagnosisReviewRecorder(repositories.reviews))
+        memory = RedisSessionStore(redis, settings.redis_session_ttl_seconds, tracer)
+        services = build_services(
+            settings=settings,
+            repositories=repositories,
+            providers=providers,
+            retrieval=retrieval,
+            tools=tools,
+            memory=memory,
+            tracer=tracer,
+            circuit_breakers=circuit_breakers,
         )
-        register_graph_tool(app.state.tool_registry, graph_service, tracer)
-        register_review_tool(app.state.tool_registry, app.state.review_repository)
-        app.state.model_gateway = model_gateway
-        app.state.session_store = RedisSessionStore(
-            redis, settings.redis_session_ttl_seconds, tracer
+        app.state.container = ApplicationContainer(
+            settings=settings,
+            tracer=tracer,
+            rate_limiter=RedisRateLimiter(redis),
+            repositories=repositories,
+            providers=providers,
+            services=services,
+            tool_registry=tools,
+            session_store=memory,
+            circuit_breakers=circuit_breakers,
         )
         log_event(logger, logging.INFO, "application_started")
         try:
             yield
         finally:
-            if embedding_provider:
-                await _close("embedding", embedding_provider.close())
-            if reranker_provider:
-                await _close("reranker", reranker_provider.close())
-            if milvus_provider:
-                await _close("milvus", milvus_provider.close())
-            if neo4j_provider:
-                await _close("neo4j", neo4j_provider.close())
+            if embedding:
+                await _close("embedding", embedding.close())
+            if reranker:
+                await _close("reranker", reranker.close())
+            if vector_search:
+                await _close("milvus", vector_search.close())
+            if neo4j:
+                await _close("neo4j", neo4j.close())
             await _close("tracer_flush", tracer.flush())
             await _close("tracer_shutdown", tracer.shutdown())
             await _close("redis", redis.aclose())

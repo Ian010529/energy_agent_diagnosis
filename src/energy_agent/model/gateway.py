@@ -7,8 +7,8 @@ from typing import Any
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from energy_agent.agent.state import CandidateCause, ClarificationQuestion
 from energy_agent.contracts.common import StrictModel
+from energy_agent.contracts.diagnosis_components import CandidateCause, ClarificationQuestion
 from energy_agent.observability.metrics import MODEL_CALLS, MODEL_DURATION, MODEL_TOKENS
 from energy_agent.observability.tracing import Tracer
 from energy_agent.reliability.circuit_breaker import CircuitBreaker, CircuitOpenError

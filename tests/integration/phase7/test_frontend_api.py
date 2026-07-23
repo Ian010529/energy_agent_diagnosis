@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import UTC, datetime, timedelta
 
@@ -10,6 +11,7 @@ from sqlalchemy import delete
 
 from energy_agent.app import create_app
 from energy_agent.catalog.repository import CatalogRepository
+from energy_agent.catalog.service import CatalogService
 from energy_agent.contracts.common import SessionSource
 from energy_agent.contracts.diagnosis import DiagnosisRunCreate, DiagnosisSessionCreate
 from energy_agent.core.config import Settings
@@ -29,8 +31,12 @@ from energy_agent.persistence.repositories.diagnosis_session import (
     DiagnosisSessionRepository,
 )
 from energy_agent.providers.influxdb import InfluxTimeseriesProvider
-from energy_agent.timeline.contracts import TimelineEventCreate, TimelineEventType
-from energy_agent.timeline.repository import TimelineRepository, timeline_event_id
+from energy_agent.timeline.contracts import (
+    TimelineEventCreate,
+    TimelineEventType,
+    timeline_event_id,
+)
+from energy_agent.timeline.repository import TimelineRepository
 
 pytestmark = pytest.mark.integration
 MYSQL_DSN = os.getenv(
@@ -78,14 +84,70 @@ async def test_catalog_real_mysql_filters_and_template_derivation(
     try:
         repository = CatalogRepository(mysql_factory)
         devices, _ = await repository.devices({"site_id": "SITE-PHASE7"}, 50, None)
-        alarms, _ = await repository.alarms({"device_id": device_id, "supported": True}, 50, None)
+        alarms = await CatalogService(repository, Settings(app_env="test")).alarms(
+            {"device_id": device_id, "supported": True}, 50, None
+        )
         assert any(item.device_id == device_id for item in devices)
-        assert len(alarms) == 1
-        assert alarms[0].template_id == "pcs_temperature_abnormal_v1"
+        assert len(alarms.items) == 1
+        assert alarms.items[0].template_id == "pcs_temperature_abnormal_v1"
     finally:
         async with mysql_factory.begin() as session:
             await session.execute(
                 delete(AlarmEventModel).where(AlarmEventModel.alarm_id == alarm_id)
+            )
+            await session.execute(
+                delete(DeviceProfileModel).where(DeviceProfileModel.device_id == device_id)
+            )
+
+
+@pytest.mark.asyncio
+async def test_catalog_alarm_cursor_does_not_skip_unreturned_batch_rows(mysql_factory) -> None:
+    suffix = new_id()[:8]
+    device_id = f"PCS-P7-PAGE-{suffix}"
+    alarm_ids = [f"ALARM-P7-PAGE-{suffix}-{index:02d}" for index in range(25)]
+    started_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=1)
+    async with mysql_factory.begin() as session:
+        session.add(
+            DeviceProfileModel(
+                device_id=device_id,
+                site_id="SITE-PHASE7",
+                device_type="PCS",
+                device_model="SC5000",
+                manufacturer="EnergyCo",
+                status="online",
+            )
+        )
+        session.add_all(
+            [
+                AlarmEventModel(
+                    alarm_id=alarm_id,
+                    device_id=device_id,
+                    site_id="SITE-PHASE7",
+                    alarm_name="PCS 机柜温度异常",
+                    alarm_level="high",
+                    trigger_time=started_at + timedelta(seconds=index),
+                    status="active",
+                    source_system="phase7-pagination-test",
+                )
+                for index, alarm_id in enumerate(alarm_ids)
+            ]
+        )
+    try:
+        service = CatalogService(CatalogRepository(mysql_factory), Settings(app_env="test"))
+        cursor = None
+        seen: list[str] = []
+        while True:
+            page = await service.alarms({"device_id": device_id}, 10, cursor)
+            seen.extend(item.alarm_id for item in page.items)
+            if not page.next_cursor:
+                break
+            cursor = page.next_cursor
+        assert seen == list(reversed(alarm_ids))
+        assert len(seen) == len(set(seen)) == 25
+    finally:
+        async with mysql_factory.begin() as session:
+            await session.execute(
+                delete(AlarmEventModel).where(AlarmEventModel.device_id == device_id)
             )
             await session.execute(
                 delete(DeviceProfileModel).where(DeviceProfileModel.device_id == device_id)
@@ -128,9 +190,9 @@ async def test_timeline_real_mysql_atomic_sequence_and_idempotent_append(
             timeline_event=event,
         )
         first = (await timeline.list(session_id))[0]
-        replay = await timeline.append(event)
+        replays = await asyncio.gather(*(timeline.append(event) for _ in range(12)))
         assert first.sequence == 1
-        assert replay.event_id == first.event_id
+        assert {replay.event_id for replay in replays} == {first.event_id}
         assert len(await timeline.list(session_id)) == 1
     finally:
         async with mysql_factory.begin() as session:

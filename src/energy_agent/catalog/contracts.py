@@ -83,6 +83,18 @@ class AlarmItem(StrictModel):
     template_version: str | None = None
 
 
+class AlarmRecord(StrictModel):
+    alarm_id: str
+    device_id: str
+    site_id: str
+    device_type: str
+    alarm_name: str
+    alarm_level: str
+    trigger_time: datetime
+    status: str
+    source_system: str
+
+
 class AlarmListResponse(StrictModel):
     items: list[AlarmItem]
     next_cursor: str | None = None

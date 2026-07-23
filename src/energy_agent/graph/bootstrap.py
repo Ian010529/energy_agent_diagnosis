@@ -1,11 +1,11 @@
 import argparse
 import asyncio
 
-from energy_agent.agent.templates.definitions import TEMPLATES
+from energy_agent.bootstrap.lifespan import create_tracer
 from energy_agent.core.config import get_settings
-from energy_agent.core.lifecycle import create_tracer
 from energy_agent.graph.service import GraphService
 from energy_agent.providers.neo4j import Neo4jProvider
+from energy_agent.templates.definitions import TEMPLATES
 
 
 async def run(*, dry_run: bool) -> None:

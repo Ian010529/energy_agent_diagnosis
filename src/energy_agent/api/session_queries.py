@@ -3,11 +3,10 @@ from datetime import datetime
 from fastapi import APIRouter, Query, Request
 
 from energy_agent.api.auth import actor_from_request, require_roles
+from energy_agent.api.dependencies import CatalogServiceDependency, TimelineServiceDependency
 from energy_agent.catalog.contracts import DiagnosisSessionListResponse
-from energy_agent.catalog.service import CatalogService
 from energy_agent.core.context import ActorRole
 from energy_agent.timeline.contracts import TimelineResponse
-from energy_agent.timeline.service import TimelineService
 
 router = APIRouter(prefix="/api/v1/diagnosis/sessions", tags=["diagnosis-queries"])
 READ_ROLES = {ActorRole.VIEWER, ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN}
@@ -20,6 +19,7 @@ def _authorize(request: Request) -> None:
 @router.get("", response_model=DiagnosisSessionListResponse)
 async def sessions(
     request: Request,
+    service: CatalogServiceDependency,
     phase: str | None = None,
     source: str | None = None,
     site_id: str | None = None,
@@ -50,10 +50,14 @@ async def sessions(
         "q",
     )
     filters = {name: values[name] for name in names if values[name] is not None}
-    return await CatalogService.from_request(request).sessions(filters, limit, cursor)
+    return await service.sessions(filters, limit, cursor)
 
 
 @router.get("/{session_id}/timeline", response_model=TimelineResponse)
-async def timeline(session_id: str, request: Request) -> TimelineResponse:
+async def timeline(
+    session_id: str,
+    request: Request,
+    service: TimelineServiceDependency,
+) -> TimelineResponse:
     _authorize(request)
-    return await TimelineService.from_request(request).get(session_id)
+    return await service.get(session_id)

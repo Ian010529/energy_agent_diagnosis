@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/metrics", include_in_schema=False)
 async def metrics(request: Request) -> Response:
-    settings = request.app.state.settings
+    settings = request.app.state.container.settings
     if settings.app_env not in {"local", "test"}:
         bearer = request.headers.get("Authorization", "").removeprefix("Bearer ")
         if (

@@ -356,10 +356,11 @@ def test_clarification_restore_validation_and_explanation(phase4_data: None) -> 
 def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) -> None:
     with TestClient(create_app(Settings(app_env="test"))) as client:
         live = os.getenv("PHASE4_LIVE") == "1"
+        case_application = client.app.state.container.services.cases._lifecycle.application
         if not live:
-            client.app.state.embedding_provider = _Embedding()
-            client.app.state.milvus_provider = _Milvus()
-        milvus = client.app.state.milvus_provider
+            case_application.embedding = _Embedding()
+            case_application.milvus = _Milvus()
+        milvus = case_application.milvus
         forbidden = client.post(
             "/api/v1/diagnosis/sessions",
             headers={"X-Actor-ID": "viewer-1", "X-Actor-Role": "viewer"},
@@ -424,7 +425,7 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         )
         assert operator_review.status_code == 403
         if not live:
-            client.app.state.embedding_provider = _FailingEmbedding()
+            case_application.embedding = _FailingEmbedding()
         approved = client.post(
             f"/api/v1/cases/{case_id}/review",
             headers={**REVIEWER, "Idempotency-Key": "approve-phase4"},
@@ -436,7 +437,7 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         if not live:
             assert approved_body["index_status"] == "FAILED"
             assert approved_body["is_active"] is False
-            client.app.state.embedding_provider = _Embedding()
+            case_application.embedding = _Embedding()
             reindexed = client.post(
                 f"/api/v1/cases/{case_id}/reindex",
                 headers={**REVIEWER, "Idempotency-Key": "reindex-phase4"},
@@ -447,6 +448,16 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         assert approved_body["is_active"] is True
         if not live:
             assert case_id in milvus.rows
+            case_application.embedding = _FailingEmbedding()
+            replayed_approval = client.post(
+                f"/api/v1/cases/{case_id}/review",
+                headers={**REVIEWER, "Idempotency-Key": "approve-phase4"},
+                json={"decision": "approve", "comment": "内容完整"},
+            )
+            assert replayed_approval.status_code == 200, replayed_approval.text
+            assert replayed_approval.json()["index_status"] == "INDEXED"
+            assert replayed_approval.json()["is_active"] is True
+            case_application.embedding = _Embedding()
 
         second = _create(client, source="chat")
         second_response = client.post(

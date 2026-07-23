@@ -1,6 +1,7 @@
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from energy_agent.cases.ports import CaseIdempotencyRecord, CaseTransitionResult
 from energy_agent.catalog.repository import decode_cursor, encode_cursor, query_datetime
 from energy_agent.contracts.cases import (
     CaseIndexStatus,
@@ -191,8 +192,11 @@ class CaseRepository:
         comment: str | None = None,
         updates: dict[str, object] | None = None,
         index_request: IndexJobCreate | None = None,
-    ) -> DiagnosisCase:
+    ) -> CaseTransitionResult:
         async with self.session_factory.begin() as session:
+            model = await session.get(DiagnosisCaseModel, case_id, with_for_update=True)
+            if model is None:
+                raise CaseNotFoundError("Case not found")
             if idempotency_key:
                 existing = (
                     await session.execute(
@@ -207,12 +211,7 @@ class CaseRepository:
                         raise CaseStateConflictError(
                             "Idempotency key reused with different request"
                         )
-                    model = await session.get(DiagnosisCaseModel, case_id)
-                    assert model is not None
-                    return case_record(model)
-            model = await session.get(DiagnosisCaseModel, case_id, with_for_update=True)
-            if model is None:
-                raise CaseNotFoundError("Case not found")
+                    return CaseTransitionResult(case_record(model), replayed=True)
             if model.review_status != expected:
                 raise CaseStateConflictError(
                     f"Case state must be {expected}, got {model.review_status}"
@@ -246,7 +245,9 @@ class CaseRepository:
         record = case_record(model)
         CASE_TRANSITIONS.labels(from_status=expected, to_status=target).inc()
         CASE_INDEX_STATUS.labels(status=record.index_status).inc()
-        return record.model_copy(update={"index_job_id": index_job_id})
+        return CaseTransitionResult(
+            record.model_copy(update={"index_job_id": index_job_id}), replayed=False
+        )
 
     async def queue_index(
         self,
@@ -290,9 +291,9 @@ class CaseRepository:
 
     async def find_idempotent_event(
         self, case_id: str, idempotency_key: str
-    ) -> CaseReviewEventModel | None:
+    ) -> CaseIdempotencyRecord | None:
         async with self.session_factory() as session:
-            return (
+            model = (
                 await session.execute(
                     select(CaseReviewEventModel).where(
                         CaseReviewEventModel.case_id == case_id,
@@ -300,6 +301,11 @@ class CaseRepository:
                     )
                 )
             ).scalar_one_or_none()
+        return (
+            CaseIdempotencyRecord(request_hash=model.request_hash, comment=model.comment)
+            if model
+            else None
+        )
 
     async def append_event(
         self,

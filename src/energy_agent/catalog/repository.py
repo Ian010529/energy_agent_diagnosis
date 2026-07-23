@@ -5,13 +5,8 @@ from datetime import UTC, datetime
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from energy_agent.agent.templates.registry import (
-    TemplateAmbiguousError,
-    TemplateNotFoundError,
-)
-from energy_agent.agent.templates.routing import route_template
 from energy_agent.catalog.contracts import (
-    AlarmItem,
+    AlarmRecord,
     DeviceItem,
     DiagnosisSessionItem,
     SiteItem,
@@ -42,16 +37,6 @@ def decode_cursor(value: str | None) -> str | None:
         return decoded
     except (binascii.Error, ValueError, UnicodeDecodeError) as exc:
         raise InvalidRequestError("Cursor is invalid") from exc
-
-
-def alarm_support(
-    device_type: str | None, alarm_name: str
-) -> tuple[str | None, str | None, str | None]:
-    try:
-        template, _ = route_template(device_type=device_type, alarm_name=alarm_name)
-    except (TemplateNotFoundError, TemplateAmbiguousError):
-        return None, None, None
-    return template.alarm_category, template.template_id, template.template_version
 
 
 def query_datetime(value: object) -> datetime:
@@ -196,7 +181,7 @@ class CatalogRepository:
 
     async def alarms(
         self, filters: dict[str, object], limit: int, cursor: str | None
-    ) -> tuple[list[AlarmItem], str | None]:
+    ) -> tuple[list[AlarmRecord], str | None]:
         query = select(AlarmEventModel, DeviceProfileModel.device_type).join(
             DeviceProfileModel,
             DeviceProfileModel.device_id == AlarmEventModel.device_id,
@@ -231,59 +216,40 @@ class CatalogRepository:
             except ValueError as exc:
                 raise InvalidRequestError("Cursor is invalid") from exc
             cursor_id = parts[1]
-        ordering = query.order_by(AlarmEventModel.trigger_time.desc(), AlarmEventModel.alarm_id)
-        batch_size = max(100, limit * 2)
-        mapped: list[AlarmItem] = []
+        if cursor_time is not None and cursor_id is not None:
+            query = query.where(
+                or_(
+                    AlarmEventModel.trigger_time < cursor_time,
+                    and_(
+                        AlarmEventModel.trigger_time == cursor_time,
+                        AlarmEventModel.alarm_id > cursor_id,
+                    ),
+                )
+            )
+        query = query.order_by(AlarmEventModel.trigger_time.desc(), AlarmEventModel.alarm_id)
         async with self.session_factory() as session:
-            while len(mapped) <= limit:
-                page = ordering
-                if cursor_time is not None and cursor_id is not None:
-                    page = page.where(
-                        or_(
-                            AlarmEventModel.trigger_time < cursor_time,
-                            and_(
-                                AlarmEventModel.trigger_time == cursor_time,
-                                AlarmEventModel.alarm_id > cursor_id,
-                            ),
-                        )
-                    )
-                rows = (await session.execute(page.limit(batch_size))).all()
-                for model, device_type in rows:
-                    category, template_id, version = alarm_support(device_type, model.alarm_name)
-                    item = AlarmItem(
-                        **{
-                            column.name: getattr(model, column.name)
-                            for column in AlarmEventModel.__table__.columns
-                            if column.name != "trigger_time"
-                        },
-                        trigger_time=ensure_utc(model.trigger_time),
-                        alarm_category=category,
-                        supported=template_id is not None,
-                        template_id=template_id,
-                        template_version=version,
-                    )
-                    supported_filter = filters.get("supported")
-                    if supported_filter is not None and item.supported is not supported_filter:
-                        continue
-                    if filters.get("template_id") and item.template_id != filters["template_id"]:
-                        continue
-                    mapped.append(item)
-                    if len(mapped) > limit:
-                        break
-                if len(mapped) > limit or len(rows) < batch_size:
-                    break
-                last_model = rows[-1][0]
-                cursor_time = last_model.trigger_time
-                cursor_id = last_model.alarm_id
-        has_more = len(mapped) > limit
-        mapped = mapped[:limit]
+            rows = (await session.execute(query.limit(limit + 1))).all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        mapped = [
+            AlarmRecord(
+                **{
+                    column.name: getattr(model, column.name)
+                    for column in AlarmEventModel.__table__.columns
+                    if column.name != "trigger_time"
+                },
+                device_type=device_type,
+                trigger_time=ensure_utc(model.trigger_time),
+            )
+            for model, device_type in rows
+        ]
         next_cursor = None
         if has_more and mapped:
             last = mapped[-1]
             next_cursor = encode_cursor(f"{last.trigger_time.isoformat()}|{last.alarm_id}")
         return mapped, next_cursor
 
-    async def alarm(self, alarm_id: str) -> AlarmItem:
+    async def alarm(self, alarm_id: str) -> AlarmRecord:
         async with self.session_factory() as session:
             row = (
                 await session.execute(
@@ -298,18 +264,14 @@ class CatalogRepository:
         if not row:
             raise ResourceNotFoundError("Alarm not found")
         model, device_type = row
-        category, template_id, version = alarm_support(device_type, model.alarm_name)
-        return AlarmItem(
+        return AlarmRecord(
             **{
                 column.name: getattr(model, column.name)
                 for column in AlarmEventModel.__table__.columns
                 if column.name != "trigger_time"
             },
+            device_type=device_type,
             trigger_time=ensure_utc(model.trigger_time),
-            alarm_category=category,
-            supported=template_id is not None,
-            template_id=template_id,
-            template_version=version,
         )
 
     async def sessions(

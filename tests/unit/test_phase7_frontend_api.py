@@ -1,5 +1,4 @@
 import asyncio
-from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -12,13 +11,8 @@ from energy_agent.agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY
 from energy_agent.agent.workflow import _extract_entity_ids
 from energy_agent.api.auth import require_roles
 from energy_agent.api.evidence import READ_ROLES
-from energy_agent.catalog.repository import (
-    alarm_support,
-    decode_cursor,
-    encode_cursor,
-    query_datetime,
-)
-from energy_agent.catalog.service import CatalogService
+from energy_agent.catalog.repository import decode_cursor, encode_cursor, query_datetime
+from energy_agent.catalog.service import CatalogService, alarm_support
 from energy_agent.contracts.common import DiagnosisPhase, SessionSource
 from energy_agent.contracts.diagnosis import (
     CreateSessionRequest,
@@ -33,9 +27,26 @@ from energy_agent.core.errors import (
 )
 from energy_agent.evidence.service import EvidenceService
 from energy_agent.observability.tracing import LocalTracer
-from energy_agent.timeline.contracts import TimelineEventType
-from energy_agent.timeline.repository import timeline_event_id
+from energy_agent.timeline.contracts import TimelineEventType, timeline_event_id
 from energy_agent.tools.registry import ToolRegistry
+
+
+def evidence_service(**overrides: object) -> EvidenceService:
+    dependencies = {
+        "sessions": SimpleNamespace(get=AsyncMock()),
+        "results": SimpleNamespace(latest=AsyncMock(return_value=None)),
+        "runs": SimpleNamespace(latest=AsyncMock(return_value=None)),
+        "memory": SimpleNamespace(get=AsyncMock(return_value=None)),
+        "sources": SimpleNamespace(
+            manual=AsyncMock(return_value=None),
+            ticket=AsyncMock(return_value=None),
+            case=AsyncMock(return_value=None),
+        ),
+        "catalog": SimpleNamespace(alarm=AsyncMock()),
+        "timeseries": SimpleNamespace(query_points=AsyncMock(return_value={})),
+    }
+    dependencies.update(overrides)
+    return EvidenceService(**dependencies)  # type: ignore[arg-type]
 
 
 def test_catalog_cursor_is_opaque_and_round_trips() -> None:
@@ -98,16 +109,10 @@ def test_timeline_persists_only_business_events() -> None:
 
 @pytest.mark.asyncio
 async def test_evidence_detail_rejects_cross_session_reference() -> None:
-    state = SimpleNamespace(
-        session_repository=SimpleNamespace(
-            get=AsyncMock(return_value=SimpleNamespace(trace_id="trace-1"))
-        ),
-        result_repository=SimpleNamespace(
-            latest=AsyncMock(return_value=SimpleNamespace(evidence=[]))
-        ),
-        session_store=SimpleNamespace(get=AsyncMock(return_value=None)),
+    service = evidence_service(
+        sessions=SimpleNamespace(get=AsyncMock(return_value=SimpleNamespace(trace_id="trace-1"))),
+        results=SimpleNamespace(latest=AsyncMock(return_value=SimpleNamespace(evidence=[]))),
     )
-    service = EvidenceService(SimpleNamespace(app=SimpleNamespace(state=state)))
     with pytest.raises(ResourceNotFoundError, match="does not belong"):
         await service.detail("session-1", "evidence-from-another-session")
 
@@ -125,23 +130,11 @@ async def test_evidence_detail_reads_in_progress_session_memory() -> None:
         relevance=0.9,
     )
 
-    @asynccontextmanager
-    async def mysql_session():
-        yield AsyncMock()
-
-    state = SimpleNamespace(
-        session_repository=SimpleNamespace(
-            get=AsyncMock(return_value=SimpleNamespace(trace_id="trace-1"))
-        ),
-        result_repository=SimpleNamespace(latest=AsyncMock(return_value=None)),
-        session_store=SimpleNamespace(
-            get=AsyncMock(return_value=SimpleNamespace(evidence=[evidence]))
-        ),
-        mysql_session_factory=mysql_session,
+    service = evidence_service(
+        sessions=SimpleNamespace(get=AsyncMock(return_value=SimpleNamespace(trace_id="trace-1"))),
+        memory=SimpleNamespace(get=AsyncMock(return_value=SimpleNamespace(evidence=[evidence]))),
     )
-    detail = await EvidenceService(SimpleNamespace(app=SimpleNamespace(state=state))).detail(
-        "session-1", evidence.evidence_id
-    )
+    detail = await service.detail("session-1", evidence.evidence_id)
 
     assert detail.evidence_id == evidence.evidence_id
     assert detail.content_excerpt == evidence.summary
@@ -151,11 +144,10 @@ async def test_evidence_detail_reads_in_progress_session_memory() -> None:
 async def test_timeseries_metric_must_belong_to_run_template() -> None:
     session = SimpleNamespace(device_id="PCS-001", trace_id="trace-1")
     run = SimpleNamespace(diagnosis_template_id="pcs_temperature_abnormal_v1")
-    state = SimpleNamespace(
-        session_repository=SimpleNamespace(get=AsyncMock(return_value=session)),
-        run_repository=SimpleNamespace(latest=AsyncMock(return_value=run)),
+    service = evidence_service(
+        sessions=SimpleNamespace(get=AsyncMock(return_value=session)),
+        runs=SimpleNamespace(latest=AsyncMock(return_value=run)),
     )
-    service = EvidenceService(SimpleNamespace(app=SimpleNamespace(state=state)))
     with pytest.raises(InvalidRequestError, match="metric is not allowed"):
         await service.timeseries("session-1", None, "admin_only_metric", None, None)
 
@@ -171,18 +163,15 @@ async def test_timeseries_recovers_window_from_persisted_alarm() -> None:
             for metric in DEFAULT_TEMPLATE_REGISTRY.get("pcs_temperature_abnormal_v1").metrics
         }
     )
-    state = SimpleNamespace(
-        session_repository=SimpleNamespace(get=AsyncMock(return_value=session)),
-        run_repository=SimpleNamespace(latest=AsyncMock(return_value=run)),
-        session_store=SimpleNamespace(get=AsyncMock(return_value=None)),
-        catalog_repository=SimpleNamespace(
+    service = evidence_service(
+        sessions=SimpleNamespace(get=AsyncMock(return_value=session)),
+        runs=SimpleNamespace(latest=AsyncMock(return_value=run)),
+        catalog=SimpleNamespace(
             alarm=AsyncMock(return_value=SimpleNamespace(trigger_time=trigger))
         ),
-        timeseries_provider=SimpleNamespace(query_points=query_points),
+        timeseries=SimpleNamespace(query_points=query_points),
     )
-    response = await EvidenceService(SimpleNamespace(app=SimpleNamespace(state=state))).timeseries(
-        "session-1", None, None, None, None
-    )
+    response = await service.timeseries("session-1", None, None, None, None)
 
     assert response.window_source == "alarm"
     assert response.end_time == trigger
@@ -253,7 +242,7 @@ async def test_cancelled_stream_persists_terminal_session(monkeypatch) -> None:
     )
     graph = SimpleNamespace(ainvoke=AsyncMock(side_effect=asyncio.CancelledError))
     monkeypatch.setattr(
-        "energy_agent.agent.service.build_diagnosis_graph", lambda *args, **kwargs: graph
+        "energy_agent.agent.runtime_factory.build_diagnosis_graph", lambda *args, **kwargs: graph
     )
 
     with pytest.raises(asyncio.CancelledError):

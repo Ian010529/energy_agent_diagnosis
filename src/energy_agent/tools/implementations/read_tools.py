@@ -3,8 +3,6 @@ from typing import Any, cast
 from pydantic import BaseModel
 
 from energy_agent.observability.tracing import Tracer
-from energy_agent.providers.influxdb import InfluxTimeseriesProvider
-from energy_agent.providers.mysql import MySQLDiagnosisProvider
 from energy_agent.retrieval.contracts import RetrievalMode, SourceType
 from energy_agent.retrieval.service import RetrievalService
 from energy_agent.tools.contracts import (
@@ -17,6 +15,7 @@ from energy_agent.tools.contracts import (
     ToolResult,
     ToolStatus,
 )
+from energy_agent.tools.ports import OperationalDataPort, TimeseriesPort
 from energy_agent.tools.registry import ToolRegistry
 
 
@@ -53,8 +52,8 @@ def _result(
 
 
 def build_registry(
-    mysql: MySQLDiagnosisProvider,
-    influx: InfluxTimeseriesProvider,
+    mysql: OperationalDataPort,
+    influx: TimeseriesPort,
     tracer: Tracer | None = None,
     retrieval: RetrievalService | None = None,
 ) -> ToolRegistry:
@@ -186,7 +185,9 @@ def build_registry(
 
     registry.register("get_device_profile", DeviceProfileInput, device)
     registry.register("get_alarm_detail", AlarmDetailInput, alarm)
-    registry.register("query_timeseries_window", TimeseriesWindowInput, timeseries)
+    registry.register(
+        "query_timeseries_window", TimeseriesWindowInput, timeseries, dependency="influxdb"
+    )
     registry.register("search_manual_chunks", ManualSearchInput, manual)
     registry.register("search_similar_tickets", TicketSearchInput, tickets)
     return registry

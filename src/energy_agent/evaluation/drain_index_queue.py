@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from aio_pika.abc import AbstractIncomingMessage
 from pydantic import ValidationError
 
+from energy_agent.bootstrap.lifespan import create_tracer
 from energy_agent.core.config import Settings
-from energy_agent.core.lifecycle import create_tracer
 from energy_agent.graph.service import GraphService
 from energy_agent.indexing.contracts import (
     IndexJobMessage,

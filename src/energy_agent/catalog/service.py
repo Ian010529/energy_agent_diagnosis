@@ -1,9 +1,7 @@
-from fastapi import Request
-
-from energy_agent.agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY
 from energy_agent.catalog.contracts import (
     AlarmItem,
     AlarmListResponse,
+    AlarmRecord,
     AuthCapability,
     CapabilitiesResponse,
     DatasetCapability,
@@ -13,20 +11,40 @@ from energy_agent.catalog.contracts import (
     SiteListResponse,
     TemplateCapability,
 )
-from energy_agent.catalog.repository import CatalogRepository
+from energy_agent.catalog.repository import CatalogRepository, encode_cursor
+from energy_agent.core.config import Settings
+from energy_agent.templates.registry import TemplateAmbiguousError, TemplateNotFoundError
+from energy_agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY, route_template
+
+
+def alarm_support(
+    device_type: str | None, alarm_name: str
+) -> tuple[str | None, str | None, str | None]:
+    try:
+        template, _ = route_template(device_type=device_type, alarm_name=alarm_name)
+    except (TemplateNotFoundError, TemplateAmbiguousError):
+        return None, None, None
+    return template.alarm_category, template.template_id, template.template_version
+
+
+def map_alarm(record: AlarmRecord) -> AlarmItem:
+    category, template_id, version = alarm_support(record.device_type, record.alarm_name)
+    return AlarmItem(
+        **record.model_dump(exclude={"device_type"}),
+        alarm_category=category,
+        supported=template_id is not None,
+        template_id=template_id,
+        template_version=version,
+    )
 
 
 class CatalogService:
-    def __init__(self, repository: CatalogRepository, request: Request) -> None:
+    def __init__(self, repository: CatalogRepository, settings: Settings) -> None:
         self.repository = repository
-        self.request = request
-
-    @classmethod
-    def from_request(cls, request: Request) -> "CatalogService":
-        return cls(request.app.state.catalog_repository, request)
+        self.settings = settings
 
     def capabilities(self) -> CapabilitiesResponse:
-        settings = self.request.app.state.settings
+        settings = self.settings
         templates = [
             TemplateCapability(
                 template_id=item.template_id,
@@ -77,13 +95,39 @@ class CatalogService:
     async def alarms(
         self, filters: dict[str, object], limit: int, cursor: str | None
     ) -> AlarmListResponse:
-        items, next_cursor = await self.repository.alarms(filters, limit, cursor)
-        return AlarmListResponse(
-            items=items, next_cursor=next_cursor, has_more=next_cursor is not None
+        items: list[AlarmItem] = []
+        batch_cursor = cursor
+        query_filters = {
+            key: value for key, value in filters.items() if key not in {"supported", "template_id"}
+        }
+        while len(items) <= limit:
+            records, page_cursor = await self.repository.alarms(
+                query_filters, max(100, limit * 2), batch_cursor
+            )
+            for record in records:
+                item = map_alarm(record)
+                supported = filters.get("supported")
+                if supported is not None and item.supported is not supported:
+                    continue
+                if filters.get("template_id") and item.template_id != filters["template_id"]:
+                    continue
+                items.append(item)
+                if len(items) > limit:
+                    break
+            if len(items) > limit or not page_cursor:
+                break
+            batch_cursor = page_cursor
+        has_more = len(items) > limit
+        items = items[:limit]
+        next_cursor = (
+            encode_cursor(f"{items[-1].trigger_time.isoformat()}|{items[-1].alarm_id}")
+            if has_more and items
+            else None
         )
+        return AlarmListResponse(items=items, next_cursor=next_cursor, has_more=has_more)
 
     async def alarm(self, alarm_id: str) -> AlarmItem:
-        return await self.repository.alarm(alarm_id)
+        return map_alarm(await self.repository.alarm(alarm_id))
 
     async def sessions(
         self, filters: dict[str, object], limit: int, cursor: str | None

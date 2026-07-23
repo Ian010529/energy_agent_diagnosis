@@ -1,4 +1,4 @@
-.PHONY: verify-design lint typecheck test-unit test-contract up-core down-core migrate \
+.PHONY: verify-design architecture-check lint typecheck test-unit test-contract up-core down-core migrate \
 	test-integration-core smoke-foundation smoke-langfuse phase1-check up-phase2 down-phase2 \
 	test-unit-phase2 test-contract-phase2 test-integration-phase2 smoke-diagnosis smoke-model \
 	smoke-langfuse-diagnosis phase2-check \
@@ -40,6 +40,9 @@ LOCAL_TEST_ENV = APP_ENV=test AUTH_MODE=development_headers INTERNAL_API_KEY= \
 
 verify-design:
 	git diff --exit-code -- docs/immutable/能源设备运维诊断Agent_详细设计.md
+
+architecture-check:
+	uv run python scripts/check_module_boundaries.py
 
 lint:
 	uv run ruff format --check .
@@ -399,6 +402,9 @@ openapi-export:
 frontend-generate-client:
 	cd frontend && pnpm generate:api
 
+frontend-contract-check: export LC_ALL := C
+frontend-contract-check: export LC_CTYPE := C
+frontend-contract-check: export LANG := C
 frontend-contract-check:
 	set -e; contract_tmp=$$(mktemp -d); trap 'rm -rf "$$contract_tmp"' EXIT; \
 		cp frontend/openapi/backend.json $$contract_tmp/backend.json; \
@@ -406,8 +412,16 @@ frontend-contract-check:
 		$(MAKE) openapi-export frontend-generate-client; \
 		diff -u $$contract_tmp/backend.json frontend/openapi/backend.json; \
 		diff -u $$contract_tmp/generated.ts frontend/lib/api/generated.ts
-	! grep -R -E '^(export )?(interface|type) (DiagnosisResponse|StructuredDiagnosisResult|DiagnosisCase|Evidence)([[:space:]=]|$$)' \
-		frontend/app frontend/components frontend/lib --exclude=generated.ts --exclude=types.ts
+	@grep_status=0; \
+	/usr/bin/env -i PATH=/usr/bin:/bin LC_ALL=C LANG=C /usr/bin/grep -R -E \
+		'^(export )?(interface|type) (DiagnosisResponse|StructuredDiagnosisResult|DiagnosisCase|Evidence)([[:space:]=]|$$)' \
+		frontend/app frontend/components frontend/lib --exclude=generated.ts --exclude=types.ts \
+		|| grep_status=$$?; \
+	if [ $$grep_status -eq 0 ]; then \
+		echo "duplicate frontend DTO declaration found"; exit 1; \
+	elif [ $$grep_status -ne 1 ]; then \
+		echo "frontend DTO scan failed with status $$grep_status"; exit $$grep_status; \
+	fi
 
 test-unit-phase7:
 	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase7_frontend_api.py
@@ -440,7 +454,7 @@ frontend-docker-smoke: frontend-docker-build
 	docker run --rm energy-agent-frontend:phase7 node -e "require('./server.js')" & \
 		container_pid=$$!; sleep 3; kill $$container_pid
 
-phase7-check: verify-design up-phase7 migrate phase6-check test-unit-phase7 test-contract-phase7 \
+phase7-check: verify-design architecture-check up-phase7 migrate phase6-check test-unit-phase7 test-contract-phase7 \
 	test-integration-frontend-api frontend-contract-check frontend-lint frontend-typecheck \
 	frontend-test frontend-build prepare-phase7-e2e-data frontend-e2e frontend-visual \
 	frontend-docker-smoke

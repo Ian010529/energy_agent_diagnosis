@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, Query, Request
 
 from energy_agent.api.auth import actor_from_request, require_pilot_write, require_roles
-from energy_agent.cases.service import CaseService
+from energy_agent.api.dependencies import CaseServiceDependency
 from energy_agent.contracts.cases import (
     CaseDisableRequest,
     CaseListResponse,
@@ -26,19 +26,19 @@ async def review_diagnosis(
     session_id: str,
     payload: DiagnosisReviewRequest,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisReviewResponse:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).review_diagnosis(
-        session_id, payload, actor, idempotency_key
-    )
+    return await service.review_diagnosis(session_id, payload, actor, idempotency_key)
 
 
 @router.get("/api/v1/cases", response_model=CaseListResponse)
 async def list_cases(
     request: Request,
+    service: CaseServiceDependency,
     review_status: str | None = None,
     device_type: str | None = None,
     device_model: str | None = None,
@@ -50,7 +50,7 @@ async def list_cases(
     sort: str = Query(default="updated_at_desc", pattern="^updated_at_(asc|desc)$"),
 ) -> CaseListResponse:
     actor_from_request(request)
-    items, total, next_cursor = await CaseService.from_request(request).list_case_page(
+    items, total, next_cursor = await service.list_case_page(
         {
             key: value
             for key, value in locals().items()
@@ -75,35 +75,43 @@ async def list_cases(
 
 
 @router.get("/api/v1/cases/{case_id}", response_model=DiagnosisCase)
-async def get_case(case_id: str, request: Request) -> DiagnosisCase:
+async def get_case(case_id: str, request: Request, service: CaseServiceDependency) -> DiagnosisCase:
     actor_from_request(request)
-    return await CaseService.from_request(request).get(case_id)
+    return await service.get(case_id)
 
 
 @router.get("/api/v1/cases/{case_id}/history", response_model=list[CaseReviewEvent])
-async def case_history(case_id: str, request: Request) -> list[CaseReviewEvent]:
+async def case_history(
+    case_id: str, request: Request, service: CaseServiceDependency
+) -> list[CaseReviewEvent]:
     actor_from_request(request)
-    return await CaseService.from_request(request).history(case_id)
+    return await service.history(case_id)
 
 
 @router.patch("/api/v1/cases/{case_id}", response_model=DiagnosisCase)
-async def patch_case(case_id: str, payload: CasePatchRequest, request: Request) -> DiagnosisCase:
+async def patch_case(
+    case_id: str,
+    payload: CasePatchRequest,
+    request: Request,
+    service: CaseServiceDependency,
+) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).patch(case_id, payload, actor)
+    return await service.patch(case_id, payload, actor)
 
 
 @router.post("/api/v1/cases/{case_id}/submit", response_model=DiagnosisCase)
 async def submit_case(
     case_id: str,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).submit(case_id, actor, idempotency_key)
+    return await service.submit(case_id, actor, idempotency_key)
 
 
 @router.post("/api/v1/cases/{case_id}/review", response_model=DiagnosisCase)
@@ -111,14 +119,13 @@ async def review_case(
     case_id: str,
     payload: CaseReviewRequest,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).review_case(
-        case_id, payload, actor, idempotency_key
-    )
+    return await service.review_case(case_id, payload, actor, idempotency_key)
 
 
 @router.post("/api/v1/cases/{case_id}/disable", response_model=DiagnosisCase)
@@ -126,12 +133,13 @@ async def disable_case(
     case_id: str,
     payload: CaseDisableRequest,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).disable(case_id, payload, actor, idempotency_key)
+    return await service.disable(case_id, payload, actor, idempotency_key)
 
 
 @router.post("/api/v1/cases/{case_id}/revisions", response_model=DiagnosisCase)
@@ -139,23 +147,23 @@ async def revise_case(
     case_id: str,
     payload: CaseRevisionRequest,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).revision(
-        case_id, payload, actor, idempotency_key
-    )
+    return await service.revision(case_id, payload, actor, idempotency_key)
 
 
 @router.post("/api/v1/cases/{case_id}/reindex", response_model=DiagnosisCase)
 async def reindex_case(
     case_id: str,
     request: Request,
+    service: CaseServiceDependency,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
     require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
-    return await CaseService.from_request(request).reindex(case_id, actor, idempotency_key)
+    return await service.reindex(case_id, actor, idempotency_key)

@@ -7,6 +7,7 @@ from energy_agent.indexing.repository import IndexRepository
 from energy_agent.persistence.models import ManualChunkModel, ManualDocumentModel
 from energy_agent.retrieval.ingestion.chunking import DocumentChunk
 from energy_agent.retrieval.ingestion.manifests import DocumentManifest, IndexStatus
+from energy_agent.retrieval.ports import ManualDocumentRecord
 
 
 class ManualDocumentRepository:
@@ -18,9 +19,9 @@ class ManualDocumentRepository:
         self.session_factory = session_factory
         self.index_repository = index_repository
 
-    async def find(self, doc_id: str, version: str) -> ManualDocumentModel | None:
+    async def find(self, doc_id: str, version: str) -> ManualDocumentRecord | None:
         async with self.session_factory() as session:
-            return (
+            model = (
                 await session.execute(
                     select(ManualDocumentModel).where(
                         ManualDocumentModel.doc_id == doc_id,
@@ -28,6 +29,16 @@ class ManualDocumentRepository:
                     )
                 )
             ).scalar_one_or_none()
+        return (
+            ManualDocumentRecord(
+                file_sha256=model.file_sha256,
+                object_key=model.object_key,
+                chunk_count=model.chunk_count,
+                index_status=model.index_status,
+            )
+            if model
+            else None
+        )
 
     async def create_pending(
         self,

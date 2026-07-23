@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import timedelta
 
 from sqlalchemy import select
@@ -10,13 +9,8 @@ from energy_agent.persistence.models import (
     DiagnosisAlarmDedupModel,
     DiagnosisSessionModel,
 )
+from energy_agent.reliability.contracts import AlarmDedupHit
 from energy_agent.reliability.dedup import alarm_dedup_key, normalize_alarm_category
-
-
-@dataclass(frozen=True)
-class DedupHit:
-    session_id: str
-    hit_count: int
 
 
 class AlarmDedupRepository:
@@ -28,7 +22,7 @@ class AlarmDedupRepository:
         self.session_factory = session_factory
         self.window_seconds = window_seconds
 
-    async def hit(self, device_id: str, alarm_category: str, alarm_id: str) -> DedupHit | None:
+    async def hit(self, device_id: str, alarm_category: str, alarm_id: str) -> AlarmDedupHit | None:
         key = alarm_dedup_key(device_id, alarm_category)
         now = utc_now()
         async with self.session_factory.begin() as session:
@@ -48,7 +42,7 @@ class AlarmDedupRepository:
             model.hit_count += 1
             model.alarm_ids = sorted({*model.alarm_ids, alarm_id})
             model.updated_at = now
-            return DedupHit(model.session_id, model.hit_count)
+            return AlarmDedupHit(model.session_id, model.hit_count)
 
     async def register(
         self,

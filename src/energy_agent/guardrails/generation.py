@@ -1,4 +1,4 @@
-from energy_agent.agent.state import CandidateCause, Evidence
+from energy_agent.contracts.diagnosis_components import CandidateCause, Evidence
 from energy_agent.guardrails.contracts import GuardrailDecision, GuardrailStatus
 
 

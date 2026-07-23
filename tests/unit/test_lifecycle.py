@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from energy_agent.app import create_app
-from energy_agent.core import lifecycle
+from energy_agent.bootstrap import lifespan as bootstrap_lifespan
 from energy_agent.core.config import Settings
 
 
@@ -39,10 +39,10 @@ events: list[str] = []
 
 def test_lifespan_closes_resources_in_order(monkeypatch) -> None:
     events.clear()
-    monkeypatch.setattr(lifecycle, "create_tracer", lambda settings: FakeTracer(events))
-    monkeypatch.setattr(lifecycle, "create_mysql_engine", lambda dsn: FakeEngine())
-    monkeypatch.setattr(lifecycle, "create_session_factory", lambda engine: object())
-    monkeypatch.setattr(lifecycle, "create_redis_client", lambda url: FakeRedis())
+    monkeypatch.setattr(bootstrap_lifespan, "create_tracer", lambda settings: FakeTracer(events))
+    monkeypatch.setattr(bootstrap_lifespan, "create_mysql_engine", lambda dsn: FakeEngine())
+    monkeypatch.setattr(bootstrap_lifespan, "create_session_factory", lambda engine: object())
+    monkeypatch.setattr(bootstrap_lifespan, "create_redis_client", lambda url: FakeRedis())
     with TestClient(create_app(Settings(app_env="test"))) as client:
         assert client.get("/health/live").status_code == 200
     assert events == ["tracer_flush", "tracer_shutdown", "redis", "mysql"]

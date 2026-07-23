@@ -1,4 +1,5 @@
-from energy_agent.agent.state import CandidateCause, DiagnosisState
+from energy_agent.agent.state import DiagnosisState
+from energy_agent.contracts.diagnosis_components import CandidateCause
 from energy_agent.guardrails.contracts import GuardrailDecision, GuardrailStatus
 from energy_agent.guardrails.generation import check_generation
 from energy_agent.guardrails.input import check_input

@@ -2,13 +2,18 @@ from datetime import datetime
 
 from pydantic import Field, model_validator
 
-from energy_agent.agent.state import CandidateCause, ClarificationQuestion, Evidence, PlanStep
 from energy_agent.contracts.common import (
     DiagnosisIntent,
     DiagnosisPhase,
     RiskLevel,
     SessionSource,
     StrictModel,
+)
+from energy_agent.contracts.diagnosis_components import (
+    CandidateCause,
+    ClarificationQuestion,
+    Evidence,
+    PlanStep,
 )
 from energy_agent.guardrails.contracts import GuardrailDecision, RecommendedAction
 

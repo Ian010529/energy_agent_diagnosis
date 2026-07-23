@@ -6,7 +6,6 @@ import platform
 from datetime import UTC, datetime
 from pathlib import Path
 
-from energy_agent.agent.templates.definitions import TEMPLATES
 from energy_agent.core.config import Settings
 from energy_agent.evaluation.dataset import load_pilot_dataset
 from energy_agent.evaluation.metrics import compute_metrics
@@ -15,6 +14,7 @@ from energy_agent.evaluation.regression import accept_baseline, compare_baseline
 from energy_agent.evaluation.report import write_report_artifacts
 from energy_agent.evaluation.runner import PublicAPIEvaluationRunner
 from energy_agent.evaluation.thresholds import TechnicalThresholds, evaluate_technical_gate
+from energy_agent.templates.definitions import TEMPLATES
 
 DATASET_VERSION = "1.3.0"
 DATASET_ROOT = Path(f"artifacts/synthetic-data/pilot_medium_v1-{DATASET_VERSION}")

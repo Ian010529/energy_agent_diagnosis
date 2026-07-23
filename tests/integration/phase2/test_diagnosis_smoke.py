@@ -297,8 +297,8 @@ def test_completed_readback_sse_and_step_logs(phase2_data: None) -> None:
 
         assert client.portal is not None
         client.portal.call(
-            client.app.state.redis.delete,
-            client.app.state.session_store.key(str(created["session_id"])),
+            client.app.state.container.providers.redis.delete,
+            client.app.state.container.session_store.key(str(created["session_id"])),
         )
         readback = client.get(f"/api/v1/diagnosis/sessions/{created['session_id']}")
         assert readback.status_code == 200

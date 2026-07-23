@@ -9,10 +9,6 @@ from energy_agent.core.errors import (
 from energy_agent.core.ids import new_id
 from energy_agent.indexing.contracts import EntityType, IndexJobCreate, IndexOperation
 from energy_agent.observability.tracing import Tracer
-from energy_agent.persistence.repositories.manual_document import ManualDocumentRepository
-from energy_agent.providers.embedding import OpenAICompatibleEmbeddingProvider
-from energy_agent.providers.milvus import MilvusVectorProvider
-from energy_agent.providers.minio import MinioDocumentProvider
 from energy_agent.retrieval.ingestion.chunking import CHUNKING_VERSION, chunk_blocks
 from energy_agent.retrieval.ingestion.manifests import (
     DocumentManifest,
@@ -20,16 +16,22 @@ from energy_agent.retrieval.ingestion.manifests import (
     IngestionResult,
 )
 from energy_agent.retrieval.ingestion.parsers import PARSER_VERSION, parse_document
+from energy_agent.retrieval.ports import (
+    DocumentStorePort,
+    EmbeddingPort,
+    ManualDocumentPort,
+    VectorSearchPort,
+)
 
 
 class DocumentIngestionService:
     def __init__(
         self,
         *,
-        repository: ManualDocumentRepository,
-        minio: MinioDocumentProvider,
-        milvus: MilvusVectorProvider | None,
-        embedding: OpenAICompatibleEmbeddingProvider | None,
+        repository: ManualDocumentPort,
+        minio: DocumentStorePort,
+        milvus: VectorSearchPort | None,
+        embedding: EmbeddingPort | None,
         tracer: Tracer,
         max_bytes: int,
         index_execution_mode: str = "sync",

@@ -83,4 +83,4 @@ def register_graph_tool(
             ),
         )
 
-    registry.register("query_graph_relations", GraphRelationsInput, query)
+    registry.register("query_graph_relations", GraphRelationsInput, query, dependency="neo4j")

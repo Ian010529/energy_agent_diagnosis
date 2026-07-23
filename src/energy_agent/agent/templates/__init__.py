@@ -1,4 +1,5 @@
-from energy_agent.agent.templates.definitions import TEMPLATES
-from energy_agent.agent.templates.registry import TemplateRegistry
+from energy_agent.templates import TEMPLATES, TemplateRegistry
+
+__all__ = ["TEMPLATES", "TemplateRegistry"]
 
 __all__ = ["TEMPLATES", "TemplateRegistry"]

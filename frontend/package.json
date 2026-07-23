@@ -14,7 +14,7 @@
     "e2e": "playwright test tests/e2e --project=chromium --workers=1",
     "visual": "playwright test tests/visual --workers=1 --timeout=180000",
     "visual:update": "playwright test tests/visual --workers=1 --timeout=180000 --update-snapshots",
-    "generate:api": "jq -r -f scripts/openapi-to-ts.jq openapi/backend.json > lib/api/generated.ts",
+    "generate:api": "jq -jr -f scripts/openapi-to-ts.jq openapi/backend.json > lib/api/generated.ts",
     "generate:api:full": "openapi-typescript openapi/backend.json -o lib/api/generated.full.ts"
   },
   "dependencies": {

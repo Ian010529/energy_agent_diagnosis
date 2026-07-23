@@ -1,4 +1,4 @@
-from energy_agent.agent.state import PlanStep
+from energy_agent.contracts.diagnosis_components import PlanStep
 from energy_agent.guardrails.contracts import GuardrailDecision, GuardrailStatus
 
 WRITE_TOOLS = {"create_or_update_ticket", "write_review_result"}

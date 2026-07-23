@@ -1,16 +1,19 @@
-from energy_agent.agent.templates.contracts import DiagnosisTemplate
-from energy_agent.graph.contracts import GraphRelation
-from energy_agent.providers.neo4j import Neo4jProvider
+from energy_agent.graph.contracts import GraphPort, GraphRelation
+from energy_agent.templates.contracts import DiagnosisTemplate
 
 
 class GraphService:
-    def __init__(self, provider: Neo4jProvider | None) -> None:
-        self.provider = provider
+    def __init__(self, provider: GraphPort | None) -> None:
+        self._provider = provider
 
-    async def bootstrap_template(self, template: DiagnosisTemplate) -> None:
-        if not self.provider:
+    @property
+    def available(self) -> bool:
+        return self._provider is not None
+
+    async def project_template(self, template: DiagnosisTemplate) -> None:
+        if not self._provider:
             raise RuntimeError("GRAPH_DISABLED")
-        await self.provider.project_template(
+        await self._provider.project_template(
             {
                 "template_id": template.template_id,
                 "template_version": template.template_version,
@@ -21,6 +24,35 @@ class GraphService:
             }
         )
 
+    async def bootstrap_template(self, template: DiagnosisTemplate) -> None:
+        await self.project_template(template)
+
+    async def project_case(
+        self,
+        *,
+        case_id: str,
+        case_version: int,
+        device_type: str,
+        alarm_name: str,
+        fault_cause: str,
+        resolution_action: str,
+    ) -> None:
+        if not self._provider:
+            raise RuntimeError("GRAPH_DISABLED")
+        await self._provider.project_case(
+            case_id=case_id,
+            case_version=case_version,
+            device_type=device_type,
+            alarm_name=alarm_name,
+            fault_cause=fault_cause,
+            resolution_action=resolution_action,
+        )
+
+    async def tombstone_case(self, case_id: str) -> None:
+        if not self._provider:
+            raise RuntimeError("GRAPH_DISABLED")
+        await self._provider.tombstone_case(case_id)
+
     async def query(
         self,
         *,
@@ -30,9 +62,9 @@ class GraphService:
         relation_depth: int,
         top_k: int,
     ) -> list[GraphRelation]:
-        if not self.provider:
+        if not self._provider:
             raise RuntimeError("GRAPH_DISABLED")
-        return await self.provider.query_relations(
+        return await self._provider.query_relations(
             alarm_name=alarm_name,
             device_type=device_type,
             component=component,

@@ -42,15 +42,11 @@ class ToolExecutor:
         registered = self.registry.get(name)
         if registered is None:
             return self._failure(trace_id, "TOOL_NOT_AVAILABLE", ToolStatus.DEGRADED)
-        schema, handler = registered
         try:
-            payload = schema.model_validate(arguments)
+            payload = registered.schema.model_validate(arguments)
         except ValidationError:
             return self._failure(trace_id, "TOOL_ARGUMENT_INVALID", ToolStatus.FAILED)
-        dependency = {
-            "query_timeseries_window": "influxdb",
-            "query_graph_relations": "neo4j",
-        }.get(name)
+        dependency = registered.dependency
         breaker = (
             self.circuit_breakers.get(dependency) if dependency and self.circuit_breakers else None
         )
@@ -67,7 +63,7 @@ class ToolExecutor:
         ) as span:
             for attempt in range(1, DEFAULT_MAX_ATTEMPTS + 1):
                 try:
-                    result = await asyncio.wait_for(handler(payload), timeout_seconds)
+                    result = await asyncio.wait_for(registered.handler(payload), timeout_seconds)
                     result.meta.attempts = attempt
                     result.meta.latency_ms = int((monotonic() - started) * 1000)
                     span.set_output(
@@ -80,9 +76,11 @@ class ToolExecutor:
                     if self.tool_logger:
                         await self.tool_logger(name, result, started_at, utc_now())
                     if breaker:
-                        if result.status in {ToolStatus.TIMEOUT, ToolStatus.FAILED} or (
-                            result.status == ToolStatus.DEGRADED and not result.data
-                        ):
+                        if result.status in {
+                            ToolStatus.TIMEOUT,
+                            ToolStatus.FAILED,
+                            ToolStatus.DEGRADED,
+                        }:
                             breaker.record_failure()
                         else:
                             breaker.record_success()

@@ -14,10 +14,10 @@ from energy_agent.api.evidence import router as evidence_router
 from energy_agent.api.health import router as health_router
 from energy_agent.api.metrics import router as metrics_router
 from energy_agent.api.session_queries import router as session_queries_router
+from energy_agent.bootstrap.lifespan import build_lifespan
 from energy_agent.core.config import Settings, get_settings
 from energy_agent.core.context import ActorRole, RequestContext, bind_context, reset_context
 from energy_agent.core.ids import trusted_or_new_id
-from energy_agent.core.lifecycle import build_lifespan
 from energy_agent.observability.logging import log_event
 from energy_agent.observability.metrics import (
     HTTP_DURATION,
@@ -126,7 +126,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
                 rate_actor = actor_id or "local-operator"
                 try:
-                    allowed, retry_after = await request.app.state.rate_limiter.allow(
+                    allowed, retry_after = await request.app.state.container.rate_limiter.allow(
                         rate_actor, group, limit
                     )
                 except Exception:
@@ -148,7 +148,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         )
                         rejected.headers["Retry-After"] = str(retry_after)
                         return rejected
-            with request.app.state.tracer.start_trace(
+            with request.app.state.container.tracer.start_trace(
                 "diagnosis.request",
                 trace_id=trace_id,
                 metadata={"method": request.method, "path": request.url.path},

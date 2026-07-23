@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Query, Request
 
 from energy_agent.api.auth import actor_from_request, require_roles
+from energy_agent.api.dependencies import CatalogServiceDependency
 from energy_agent.catalog.contracts import (
     AlarmItem,
     AlarmListResponse,
@@ -11,7 +12,6 @@ from energy_agent.catalog.contracts import (
     DeviceListResponse,
     SiteListResponse,
 )
-from energy_agent.catalog.service import CatalogService
 from energy_agent.core.context import ActorRole
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
@@ -23,20 +23,21 @@ def _authorize(request: Request) -> None:
 
 
 @router.get("/capabilities", response_model=CapabilitiesResponse)
-async def capabilities(request: Request) -> CapabilitiesResponse:
+async def capabilities(request: Request, service: CatalogServiceDependency) -> CapabilitiesResponse:
     _authorize(request)
-    return CatalogService.from_request(request).capabilities()
+    return service.capabilities()
 
 
 @router.get("/sites", response_model=SiteListResponse)
-async def sites(request: Request) -> SiteListResponse:
+async def sites(request: Request, service: CatalogServiceDependency) -> SiteListResponse:
     _authorize(request)
-    return await CatalogService.from_request(request).sites()
+    return await service.sites()
 
 
 @router.get("/devices", response_model=DeviceListResponse)
 async def devices(
     request: Request,
+    service: CatalogServiceDependency,
     site_id: str | None = None,
     device_type: str | None = None,
     device_model: str | None = None,
@@ -60,18 +61,19 @@ async def devices(
         )
         if values[name] is not None
     }
-    return await CatalogService.from_request(request).devices(filters, limit, cursor)
+    return await service.devices(filters, limit, cursor)
 
 
 @router.get("/devices/{device_id}", response_model=DeviceItem)
-async def device(device_id: str, request: Request) -> DeviceItem:
+async def device(device_id: str, request: Request, service: CatalogServiceDependency) -> DeviceItem:
     _authorize(request)
-    return await CatalogService.from_request(request).device(device_id)
+    return await service.device(device_id)
 
 
 @router.get("/alarms", response_model=AlarmListResponse)
 async def alarms(
     request: Request,
+    service: CatalogServiceDependency,
     site_id: str | None = None,
     device_id: str | None = None,
     alarm_level: str | None = None,
@@ -100,10 +102,10 @@ async def alarms(
         "q",
     )
     filters = {name: values[name] for name in names if values[name] is not None}
-    return await CatalogService.from_request(request).alarms(filters, limit, cursor)
+    return await service.alarms(filters, limit, cursor)
 
 
 @router.get("/alarms/{alarm_id}", response_model=AlarmItem)
-async def alarm(alarm_id: str, request: Request) -> AlarmItem:
+async def alarm(alarm_id: str, request: Request, service: CatalogServiceDependency) -> AlarmItem:
     _authorize(request)
-    return await CatalogService.from_request(request).alarm(alarm_id)
+    return await service.alarm(alarm_id)

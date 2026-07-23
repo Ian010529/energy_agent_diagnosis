@@ -4,9 +4,9 @@ from typing import Any
 
 from sqlalchemy import select, update
 
+from energy_agent.bootstrap.lifespan import create_tracer
 from energy_agent.core.config import Settings
 from energy_agent.core.ids import new_id
-from energy_agent.core.lifecycle import create_tracer
 from energy_agent.core.time import utc_now
 from energy_agent.indexing.contracts import EntityType, IndexJobCreate, IndexOperation
 from energy_agent.indexing.repository import IndexRepository

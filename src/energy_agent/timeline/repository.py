@@ -1,5 +1,3 @@
-from hashlib import sha256
-
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -9,10 +7,6 @@ from energy_agent.persistence.models import (
     DiagnosisTimelineEventModel,
 )
 from energy_agent.timeline.contracts import TimelineEventCreate, TimelineEventRecord
-
-
-def timeline_event_id(session_id: str, event_type: str, key: str) -> str:
-    return sha256(f"{session_id}:{event_type}:{key}".encode()).hexdigest()
 
 
 class TimelineRepository:
@@ -36,6 +30,11 @@ class TimelineRepository:
 
     async def append(self, payload: TimelineEventCreate) -> TimelineEventRecord:
         async with self.session_factory.begin() as session:
+            await session.execute(
+                select(DiagnosisSessionModel.id)
+                .where(DiagnosisSessionModel.id == payload.session_id)
+                .with_for_update()
+            )
             existing = (
                 await session.execute(
                     select(DiagnosisTimelineEventModel).where(
@@ -45,11 +44,6 @@ class TimelineRepository:
             ).scalar_one_or_none()
             if existing:
                 return self._record(existing)
-            await session.execute(
-                select(DiagnosisSessionModel.id)
-                .where(DiagnosisSessionModel.id == payload.session_id)
-                .with_for_update()
-            )
             sequence = (
                 int(
                     (
