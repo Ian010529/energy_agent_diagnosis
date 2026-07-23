@@ -3,6 +3,7 @@
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api/browser-client";
 import type { CaseHistory, DiagnosisCase } from "@/lib/api/types";
@@ -15,6 +16,7 @@ export function CaseVersionHistory({ history }: { history: CaseHistory }) {
 }
 
 export function CaseDetail({ caseId }: { caseId: string }) {
+  const router = useRouter();
   const client = useQueryClient();
   const [comment, setComment] = useState("");
   const [failure, setFailure] = useState("");
@@ -23,25 +25,40 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   const [resolutionSteps, setResolutionSteps] = useState("");
   const [pendingAction, setPendingAction] = useState("");
   const pendingRef = useRef(false);
+  const idempotencyKeys = useRef(new Map<string, string>());
   const [caseQuery, historyQuery, runtimeQuery] = useQueries({ queries: [
     { queryKey: ["case", caseId], queryFn: () => api<DiagnosisCase>(`cases/${caseId}`) },
     { queryKey: ["case-history", caseId], queryFn: () => api<CaseHistory>(`cases/${caseId}/history`) },
-    { queryKey: ["runtime"], queryFn: async () => (await fetch("/api/runtime")).json() as Promise<{ role: string }> },
+    { queryKey: ["runtime"], queryFn: async () => (await fetch("/api/runtime")).json() as Promise<{ role: string; actor_id: string }> },
   ] });
   if (caseQuery.isLoading || historyQuery.isLoading) return <div className="page"><Skeleton rows={9} /></div>;
-  if (!caseQuery.data) return <div className="page"><ErrorState message={errorMessage(caseQuery.error)} /></div>;
+  if (caseQuery.error || historyQuery.error) return <div className="page"><ErrorState message={errorMessage(caseQuery.error || historyQuery.error)} retry={() => { void Promise.all([caseQuery.refetch(), historyQuery.refetch()]); }} /></div>;
+  if (!caseQuery.data) return <div className="page"><ErrorState message="案例数据不可用。" /></div>;
   const item = caseQuery.data;
   const role = runtimeQuery.data?.role;
-  const canOperate = role != null && role !== "viewer";
   const canReview = role === "reviewer" || role === "admin";
-  const canReindex = item.review_status === "APPROVED"
+  const canOperate = canReview;
+  const canApprove = canReview && item.created_by !== runtimeQuery.data?.actor_id;
+  const canReindex = ["APPROVED", "DISABLED", "SUPERSEDED"].includes(item.review_status ?? "")
     && ["PENDING", "FAILED", "DEGRADED"].includes(item.index_status ?? "PENDING");
+  const reindexLabel = item.review_status === "APPROVED" ? "重新索引" : "重试索引下线";
   async function action(path: string, body?: object) {
     if (pendingRef.current) return;
     pendingRef.current = true;
     setPendingAction(path);
     setFailure("");
-    try { await api(`cases/${caseId}/${path}`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: body ? JSON.stringify(body) : undefined }); await Promise.all([client.invalidateQueries({ queryKey: ["case", caseId] }), client.invalidateQueries({ queryKey: ["case-history", caseId] })]); }
+    const fingerprint = `${path}:${JSON.stringify(body ?? null)}`;
+    const idempotencyKey = idempotencyKeys.current.get(fingerprint) ?? crypto.randomUUID();
+    idempotencyKeys.current.set(fingerprint, idempotencyKey);
+    try {
+      const updated = await api<DiagnosisCase>(`cases/${caseId}/${path}`, { method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: body ? JSON.stringify(body) : undefined });
+      idempotencyKeys.current.delete(fingerprint);
+      if (path === "revisions" && updated.case_id !== caseId) {
+        router.push(`/cases/${updated.case_id}`);
+      } else {
+        await Promise.all([client.invalidateQueries({ queryKey: ["case", caseId] }), client.invalidateQueries({ queryKey: ["case-history", caseId] })]);
+      }
+    }
     catch (error) { setFailure(errorMessage(error)); }
     finally { pendingRef.current = false; setPendingAction(""); }
   }
@@ -62,13 +79,15 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     <div className="status-grid"><div className="status-cell"><strong>根因</strong>{item.root_cause}</div><div className="status-cell"><strong>设备</strong>{item.device_type || "—"}<br />{item.device_model || "—"}</div><div className="status-cell"><strong>告警</strong>{item.alarm_name || "—"}</div><div className="status-cell"><strong>版本</strong>v{item.case_version}</div><div className="status-cell"><strong>图谱投影</strong>{item.graph_projection_status || "未报告"}</div></div>
     <h2 className="section-title">来源</h2><dl><dt>Session</dt><dd className="mono">{item.source_session_id}</dd><dt>Run</dt><dd className="mono">{item.source_run_id}</dd><dt>Review</dt><dd className="mono">{item.source_review_id}</dd></dl>
     <h2 className="section-title">现象摘要</h2><p>{item.symptom_summary || "—"}</p>
-    {editing ? <div className="form-stack"><div className="field"><label>根因</label><textarea className="input" value={rootCause} onChange={(event) => setRootCause(event.target.value)} /></div><div className="field"><label>处理步骤（每行一项）</label><textarea className="input" value={resolutionSteps} onChange={(event) => setResolutionSteps(event.target.value)} /></div><div><button className="button primary" disabled={!!pendingAction || !rootCause.trim() || !resolutionSteps.trim()} onClick={() => void saveDraft()}>{pendingAction === "save" ? "正在保存…" : "保存草稿"}</button> <button className="button" disabled={!!pendingAction} onClick={() => setEditing(false)}>取消</button></div></div> : <><h2 className="section-title">处理步骤</h2><ol>{(item.resolution_steps ?? []).map((step) => <li key={step}>{step}</li>)}</ol></>}
+    {editing ? <div className="form-stack"><div className="field"><label htmlFor="case-root-cause">根因</label><textarea id="case-root-cause" className="input" value={rootCause} onChange={(event) => setRootCause(event.target.value)} /></div><div className="field"><label htmlFor="case-resolution-steps">处理步骤（每行一项）</label><textarea id="case-resolution-steps" className="input" value={resolutionSteps} onChange={(event) => setResolutionSteps(event.target.value)} /></div><div><button className="button primary" disabled={!!pendingAction || !rootCause.trim() || !resolutionSteps.trim()} onClick={() => void saveDraft()}>{pendingAction === "save" ? "正在保存…" : "保存草稿"}</button> <button className="button" disabled={!!pendingAction} onClick={() => setEditing(false)}>取消</button></div></div> : <><h2 className="section-title">处理步骤</h2><ol>{(item.resolution_steps ?? []).map((step) => <li key={step}>{step}</li>)}</ol></>}
     <h2 className="section-title">Evidence</h2><div className="mono">{(item.evidence_refs ?? []).join(" · ") || "—"}</div>
     <h2 className="section-title">操作</h2><div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
       {item.review_status === "DRAFT" && canOperate ? <><button className="button" disabled={!!pendingAction} onClick={() => { setRootCause(item.root_cause); setResolutionSteps((item.resolution_steps ?? []).join("\n")); setEditing(true); }}>编辑草稿</button><button className="button primary" disabled={!!pendingAction} onClick={() => void action("submit")}>{pendingAction === "submit" ? "正在提交…" : "提交审核"}</button></> : null}
-      {item.review_status === "PENDING_REVIEW" && canReview ? <><button className="button primary" disabled={!!pendingAction} onClick={() => void action("review", { decision: "approve", comment })}>{pendingAction === "review" ? "正在处理…" : "审批通过"}</button><button className="button danger" disabled={!!pendingAction} onClick={() => void action("review", { decision: "reject", comment: comment || "审核拒绝" })}>拒绝</button></> : null}
+      {item.review_status === "PENDING_REVIEW" && canApprove ? <><button className="button primary" disabled={!!pendingAction} onClick={() => void action("review", { decision: "approve", comment })}>{pendingAction === "review" ? "正在处理…" : "审批通过"}</button><button className="button danger" disabled={!!pendingAction} onClick={() => void action("review", { decision: "reject", comment: comment || "审核拒绝" })}>拒绝</button></> : null}
       {item.review_status === "APPROVED" ? <>{canReview && canReindex ? <button className="button" disabled={!!pendingAction} onClick={() => void action("reindex")}>{pendingAction === "reindex" ? "正在索引…" : "重新索引"}</button> : null}{canReview ? <button className="button danger" disabled={!!pendingAction} onClick={() => void action("disable", { reason: comment || "人工停用" })}>{pendingAction === "disable" ? "正在停用…" : "停用"}</button> : null}{canOperate ? <button className="button" disabled={!!pendingAction} onClick={() => void action("revisions", { submit_for_review: false })}>{pendingAction === "revisions" ? "正在创建…" : "创建修订"}</button> : null}</> : null}
-    </div>{canOperate ? <div className="field" style={{ marginTop: "1rem", maxWidth: "38rem" }}><label>操作意见</label><input className="input" value={comment} onChange={(event) => setComment(event.target.value)} /></div> : <div className="banner warning" style={{ marginTop: "1rem" }}>viewer 为只读角色，案例操作已隐藏。</div>}
+      {item.review_status === "REJECTED" && canOperate ? <button className="button" disabled={!!pendingAction} onClick={() => void action("revisions", { submit_for_review: false })}>{pendingAction === "revisions" ? "正在创建…" : "创建修订"}</button> : null}
+      {["DISABLED", "SUPERSEDED"].includes(item.review_status ?? "") && canReview && canReindex ? <button className="button" disabled={!!pendingAction} onClick={() => void action("reindex")}>{pendingAction === "reindex" ? "正在下线…" : reindexLabel}</button> : null}
+    </div>{item.review_status === "PENDING_REVIEW" && canReview && !canApprove ? <div className="banner warning" style={{ marginTop: "1rem" }}>案例创建人不能审核自己的案例，请由另一位 reviewer 或 admin 处理。</div> : canOperate ? <div className="field" style={{ marginTop: "1rem", maxWidth: "38rem" }}><label htmlFor="case-action-comment">操作意见</label><input id="case-action-comment" className="input" value={comment} onChange={(event) => setComment(event.target.value)} /></div> : role ? <div className="banner warning" style={{ marginTop: "1rem" }}>只有 reviewer 或 admin 可以修改案例。</div> : null}
     <h2 className="section-title">审核历史</h2><CaseVersionHistory history={historyQuery.data ?? []} />
   </div></div>;
 }

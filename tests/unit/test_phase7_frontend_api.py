@@ -25,6 +25,7 @@ from energy_agent.core.errors import (
     PermissionDeniedError,
     ResourceNotFoundError,
 )
+from energy_agent.core.idempotency import request_fingerprint
 from energy_agent.evidence.service import EvidenceService
 from energy_agent.observability.tracing import LocalTracer
 from energy_agent.timeline.contracts import TimelineEventType, timeline_event_id
@@ -183,12 +184,15 @@ async def test_timeseries_recovers_window_from_persisted_alarm() -> None:
     )
 
 
-def diagnosis_service() -> tuple[DiagnosisService, SimpleNamespace]:
+def diagnosis_service(
+    *, alarm_dedup: SimpleNamespace | None = None
+) -> tuple[DiagnosisService, SimpleNamespace]:
     dependencies = SimpleNamespace(
         sessions=SimpleNamespace(create=AsyncMock(), get=AsyncMock(), update=AsyncMock()),
         runs=SimpleNamespace(
             create=AsyncMock(),
             find_idempotent=AsyncMock(return_value=None),
+            find_idempotent_global=AsyncMock(return_value=None),
             finish=AsyncMock(),
             set_hardening_outcome=AsyncMock(),
         ),
@@ -204,6 +208,7 @@ def diagnosis_service() -> tuple[DiagnosisService, SimpleNamespace]:
         memory=dependencies.memory,
         tools=ToolRegistry(),
         tracer=LocalTracer(),
+        alarm_dedup=alarm_dedup,
     )
     return service, dependencies
 
@@ -219,7 +224,38 @@ async def test_create_session_initial_run_is_not_marked_running() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cancelled_stream_persists_terminal_session(monkeypatch) -> None:
+async def test_create_session_idempotency_replay_precedes_alarm_dedup() -> None:
+    alarm_dedup = SimpleNamespace(hit=AsyncMock(), register=AsyncMock())
+    service, dependencies = diagnosis_service(alarm_dedup=alarm_dedup)
+    payload = CreateSessionRequest(
+        source=SessionSource.ALARM,
+        site_id="SITE-1",
+        device_id="PCS-1",
+        alarm_id="ALARM-1",
+        alarm_name="PCS 机柜温度异常",
+    )
+    dependencies.runs.find_idempotent_global.return_value = SimpleNamespace(
+        request_hash=request_fingerprint("create_session", payload.model_dump(mode="json")),
+        session_id="session-existing",
+        id="run-existing",
+        trace_id="trace-existing",
+    )
+    dependencies.sessions.get.return_value = SimpleNamespace(
+        phase=DiagnosisPhase.INIT,
+    )
+
+    response = await service.create_session(payload, "same-browser-retry")
+
+    assert response.session_id == "session-existing"
+    assert response.run_id == "run-existing"
+    assert response.merged is False
+    assert response.duplicate_count == 1
+    alarm_dedup.hit.assert_not_awaited()
+    alarm_dedup.register.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_cancelled_stream_restores_retryable_session(monkeypatch) -> None:
     service, dependencies = diagnosis_service()
     persisted = SessionMemoryPayload(
         session_id="session-1",
@@ -249,13 +285,15 @@ async def test_cancelled_stream_persists_terminal_session(monkeypatch) -> None:
         await service.diagnose(DiagnosisChatRequest(session_id="session-1", message="diagnose"))
 
     run_id = dependencies.runs.create.await_args.args[0].id
-    dependencies.runs.finish.assert_awaited_once_with(run_id, DiagnosisPhase.FAILED, "cancelled")
-    assert dependencies.sessions.update.await_args_list[-1].args[1].phase == DiagnosisPhase.FAILED
+    dependencies.runs.finish.assert_awaited_once_with(run_id, DiagnosisPhase.INIT, "cancelled")
+    restored = dependencies.sessions.update.await_args_list[-1].args[1]
+    assert restored.phase == DiagnosisPhase.INIT
+    assert restored.run_id == "init-run"
     assert (
         dependencies.runs.set_hardening_outcome.await_args.kwargs["failure_category"]
         == "stream_disconnected"
     )
-    assert dependencies.memory.save.await_args.args[0].phase == DiagnosisPhase.FAILED
+    dependencies.memory.save.assert_not_awaited()
 
 
 @pytest.mark.asyncio

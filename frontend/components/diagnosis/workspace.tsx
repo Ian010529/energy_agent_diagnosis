@@ -32,10 +32,11 @@ export function DiagnosisWorkspace({ sessionId }: { sessionId: string }) {
   const inspector = manualInspector ?? wide;
   const setInspector = (open: boolean | ((current: boolean) => boolean)) => setManualInspector(typeof open === "function" ? open(inspector) : open);
   const overlayInspector = !wide;
-  const [sessionQuery, timelineQuery, listQuery, runtimeQuery] = useQueries({ queries: [
+  const [sessionQuery, timelineQuery, listQuery, metadataQuery, runtimeQuery] = useQueries({ queries: [
     { queryKey: ["session", sessionId], queryFn: () => api<DiagnosisResponse>(`diagnosis/sessions/${sessionId}`), refetchInterval: 15_000 },
     { queryKey: ["timeline", sessionId], queryFn: () => api<TimelineResponse>(`diagnosis/sessions/${sessionId}/timeline`), refetchInterval: 15_000 },
     { queryKey: ["sessions"], queryFn: () => api<SessionList>("diagnosis/sessions?limit=50") },
+    { queryKey: ["session-metadata", sessionId], queryFn: () => api<SessionList>(`diagnosis/sessions?limit=1&q=${encodeURIComponent(sessionId)}`) },
     { queryKey: ["runtime"], queryFn: async () => (await fetch("/api/runtime")).json() as Promise<{ role: string }> },
   ] });
   async function recover() {
@@ -49,12 +50,13 @@ export function DiagnosisWorkspace({ sessionId }: { sessionId: string }) {
   if (sessionQuery.error || timelineQuery.error) return <div className="page"><ErrorState message={errorMessage(sessionQuery.error || timelineQuery.error)} retry={() => void recover()} /></div>;
   if (!sessionQuery.data || !timelineQuery.data) return null;
   const response = sessionQuery.data;
-  const sessionItem = listQuery.data?.items.find((item) => item.session_id === sessionId);
+  const sessionItem = listQuery.data?.items.find((item) => item.session_id === sessionId)
+    ?? metadataQuery.data?.items.find((item) => item.session_id === sessionId);
   const inspectorContext = { alarmId: sessionItem?.alarm_id, templateId: sessionItem?.diagnosis_template_id, templateVersion: sessionItem?.diagnosis_template_version };
   return <WorkspaceShell inspectorOpen={inspector && !overlayInspector}>
     <SessionSidebar><WorkspaceHeader><strong>诊断任务</strong></WorkspaceHeader><div className="session-list">{listQuery.data?.items.map((item) => <SessionRow item={item} selected={item.session_id === sessionId} key={item.session_id} />)}</div></SessionSidebar>
-    <section className="panel thread-panel"><WorkspaceHeader><div className="truncate"><strong>{sessionItem?.alarm_name || "诊断线程"}</strong><div className="row-subtitle mono">{sessionId}</div></div><div className="header-actions"><RiskBadge value={response.result?.risk_level} /><StatusBadge value={response.phase} /><button className="icon-button" onClick={() => void recover()} aria-label="刷新"><RefreshCw size={16} /></button><button className="icon-button" onClick={() => setInspector((open) => !open)} aria-label="切换检查器"><PanelRight size={17} /></button></div></WorkspaceHeader><DiagnosisThread sessionId={sessionId} response={response} timeline={timelineQuery.data} onRecover={recover} canWrite={runtimeQuery.data?.role != null && runtimeQuery.data.role !== "viewer"} /></section>
-    {inspector && !overlayInspector ? <EvidenceInspector sessionId={sessionId} response={response} context={inspectorContext} onClose={() => setInspector(false)} /> : null}
-    {overlayInspector ? <ResponsiveDrawer open={inspector} onOpenChange={setInspector} title="诊断检查器"><EvidenceInspector sessionId={sessionId} response={response} context={inspectorContext} /></ResponsiveDrawer> : null}
+    <section className="panel thread-panel"><WorkspaceHeader><div className="truncate"><strong>{sessionItem?.alarm_name || "诊断线程"}</strong><div className="row-subtitle mono">{sessionId}</div></div><div className="header-actions"><RiskBadge value={response.result?.risk_level} /><StatusBadge value={response.phase} /><button className="icon-button" onClick={() => void recover()} aria-label="刷新"><RefreshCw size={16} /></button><button className="icon-button" onClick={() => setInspector((open) => !open)} aria-label="切换检查器"><PanelRight size={17} /></button></div></WorkspaceHeader><DiagnosisThread key={sessionId} sessionId={sessionId} response={response} timeline={timelineQuery.data} onRecover={recover} canWrite={runtimeQuery.data?.role != null && runtimeQuery.data.role !== "viewer"} /></section>
+    {inspector && !overlayInspector ? <EvidenceInspector key={sessionId} sessionId={sessionId} response={response} context={inspectorContext} onClose={() => setInspector(false)} /> : null}
+    {overlayInspector ? <ResponsiveDrawer open={inspector} onOpenChange={setInspector} title="诊断检查器"><EvidenceInspector key={sessionId} sessionId={sessionId} response={response} context={inspectorContext} /></ResponsiveDrawer> : null}
   </WorkspaceShell>;
 }

@@ -20,7 +20,7 @@ from energy_agent.agent.state import (
     DiagnosisState,
     UserFeedback,
 )
-from energy_agent.contracts.common import DiagnosisIntent, DiagnosisPhase
+from energy_agent.contracts.common import DiagnosisIntent, DiagnosisPhase, SessionSource
 from energy_agent.contracts.diagnosis import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -109,6 +109,20 @@ class DiagnosisExecutionService:
         actor: ActorContext | None = None,
     ) -> CreateSessionResponse:
         trace_id = self._trace_id()
+        fingerprint = request_fingerprint("create_session", payload.model_dump(mode="json"))
+        if idempotency_key:
+            existing = await self.runs.find_idempotent_global(idempotency_key, trace_id=trace_id)
+            if existing:
+                if existing.request_hash != fingerprint:
+                    raise IdempotencyConflictError("Idempotency key reused with different request")
+                existing_session = await self.sessions.get(existing.session_id, trace_id=trace_id)
+                assert existing_session is not None
+                return CreateSessionResponse(
+                    session_id=existing.session_id,
+                    run_id=existing.id,
+                    phase=existing_session.phase,
+                    trace_id=existing.trace_id,
+                )
         if (
             payload.source.value == "alarm"
             and payload.device_id
@@ -145,20 +159,6 @@ class DiagnosisExecutionService:
                     duplicate_count=hit.hit_count,
                 )
         session_id, run_id = new_id(), new_id()
-        fingerprint = request_fingerprint("create_session", payload.model_dump(mode="json"))
-        if idempotency_key:
-            existing = await self.runs.find_idempotent_global(idempotency_key, trace_id=trace_id)
-            if existing:
-                if existing.request_hash != fingerprint:
-                    raise IdempotencyConflictError("Idempotency key reused with different request")
-                existing_session = await self.sessions.get(existing.session_id, trace_id=trace_id)
-                assert existing_session is not None
-                return CreateSessionResponse(
-                    session_id=existing.session_id,
-                    run_id=existing.id,
-                    phase=existing_session.phase,
-                    trace_id=existing.trace_id,
-                )
         await self.sessions.create(
             DiagnosisSessionCreate(
                 id=session_id,
@@ -287,6 +287,10 @@ class DiagnosisExecutionService:
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
                 memory=memory,
+                source=session.source,
+                message=payload.message,
+                actor=actor,
+                event_emitter=event_emitter,
             )
         if payload.clarification_answers:
             with self.tracer.start_span(
@@ -530,7 +534,7 @@ class DiagnosisExecutionService:
                 output = await graph.ainvoke(initial)
         except asyncio.CancelledError:
             with anyio.CancelScope(shield=True):
-                await self.runs.finish(run_id, DiagnosisPhase.FAILED, "cancelled")
+                await self.runs.finish(run_id, session.phase, "cancelled")
                 await self.runs.set_hardening_outcome(
                     run_id,
                     first_event_at=getattr(emitter, "first_event_at", None),
@@ -539,21 +543,9 @@ class DiagnosisExecutionService:
                 )
                 await self.sessions.update(
                     payload.session_id,
-                    DiagnosisSessionUpdate(phase=DiagnosisPhase.FAILED, run_id=run_id),
+                    DiagnosisSessionUpdate(phase=session.phase, run_id=session.run_id),
                     trace_id=trace_id,
                 )
-                persisted = await self.memory.get(payload.session_id, trace_id=trace_id)
-                if persisted:
-                    await self.memory.save(
-                        persisted.model_copy(
-                            update={
-                                "phase": DiagnosisPhase.FAILED,
-                                "run_id": run_id,
-                                "trace_id": trace_id,
-                                "updated_at": utc_now(),
-                            }
-                        )
-                    )
             SESSION_FAILURES.labels(category="cancelled").inc()
             raise
         except Exception:
@@ -798,6 +790,10 @@ class DiagnosisExecutionService:
         idempotency_key: str | None,
         fingerprint: str,
         memory: SessionMemoryPayload | None,
+        source: SessionSource,
+        message: str,
+        actor: ActorContext | None,
+        event_emitter: DiagnosisEventEmitter | None,
     ) -> DiagnosisResponse:
         result = memory.final_result if memory else None
         if result is None:
@@ -813,29 +809,75 @@ class DiagnosisExecutionService:
         latest = await self.runs.latest(session_id, trace_id=trace_id)
         parent = memory.run_id if memory else latest.id if latest else ""
         run_id = new_id()
-        await self.runs.create(
-            DiagnosisRunCreate(
-                id=run_id,
-                session_id=session_id,
-                trace_id=trace_id,
-                idempotency_key=idempotency_key,
-                request_hash=fingerprint,
-                phase=DiagnosisPhase.COMPLETED,
-                parent_run_id=parent,
-                run_type="explanation",
-                diagnosis_template_id=memory.diagnosis_template_id if memory else None,
-                diagnosis_template_version=(memory.diagnosis_template_version if memory else None),
-                alarm_category=memory.alarm_category if memory else None,
-            )
+        run_create = DiagnosisRunCreate(
+            id=run_id,
+            session_id=session_id,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+            request_hash=fingerprint,
+            phase=DiagnosisPhase.COMPLETED,
+            parent_run_id=parent,
+            run_type="explanation",
+            diagnosis_template_id=memory.diagnosis_template_id if memory else None,
+            diagnosis_template_version=(memory.diagnosis_template_version if memory else None),
+            alarm_category=memory.alarm_category if memory else None,
         )
+        user_message_event = (
+            self.timeline.create(
+                session_id,
+                TimelineEventType.USER_MESSAGE,
+                run_id,
+                run_id=run_id,
+                actor=actor,
+                payload={"message": message},
+            )
+            if self.timeline
+            else None
+        )
+        if user_message_event:
+            await self.runs.create(run_create, timeline_event=user_message_event)
+        else:
+            await self.runs.create(run_create)
         await self.runs.finish(run_id, DiagnosisPhase.COMPLETED, "completed")
+        if self.timeline:
+            await self.timeline.append(
+                session_id,
+                TimelineEventType.DIAGNOSIS_RESULT,
+                run_id,
+                run_id=run_id,
+                payload={
+                    "summary": result.summary,
+                    "risk_level": result.risk_level,
+                    "evidence_refs": [item.evidence_id for item in result.evidence],
+                    "candidate_causes": [
+                        item.model_dump(mode="json") for item in result.candidate_causes
+                    ],
+                },
+            )
+        state = DiagnosisState(
+            session_id=session_id,
+            run_id=run_id,
+            trace_id=trace_id,
+            phase=DiagnosisPhase.COMPLETED,
+            source=source,
+            user_message=message,
+            followup_mode="explain_previous_result",
+            memory_revision=memory.memory_revision if memory else 1,
+            parent_run_id=parent,
+            intent=DiagnosisIntent.FOLLOWUP_CLARIFICATION,
+            evidence=result.evidence,
+            evidence_refs=[item.evidence_id for item in result.evidence],
+            candidate_causes=result.candidate_causes,
+            risk_level=result.risk_level,
+            final_response=result.model_dump(mode="json"),
+        )
         with self.tracer.start_span(
             "human.explanation",
             trace_id=trace_id,
             metadata={"session_id": session_id, "parent_run_id": parent},
         ):
             pass
-        return DiagnosisResponse(
+        response = DiagnosisResponse(
             session_id=session_id,
             run_id=run_id,
             trace_id=trace_id,
@@ -846,3 +888,9 @@ class DiagnosisExecutionService:
             evidence_refs=[item.evidence_id for item in result.evidence],
             memory_revision=memory.memory_revision if memory else None,
         )
+        await (event_emitter or NoopDiagnosisEventEmitter()).emit(
+            SSEEventType.COMPLETED,
+            state,
+            result=response.model_dump(mode="json"),
+        )
+        return response

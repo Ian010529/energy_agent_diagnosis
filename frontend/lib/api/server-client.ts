@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 
-export async function backendHeaders(): Promise<Headers> {
+export async function frontendActor(): Promise<{ actorId: string; role: string; local: boolean }> {
   const appEnv = process.env.FRONTEND_APP_ENV ?? "local";
   const cookieStore = await cookies();
   const localRole = appEnv === "local" ? cookieStore.get("energy-role")?.value : undefined;
@@ -18,6 +18,11 @@ export async function backendHeaders(): Promise<Headers> {
   const actorId = appEnv === "local"
     ? localActors[role] ?? localActors.operator
     : (process.env.FRONTEND_DEFAULT_ACTOR_ID ?? "frontend-local");
+  return { actorId, role, local: appEnv === "local" };
+}
+
+export async function backendHeaders(): Promise<Headers> {
+  const { actorId, role } = await frontendActor();
   const requestId = randomUUID();
   const headers = new Headers({
     "X-Actor-ID": actorId,
@@ -33,4 +38,21 @@ export async function backendHeaders(): Promise<Headers> {
 export function backendUrl(path: string): URL {
   const base = process.env.BACKEND_BASE_URL ?? "http://127.0.0.1:8000";
   return new URL(path.replace(/^\//, ""), `${base.replace(/\/$/, "")}/`);
+}
+
+export function backendUnavailableResponse(): Response {
+  return Response.json(
+    {
+      error: {
+        code: "BACKEND_UNAVAILABLE",
+        message: "Backend service is unavailable",
+        retryable: true,
+        details: {},
+      },
+    },
+    {
+      status: 503,
+      headers: { "Retry-After": "3" },
+    },
+  );
 }

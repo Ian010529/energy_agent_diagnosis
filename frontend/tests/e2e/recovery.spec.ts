@@ -10,5 +10,7 @@ test("recovers session and timeline after an interrupted SSE request", async ({ 
   await page.goto("/diagnosis/recovery-session");
   await page.getByLabel("诊断消息").fill("继续诊断");
   await page.getByRole("button", { name: "发送消息" }).click();
-  await expect(page.getByText("连接已中断，已从服务器恢复最新状态。")).toBeVisible();
+  await expect(page.getByText("诊断后端尚未就绪或依赖正在降级。")).toBeVisible();
+  await expect(page.getByText("连接已中断，已从服务器恢复最新状态。")).toHaveCount(0);
+  await expect(page.getByLabel("诊断消息")).toHaveValue("继续诊断");
 });

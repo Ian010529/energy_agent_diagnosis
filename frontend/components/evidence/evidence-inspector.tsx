@@ -6,7 +6,7 @@ import { useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { DiagnosisResponse, EvidenceDetail, TimeseriesResponse } from "@/lib/api/types";
 import { api, errorMessage } from "@/lib/api/browser-client";
-import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states";
+import { EmptyState, ErrorState, RequestErrorState, Skeleton } from "@/components/ui/states";
 import { ToolRun } from "@/components/diagnosis/diagnosis-thread";
 
 export function EvidenceCard({ evidence, selected, onSelect }: { evidence: NonNullable<DiagnosisResponse["evidence"]>[number]; selected: boolean; onSelect: () => void }) {
@@ -48,7 +48,7 @@ export function TimeseriesPanel({ sessionId, response, alarmTime }: { sessionId:
   const hasPoints = chartData.length > 0;
   const palette = ["var(--status-info)", "var(--status-complete)", "var(--status-warning)", "var(--text-secondary)"];
   return <div aria-label="诊断时序图">
-    <div className="field"><label>时间范围</label><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}><input className="input" type="datetime-local" value={resolvedStart} onChange={(event) => setStart(event.target.value)} /><input className="input" type="datetime-local" value={resolvedEnd} onChange={(event) => setEnd(event.target.value)} /></div></div>
+    <div className="field"><label>时间范围</label><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}><input aria-label="开始时间" className="input" type="datetime-local" value={resolvedStart} onChange={(event) => setStart(event.target.value)} /><input aria-label="结束时间" className="input" type="datetime-local" value={resolvedEnd} onChange={(event) => setEnd(event.target.value)} /></div></div>
     <div className="row-subtitle">查询窗口：{new Date(query.data.start_time).toLocaleString("zh-CN")} — {new Date(query.data.end_time).toLocaleString("zh-CN")} · 来源 {query.data.window_source}</div>
     <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginBlock: ".75rem" }}>{query.data.series.map((series) => <label className="badge" key={series.metric}><input type="checkbox" checked={selected.includes(series.metric)} onChange={() => setSelectedMetrics(selected.includes(series.metric) ? selected.filter((item) => item !== series.metric) : [...selected, series.metric])} />{series.metric}{series.unit ? ` (${series.unit})` : ""} · {series.points.length} 点{series.points.length ? ` · quality ${[...new Set(series.points.map((point) => point.quality ?? "good"))].join("/")}` : ""}</label>)}</div>
     {hasPoints ? <div style={{ height: "20rem", width: "100%" }}><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData}><CartesianGrid stroke="var(--border-subtle)" vertical={false} /><XAxis dataKey="timestamp" type="number" domain={["dataMin", "dataMax"]} tickFormatter={(value) => new Date(value).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })} stroke="var(--text-muted)" /><YAxis stroke="var(--text-muted)" /><Tooltip labelFormatter={(value) => new Date(Number(value)).toLocaleString("zh-CN")} />{alarmTime ? <ReferenceLine x={new Date(alarmTime).getTime()} stroke="var(--status-warning)" strokeDasharray="3 3" label="告警时间" /> : null}{selected.map((metric, index) => <Line key={metric} type="monotone" dataKey={metric} stroke={palette[index % palette.length]} dot={false} connectNulls isAnimationActive={false} />)}</LineChart></ResponsiveContainer></div> : <EmptyState title="暂无时序点" detail={query.data.empty_reason ?? "所选时间范围内没有数据。可调整上方时间范围后重试。"} />}
@@ -60,7 +60,10 @@ export function EvidenceInspector({ sessionId, response, context, onClose }: { s
   const tools = response.tool_summaries ?? [];
   const degraded = response.degraded_components ?? [];
   const [selected, setSelected] = useState(sorted[0]?.evidence_id ?? "");
-  const detail = useQuery({ queryKey: ["evidence", sessionId, selected], enabled: !!selected, queryFn: () => api<EvidenceDetail>(`diagnosis/sessions/${sessionId}/evidence/${encodeURIComponent(selected)}`) });
+  const resolvedSelected = sorted.some((item) => item.evidence_id === selected)
+    ? selected
+    : sorted[0]?.evidence_id ?? "";
+  const detail = useQuery({ queryKey: ["evidence", sessionId, resolvedSelected], enabled: !!resolvedSelected, queryFn: () => api<EvidenceDetail>(`diagnosis/sessions/${sessionId}/evidence/${encodeURIComponent(resolvedSelected)}`) });
   const runtime = useQuery({ queryKey: ["runtime"], queryFn: async () => (await fetch("/api/runtime")).json() as Promise<{ langfuse_url: string | null }> });
   const alarm = useQuery({ queryKey: ["alarm", context?.alarmId], enabled: !!context?.alarmId, queryFn: () => api<{ trigger_time: string }>(`alarms/${encodeURIComponent(context?.alarmId ?? "")}`) });
   return <Tabs.Root defaultValue="evidence" className="panel inspector">
@@ -69,10 +72,10 @@ export function EvidenceInspector({ sessionId, response, context, onClose }: { s
       {[["evidence", "Evidence"], ["timeseries", "Time Series"], ["tools", "Tools"], ["trace", "Trace"]].map(([value, label]) => <Tabs.Trigger className="tab" value={value} key={value}>{label}</Tabs.Trigger>)}
     </Tabs.List>
     <Tabs.Content value="evidence" className="inspector-content">
-      {sorted.length ? sorted.map((item) => <EvidenceCard key={item.evidence_id} evidence={item} selected={selected === item.evidence_id} onSelect={() => setSelected(item.evidence_id)} />) : <EmptyState title="暂无 Evidence" />}
-      {detail.data ? <div className="result-block"><h3>{detail.data.title}</h3><p>{detail.data.content_excerpt || detail.data.summary}</p><div className="mono">{detail.data.citation}</div><dl>{Object.entries(detail.data.scores).map(([name, value]) => <div key={name}><dt>{name}</dt><dd className="score">{value == null ? "—" : value.toFixed(3)}</dd></div>)}</dl></div> : null}
+      {sorted.length ? sorted.map((item) => <EvidenceCard key={item.evidence_id} evidence={item} selected={resolvedSelected === item.evidence_id} onSelect={() => setSelected(item.evidence_id)} />) : <EmptyState title="暂无 Evidence" />}
+      {detail.isLoading ? <Skeleton rows={2} /> : detail.error ? <RequestErrorState error={detail.error} retry={() => void detail.refetch()} /> : detail.data ? <div className="result-block"><h3>{detail.data.title}</h3><p>{detail.data.content_excerpt || detail.data.summary}</p><div className="mono">{detail.data.citation}</div><dl>{Object.entries(detail.data.scores).map(([name, value]) => <div key={name}><dt>{name}</dt><dd className="score">{value == null ? "—" : value.toFixed(3)}</dd></div>)}</dl></div> : null}
     </Tabs.Content>
-    <Tabs.Content value="timeseries" className="inspector-content"><TimeseriesPanel sessionId={sessionId} response={response} alarmTime={alarm.data?.trigger_time} /></Tabs.Content>
+    <Tabs.Content value="timeseries" className="inspector-content">{alarm.error && !response.result ? <RequestErrorState error={alarm.error} retry={() => void alarm.refetch()} /> : <TimeseriesPanel sessionId={sessionId} response={response} alarmTime={alarm.data?.trigger_time} />}</Tabs.Content>
     <Tabs.Content value="tools" className="inspector-content">{tools.length ? tools.map((tool, index) => <ToolRun key={`${String(tool.tool_name)}-${index}`} name={String(tool.tool_name ?? "tool")} status={String(tool.status ?? "unknown")} summary={typeof tool.summary === "string" ? tool.summary : null} hasUsableData={typeof tool.has_usable_data === "boolean" ? tool.has_usable_data : null} resultRef={typeof tool.result_ref === "string" ? tool.result_ref : null} />) : <EmptyState title="暂无工具记录" />}</Tabs.Content>
     <Tabs.Content value="trace" className="inspector-content"><dl><dt>Trace ID</dt><dd className="mono truncate" title={response.trace_id}>{response.trace_id}</dd><dt>Run ID</dt><dd className="mono truncate" title={response.run_id}>{response.run_id}</dd><dt>Template</dt><dd className="mono">{context?.templateId ? `${context.templateId} · ${context.templateVersion ?? "version unknown"}` : "当前响应未公开"}</dd><dt>Prompt version</dt><dd>当前安全响应未公开</dd><dt>降级组件</dt><dd>{degraded.length ? degraded.join("、") : "无"}</dd></dl>{runtime.data?.langfuse_url ? <a className="button" href={runtime.data.langfuse_url} target="_blank" rel="noreferrer">在 LangFuse 中按 Trace ID 查询</a> : <span className="button" aria-disabled="true">LangFuse 未配置</span>}</Tabs.Content>
   </Tabs.Root>;

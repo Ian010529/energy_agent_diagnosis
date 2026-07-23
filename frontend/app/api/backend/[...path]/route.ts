@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { backendHeaders, backendUrl } from "@/lib/api/server-client";
+import { backendHeaders, backendUnavailableResponse, backendUrl } from "@/lib/api/server-client";
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
@@ -10,12 +10,17 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   if (contentType) headers.set("Content-Type", contentType);
   const idempotency = request.headers.get("idempotency-key");
   if (idempotency) headers.set("Idempotency-Key", idempotency);
-  const response = await fetch(target, {
-    method: request.method,
-    headers,
-    body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.arrayBuffer(),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(target, {
+      method: request.method,
+      headers,
+      body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.arrayBuffer(),
+      cache: "no-store",
+    });
+  } catch {
+    return backendUnavailableResponse();
+  }
   const outgoing = new Headers();
   for (const name of ["content-type", "retry-after", "x-trace-id", "x-request-id"]) {
     const value = response.headers.get(name);

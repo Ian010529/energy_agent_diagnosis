@@ -1,3 +1,5 @@
+import { ApiError } from "./browser-client";
+
 export const DIAGNOSIS_EVENTS = new Set([
   "intent_identified",
   "data_fetch_started",
@@ -53,14 +55,29 @@ export async function streamDiagnosis(
   body: Record<string, unknown>,
   onEvent: (event: DiagnosisEvent) => void,
   signal?: AbortSignal,
+  idempotencyKey?: string,
 ): Promise<void> {
   const response = await fetch(`/api/stream/diagnosis/${encodeURIComponent(sessionId)}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+    },
     body: JSON.stringify(body),
     signal,
   });
-  if (!response.ok || !response.body) throw new Error(`STREAM_${response.status}`);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as {
+      error?: { code?: string; message?: string };
+    };
+    throw new ApiError(
+      payload.error?.message ?? `Request failed (${response.status})`,
+      response.status,
+      payload.error?.code ?? "UNKNOWN",
+      Number(response.headers.get("retry-after")) || null,
+    );
+  }
+  if (!response.body) throw new Error("STREAM_BODY_MISSING");
   const parser = new SSEParser();
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8");

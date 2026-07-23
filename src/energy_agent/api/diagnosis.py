@@ -111,11 +111,13 @@ async def stream_message(
             response.headers["Retry-After"] = "1"
             return response
     emitter = QueueDiagnosisEventEmitter()
+    idempotency_key = request.headers.get("idempotency-key")
 
     async def run_workflow() -> None:
         try:
             await service.diagnose(
                 DiagnosisChatRequest(session_id=session_id, **payload.model_dump()),
+                idempotency_key=idempotency_key,
                 actor=actor,
                 event_emitter=emitter,
             )

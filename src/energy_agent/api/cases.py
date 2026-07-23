@@ -30,7 +30,7 @@ async def review_diagnosis(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisReviewResponse:
     actor = actor_from_request(request, explicit=True)
-    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
     return await service.review_diagnosis(session_id, payload, actor, idempotency_key)
 
@@ -96,7 +96,7 @@ async def patch_case(
     service: CaseServiceDependency,
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
-    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
     return await service.patch(case_id, payload, actor)
 
@@ -109,7 +109,7 @@ async def submit_case(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
-    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
     return await service.submit(case_id, actor, idempotency_key)
 
@@ -151,7 +151,7 @@ async def revise_case(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> DiagnosisCase:
     actor = actor_from_request(request, explicit=True)
-    require_roles(actor, {ActorRole.OPERATOR, ActorRole.REVIEWER, ActorRole.ADMIN})
+    require_roles(actor, {ActorRole.REVIEWER, ActorRole.ADMIN})
     require_pilot_write(request, actor)
     return await service.revision(case_id, payload, actor, idempotency_key)
 

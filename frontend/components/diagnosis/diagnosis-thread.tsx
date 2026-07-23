@@ -4,6 +4,7 @@ import { Send, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { DiagnosisResponse, TimelineResponse } from "@/lib/api/types";
+import { ApiError, errorMessage } from "@/lib/api/browser-client";
 import { streamDiagnosis, type DiagnosisEvent } from "@/lib/api/sse";
 import { DiagnosisResultBlock } from "./result-components";
 
@@ -20,7 +21,10 @@ const kindTitle: Record<string, string> = {
 
 export function TimelineItem({ item }: { item: TimelineResponse["items"][number] }) {
   const payload = (item.payload ?? {}) as Record<string, unknown>;
-  const text = payloadText(payload, "message") || payloadText(payload, "question") || payloadText(payload, "answer") || payloadText(payload, "summary") || item.title || "状态已更新";
+  const requestedQuestions = Array.isArray(payload.requested_questions)
+    ? payload.requested_questions.filter((value): value is string => typeof value === "string").join("；")
+    : "";
+  const text = payloadText(payload, "message") || payloadText(payload, "question") || payloadText(payload, "answer") || requestedQuestions || payloadText(payload, "comments") || payloadText(payload, "summary") || item.title || "状态已更新";
   const tone = item.kind === "error" ? "error" : item.kind === "diagnosis_result" ? "complete" : item.kind.includes("progress") ? "running" : "";
   return <article className="timeline-item">
     <span className={`timeline-dot ${tone}`} aria-hidden />
@@ -36,7 +40,7 @@ export function ToolRun({ name, status, summary, hasUsableData, resultRef }: { n
   return <div className="evidence-row"><div style={{ display: "flex", justifyContent: "space-between" }}><strong>{name}</strong><span className="badge">{status}</span></div>{summary ? <p>{summary}</p> : null}<div className="row-subtitle">可用数据：{hasUsableData == null ? "未报告" : hasUsableData ? "是" : "否"}{resultRef ? ` · ${resultRef}` : ""}</div></div>;
 }
 
-export function ClarificationForm({ response, onSubmit, disabled }: { response: DiagnosisResponse; onSubmit: (message: string, answers: Array<{ question_id: string; answer: string }>) => Promise<void>; disabled: boolean }) {
+export function ClarificationForm({ response, onSubmit, disabled }: { response: DiagnosisResponse; onSubmit: (message: string, answers: Array<{ question_id: string; answer: string }>) => Promise<boolean>; disabled: boolean }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const questions = response.clarification_questions ?? [];
   if (response.phase !== "NEED_USER_INPUT" || !questions.length) return null;
@@ -47,10 +51,26 @@ export function ClarificationForm({ response, onSubmit, disabled }: { response: 
   </form>;
 }
 
-export function DiagnosisComposer({ disabled, onSend }: { disabled: boolean; onSend: (message: string) => Promise<void> }) {
+export function DiagnosisComposer({ disabled, onSend, storageKey }: { disabled: boolean; onSend: (message: string, idempotencyKey: string) => Promise<boolean>; storageKey: string }) {
   const [value, setValue] = useState("");
-  async function submit(event: FormEvent) { event.preventDefault(); if (!value.trim()) return; const message = value.trim(); await onSend(message); setValue(""); }
-  return <form className="composer" onSubmit={submit}><div className="composer-box"><textarea aria-label="诊断消息" placeholder="补充现象、追问依据或继续诊断…" value={value} onChange={(event) => setValue(event.target.value)} disabled={disabled} /><button className="icon-button" aria-label="发送消息" disabled={disabled || !value.trim()}><Send size={17} /></button></div></form>;
+  const idempotencyStorageKey = `${storageKey}:idempotency`;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setValue(sessionStorage.getItem(storageKey) ?? ""), 0);
+    return () => window.clearTimeout(timer);
+  }, [storageKey]);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!value.trim()) return;
+    const message = value.trim();
+    const idempotencyKey = sessionStorage.getItem(idempotencyStorageKey) ?? crypto.randomUUID();
+    sessionStorage.setItem(idempotencyStorageKey, idempotencyKey);
+    if (await onSend(message, idempotencyKey)) {
+      sessionStorage.removeItem(storageKey);
+      sessionStorage.removeItem(idempotencyStorageKey);
+      setValue("");
+    }
+  }
+  return <form className="composer" onSubmit={submit}><div className="composer-box"><textarea aria-label="诊断消息" placeholder="补充现象、追问依据或继续诊断…" value={value} onChange={(event) => { setValue(event.target.value); sessionStorage.setItem(storageKey, event.target.value); sessionStorage.removeItem(idempotencyStorageKey); }} disabled={disabled} /><button className="icon-button" aria-label="发送消息" disabled={disabled || !value.trim()}><Send size={17} /></button></div></form>;
 }
 
 export function DiagnosisThread({ sessionId, response, timeline, onRecover, canWrite = true }: { sessionId: string; response: DiagnosisResponse; timeline: TimelineResponse; onRecover: () => Promise<void>; canWrite?: boolean }) {
@@ -58,9 +78,12 @@ export function DiagnosisThread({ sessionId, response, timeline, onRecover, canW
   const [streaming, setStreaming] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [disconnected, setDisconnected] = useState(false);
+  const [failure, setFailure] = useState("");
+  const [composerRevision, setComposerRevision] = useState(0);
   const liveRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const initialMessageSentRef = useRef(false);
+  const automaticIdempotencyKeys = useRef(new Map<string, string>());
   useEffect(() => () => controllerRef.current?.abort(), []);
   useEffect(() => {
     if (!streaming) return;
@@ -68,35 +91,74 @@ export function DiagnosisThread({ sessionId, response, timeline, onRecover, canW
     const timer = window.setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1_000);
     return () => window.clearInterval(timer);
   }, [streaming]);
-  const send = useCallback(async (message: string, answers: Array<{ question_id: string; answer: string }> = []) => {
-    setElapsedSeconds(0); setStreaming(true); setDisconnected(false); setEvents([]);
+  const send = useCallback(async (message: string, answers: Array<{ question_id: string; answer: string }> = [], idempotencyKey?: string) => {
+    const fingerprint = JSON.stringify({
+      message,
+      answers,
+      memoryRevision: response.memory_revision,
+      phase: response.phase,
+    });
+    const automaticKey = idempotencyKey == null;
+    const resolvedIdempotencyKey = idempotencyKey
+      ?? automaticIdempotencyKeys.current.get(fingerprint)
+      ?? crypto.randomUUID();
+    if (automaticKey) automaticIdempotencyKeys.current.set(fingerprint, resolvedIdempotencyKey);
+    setElapsedSeconds(0); setStreaming(true); setDisconnected(false); setFailure(""); setEvents([]);
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
-      await streamDiagnosis(sessionId, { message, clarification_answers: answers, expected_memory_revision: response.memory_revision }, (event) => setEvents((old) => [...old, event]), controller.signal);
+      await streamDiagnosis(sessionId, {
+        message,
+        clarification_answers: answers,
+        expected_memory_revision: response.memory_revision,
+        followup_mode: response.phase === "COMPLETED" ? "explain_previous_result" : undefined,
+      }, (event) => setEvents((old) => [...old, event]), controller.signal, resolvedIdempotencyKey);
       await onRecover();
-    } catch {
+      if (automaticKey) automaticIdempotencyKeys.current.delete(fingerprint);
+      return true;
+    } catch (error) {
       if (!controller.signal.aborted) {
-        setDisconnected(true);
-        await onRecover();
+        if (error instanceof ApiError) setFailure(errorMessage(error));
+        else setDisconnected(true);
+        try {
+          await onRecover();
+        } catch {
+          setDisconnected(true);
+        }
       }
+      return false;
     } finally { if (controllerRef.current === controller) controllerRef.current = null; setStreaming(false); }
-  }, [onRecover, response.memory_revision, sessionId]);
+  }, [onRecover, response.memory_revision, response.phase, sessionId]);
   useEffect(() => {
     if (!canWrite) return;
     if (initialMessageSentRef.current) return;
     const key = `energy-initial-message:${sessionId}`;
+    const idempotencyKeyStorage = `${key}:idempotency`;
     const message = sessionStorage.getItem(key);
     if (!message) return;
     initialMessageSentRef.current = true;
-    sessionStorage.removeItem(key);
-    queueMicrotask(() => void send(message));
+    const idempotencyKey = sessionStorage.getItem(idempotencyKeyStorage) ?? crypto.randomUUID();
+    sessionStorage.setItem(idempotencyKeyStorage, idempotencyKey);
+    queueMicrotask(() => void send(message, [], idempotencyKey).then((sent) => {
+      if (sent) {
+        sessionStorage.removeItem(key);
+        sessionStorage.removeItem(idempotencyKeyStorage);
+      }
+      else {
+        sessionStorage.removeItem(key);
+        sessionStorage.removeItem(idempotencyKeyStorage);
+        sessionStorage.setItem(`energy-diagnosis-draft:${sessionId}`, message);
+        sessionStorage.setItem(`energy-diagnosis-draft:${sessionId}:idempotency`, idempotencyKey);
+        setComposerRevision((value) => value + 1);
+      }
+    }));
   }, [canWrite, send, sessionId]);
   const blocked = response.result?.guardrail_decision?.status === "BLOCKED";
   const failed = response.phase === "FAILED";
   return <>
     <div className="thread" ref={liveRef}>
       {disconnected ? <div className="banner warning" role="status"><WifiOff size={16} />连接已中断，已从服务器恢复最新状态。</div> : null}
+      {failure ? <div className="banner danger" role="alert">{failure}</div> : null}
       {!canWrite ? <div className="banner warning">viewer 为只读角色，不能发送消息或提交现场补充。</div> : null}
       {failed ? <div className="banner danger" role="alert">本次诊断已失败，已完成的进度仍保留在时间线中。<Link className="button" href="/diagnosis/new">新建诊断</Link></div> : null}
       {blocked ? <div className="banner danger" role="alert">该结果已被 Guardrail 阻断，不能作为诊断成功或提交确认。</div> : null}
@@ -106,6 +168,6 @@ export function DiagnosisThread({ sessionId, response, timeline, onRecover, canW
       {response.result ? <DiagnosisResultBlock result={response.result} /> : null}
       <div aria-live="polite" className="timeline-kicker">{streaming ? `诊断正在运行 · ${elapsedSeconds} 秒（混合检索和模型调用通常需要 10–60 秒）` : disconnected ? "流已恢复" : ""}</div>
     </div>
-    <DiagnosisComposer disabled={!canWrite || streaming || failed || response.phase === "COMPLETED"} onSend={(message) => send(message)} />
+    <DiagnosisComposer key={`${sessionId}:${composerRevision}`} disabled={!canWrite || streaming || failed} onSend={(message, idempotencyKey) => send(message, [], idempotencyKey)} storageKey={`energy-diagnosis-draft:${sessionId}`} />
   </>;
 }

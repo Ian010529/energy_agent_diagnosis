@@ -39,6 +39,10 @@ REVIEWER = {
     "X-Actor-ID": "reviewer-phase4",
     "X-Actor-Role": "reviewer",
 }
+ADMIN = {
+    "X-Actor-ID": "admin-phase4",
+    "X-Actor-Role": "admin",
+}
 
 
 class _Embedding:
@@ -63,6 +67,11 @@ class _Milvus:
         assert source == "case"
         for item in ids:
             self.rows.pop(item, None)
+
+
+class _FailingDeleteMilvus:
+    async def delete(self, source: str, ids: list[str]) -> None:
+        raise ConnectionError("test tombstone failure")
 
 
 async def _reset_and_seed() -> None:
@@ -249,8 +258,25 @@ async def _database_readback(session_id: str, case_id: str) -> dict[str, object]
             .scalars()
             .all()
         )
+        timeline = (
+            (
+                await session.execute(
+                    select(DiagnosisTimelineEventModel)
+                    .where(DiagnosisTimelineEventModel.session_id == session_id)
+                    .order_by(DiagnosisTimelineEventModel.sequence)
+                )
+            )
+            .scalars()
+            .all()
+        )
     await engine.dispose()
-    return {"runs": runs, "case": case, "events": events, "audits": audits}
+    return {
+        "runs": runs,
+        "case": case,
+        "events": events,
+        "audits": audits,
+        "timeline": timeline,
+    }
 
 
 @pytest.fixture
@@ -336,7 +362,7 @@ def test_clarification_restore_validation_and_explanation(phase4_data: None) -> 
 
         explanation = client.post(
             f"/api/v1/diagnosis/sessions/{created['session_id']}/messages",
-            headers=OPERATOR,
+            headers={**OPERATOR, "Idempotency-Key": "explanation-phase4"},
             json={
                 "message": "为什么这样判断",
                 "followup_mode": "explain_previous_result",
@@ -346,10 +372,53 @@ def test_clarification_restore_validation_and_explanation(phase4_data: None) -> 
         explained = explanation.json()
         assert explained["run_id"] != completed["run_id"]
         assert explained["evidence_refs"] == completed["evidence_refs"]
+        stream_replay = client.post(
+            f"/api/v1/diagnosis/sessions/{created['session_id']}/messages/stream",
+            headers={**OPERATOR, "Idempotency-Key": "explanation-phase4"},
+            json={
+                "message": "为什么这样判断",
+                "followup_mode": "explain_previous_result",
+            },
+        )
+        assert stream_replay.status_code == 200, stream_replay.text
+        more_info = client.post(
+            f"/api/v1/diagnosis/sessions/{created['session_id']}/review",
+            headers={**REVIEWER, "Idempotency-Key": "more-info-phase4"},
+            json={
+                "review_result": "needs_more_info",
+                "comments": "请补充现场信息",
+                "requested_questions": ["风扇是否转动？", "滤网是否积尘？"],
+            },
+        )
+        assert more_info.status_code == 200, more_info.text
+        timeline = client.get(
+            f"/api/v1/diagnosis/sessions/{created['session_id']}/timeline",
+            headers=OPERATOR,
+        )
+        assert timeline.status_code == 200, timeline.text
+        review_item = next(
+            item
+            for item in timeline.json()["items"]
+            if item["kind"] == "review"
+            and item["payload"].get("review_result") == "needs_more_info"
+        )
+        assert review_item["payload"]["requested_questions"] == [
+            "风扇是否转动？",
+            "滤网是否积尘？",
+        ]
 
         readback = asyncio.run(_database_readback(str(created["session_id"]), "missing"))
         assert readback["runs"][-1].run_type == "explanation"
         assert readback["runs"][-1].parent_run_id == completed["run_id"]
+        assert sum(item.run_type == "explanation" for item in readback["runs"]) == 1
+        explanation_timeline = [
+            item for item in readback["timeline"] if item.run_id == explained["run_id"]
+        ]
+        assert [item.event_type for item in explanation_timeline] == [
+            "user_message",
+            "diagnosis_result",
+        ]
+        assert explanation_timeline[0].payload["message"] == "为什么这样判断"
 
 
 @pytest.mark.integration
@@ -391,9 +460,21 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         ).json()
         root_cause = diagnosis["result"]["candidate_causes"][0]["cause"]
         evidence_ref = diagnosis["result"]["candidate_causes"][0]["supporting_evidence"][0]
-        review = client.post(
+        operator_review = client.post(
             f"/api/v1/diagnosis/sessions/{created['session_id']}/review",
             headers={**OPERATOR, "Idempotency-Key": "review-phase4"},
+            json={
+                "review_result": "confirmed",
+                "root_cause": root_cause,
+                "resolution_steps": ["授权断电后更换风扇"],
+                "comments": "现场已确认",
+                "evidence_refs": [evidence_ref],
+            },
+        )
+        assert operator_review.status_code == 403
+        review = client.post(
+            f"/api/v1/diagnosis/sessions/{created['session_id']}/review",
+            headers={**REVIEWER, "Idempotency-Key": "review-phase4"},
             json={
                 "review_result": "confirmed",
                 "root_cause": root_cause,
@@ -408,13 +489,13 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         case_id = review_body["case_id"]
         submitted = client.post(
             f"/api/v1/cases/{case_id}/submit",
-            headers={**OPERATOR, "Idempotency-Key": "submit-phase4"},
+            headers={**REVIEWER, "Idempotency-Key": "submit-phase4"},
         )
         assert submitted.status_code == 200, submitted.text
         assert submitted.json()["review_status"] == "PENDING_REVIEW"
         self_review = client.post(
             f"/api/v1/cases/{case_id}/review",
-            headers={**OPERATOR, "Idempotency-Key": "self-review"},
+            headers={**REVIEWER, "Idempotency-Key": "self-review"},
             json={"decision": "approve"},
         )
         assert self_review.status_code == 403
@@ -428,7 +509,7 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
             case_application.embedding = _FailingEmbedding()
         approved = client.post(
             f"/api/v1/cases/{case_id}/review",
-            headers={**REVIEWER, "Idempotency-Key": "approve-phase4"},
+            headers={**ADMIN, "Idempotency-Key": "approve-phase4"},
             json={"decision": "approve", "comment": "内容完整"},
         )
         assert approved.status_code == 200, approved.text
@@ -451,7 +532,7 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
             case_application.embedding = _FailingEmbedding()
             replayed_approval = client.post(
                 f"/api/v1/cases/{case_id}/review",
-                headers={**REVIEWER, "Idempotency-Key": "approve-phase4"},
+                headers={**ADMIN, "Idempotency-Key": "approve-phase4"},
                 json={"decision": "approve", "comment": "内容完整"},
             )
             assert replayed_approval.status_code == 200, replayed_approval.text
@@ -482,9 +563,18 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
             item["source_type"] == "case" and item["citation"] == f"[案例: {case_id} v1]"
             for item in second_result["result"]["evidence"]
         )
-        revision = client.post(
+        operator_revision = client.post(
             f"/api/v1/cases/{case_id}/revisions",
             headers={**OPERATOR, "Idempotency-Key": "revision-phase4"},
+            json={
+                "symptom_summary": "机柜温度升高且风扇转速为零",
+                "submit_for_review": True,
+            },
+        )
+        assert operator_revision.status_code == 403
+        revision = client.post(
+            f"/api/v1/cases/{case_id}/revisions",
+            headers={**ADMIN, "Idempotency-Key": "revision-phase4"},
             json={
                 "symptom_summary": "机柜温度升高且风扇转速为零",
                 "submit_for_review": True,
@@ -508,12 +598,23 @@ def test_roles_review_case_index_retrieval_disable_and_audit(phase4_data: None) 
         if not live:
             assert case_id not in milvus.rows
             assert revision_id in milvus.rows
+        if not live:
+            case_application.milvus = _FailingDeleteMilvus()
         disabled = client.post(
             f"/api/v1/cases/{revision_id}/disable",
             headers={**REVIEWER, "Idempotency-Key": "disable-phase4"},
             json={"reason": "案例已失效"},
         )
         assert disabled.status_code == 200, disabled.text
+        if not live:
+            assert disabled.json()["index_status"] == "FAILED"
+            assert revision_id in milvus.rows
+            case_application.milvus = milvus
+            disabled = client.post(
+                f"/api/v1/cases/{revision_id}/reindex",
+                headers={**REVIEWER, "Idempotency-Key": "tombstone-retry-phase4"},
+            )
+            assert disabled.status_code == 200, disabled.text
         assert disabled.json()["index_status"] == "TOMBSTONED"
         if not live:
             assert revision_id not in milvus.rows

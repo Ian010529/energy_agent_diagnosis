@@ -225,6 +225,7 @@ class CaseApplicationService:
                     "review_id": review_id,
                     "review_result": payload.review_result,
                     "comments": payload.comments or "",
+                    "requested_questions": payload.requested_questions,
                     "evidence_refs": payload.evidence_refs,
                 },
             )
@@ -483,17 +484,16 @@ class CaseApplicationService:
             updates={
                 "is_active": False,
                 "index_status": (
-                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.TOMBSTONED
+                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.PENDING
                 ),
             },
             index_request=index_request,
         )
-        if transition.replayed:
-            return transition.case
         case = transition.case
-        if self.index_execution_mode == "sync" and self.milvus:
-            await self.milvus.delete("case", [case_id])
-        await self._audit_case(actor, "case.disabled", case)
+        if self.index_execution_mode == "sync":
+            case = await self._tombstone(case, actor, action_prefix="case.disable")
+        if not transition.replayed:
+            await self._audit_case(actor, "case.disabled", case)
         return case
 
     async def revision(
@@ -576,16 +576,26 @@ class CaseApplicationService:
                 if event.request_hash != fingerprint:
                     raise CaseStateConflictError("Idempotency key reused with different request")
                 return await self.get(case_id)
-        if case.review_status != CaseStatus.APPROVED or case.index_status not in {
+        retry_upsert = case.review_status == CaseStatus.APPROVED and case.index_status in {
             CaseIndexStatus.FAILED,
             CaseIndexStatus.PENDING,
             CaseIndexStatus.DEGRADED,
-        }:
+        }
+        retry_tombstone = case.review_status in {
+            CaseStatus.DISABLED,
+            CaseStatus.SUPERSEDED,
+        } and case.index_status in {
+            CaseIndexStatus.FAILED,
+            CaseIndexStatus.PENDING,
+            CaseIndexStatus.DEGRADED,
+        }
+        if not retry_upsert and not retry_tombstone:
             raise CaseNotIndexedError("Case is not eligible for reindex")
         if self.index_execution_mode == "rabbitmq":
+            operation = IndexOperation.REINDEX if retry_upsert else IndexOperation.TOMBSTONE
             updated = await self.cases.queue_index(
                 case_id,
-                request=self._index_request(case, IndexOperation.REINDEX),
+                request=self._index_request(case, operation),
                 actor_id=actor.actor_id,
                 actor_role=actor.actor_role,
                 action="case.reindex_queued",
@@ -608,6 +618,8 @@ class CaseApplicationService:
             trace_id=self.trace_id(),
         )
         await self._audit_case(actor, "case.reindex_started", case)
+        if retry_tombstone:
+            return await self._tombstone(case, actor, action_prefix="case.tombstone_retry")
         return await self._index(case, actor, action_prefix="case.reindex")
 
     async def history(self, case_id: str) -> list[CaseReviewEvent]:
@@ -673,6 +685,29 @@ class CaseApplicationService:
             await self._audit_case(actor, f"{action_prefix}_failed", updated)
             return updated
 
+    async def _tombstone(
+        self, case: DiagnosisCase, actor: ActorContext, *, action_prefix: str
+    ) -> DiagnosisCase:
+        try:
+            if self.milvus:
+                await self.milvus.delete("case", [case.case_id])
+            updated = await self.cases.set_index(
+                case.case_id,
+                CaseIndexStatus.TOMBSTONED,
+                active=False,
+            )
+            await self._audit_case(actor, f"{action_prefix}_succeeded", updated)
+            return updated
+        except Exception:
+            updated = await self.cases.set_index(
+                case.case_id,
+                CaseIndexStatus.FAILED,
+                error_code="CASE_TOMBSTONE_PROVIDER_FAILED",
+                active=False,
+            )
+            await self._audit_case(actor, f"{action_prefix}_failed", updated)
+            return updated
+
     async def _supersede(self, case_id: str, actor: ActorContext) -> None:
         with self.tracer.start_span(
             "case.supersede",
@@ -699,17 +734,16 @@ class CaseApplicationService:
             updates={
                 "is_active": False,
                 "index_status": (
-                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.TOMBSTONED
+                    CaseIndexStatus.QUEUED if index_request else CaseIndexStatus.PENDING
                 ),
             },
             index_request=index_request,
         )
-        if transition.replayed:
-            return
         old = transition.case
-        if self.index_execution_mode == "sync" and self.milvus:
-            await self.milvus.delete("case", [case_id])
-        await self._audit_case(actor, "case.superseded", old)
+        if self.index_execution_mode == "sync":
+            old = await self._tombstone(old, actor, action_prefix="case.supersede")
+        if not transition.replayed:
+            await self._audit_case(actor, "case.superseded", old)
 
     def _index_request(self, case: DiagnosisCase, operation: IndexOperation) -> IndexJobCreate:
         trace_id = self.trace_id()
