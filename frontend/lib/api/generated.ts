@@ -2,6 +2,7 @@
 export interface components {
   schemas: {
     "ActionExecutionStatus": "not_executed";
+    "ActorRole": "viewer" | "operator" | "reviewer" | "admin";
     "AlarmItem": { "alarm_id": string; "device_id": string; "site_id": string; "alarm_name": string; "alarm_level": string; "trigger_time": string; "status": string; "source_system": string; "alarm_category"?: string | null; "supported": boolean; "template_id"?: string | null; "template_version"?: string | null; };
     "AlarmListResponse": { "items": (components["schemas"]["AlarmItem"])[]; "next_cursor"?: string | null; "has_more"?: boolean; };
     "AuthCapability": { "mode": string; "pilot_mode": boolean; };
@@ -15,6 +16,7 @@ export interface components {
     "CaseReviewRequest": { "decision": string; "comment"?: string | null; };
     "CaseRevisionRequest": { "device_type"?: string | null; "device_model"?: string | null; "manufacturer"?: string | null; "alarm_name"?: string | null; "symptom_summary"?: string | null; "timeseries_features"?: string | null; "root_cause"?: string | null; "resolution_steps"?: (string)[] | null; "safety_notes"?: (string)[] | null; "evidence_refs"?: (string)[] | null; "submit_for_review"?: boolean; };
     "CaseStatus": "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "DISABLED" | "SUPERSEDED";
+    "ChangePasswordRequest": { "current_password": string; "new_password": string; };
     "ClarificationAnswer": { "question_id": string; "answer": string; };
     "ClarificationQuestion": { "question_id": string; "question": string; "reason": string; "expected_answer_type"?: string; };
     "CreateSessionRequest": { "source": components["schemas"]["SessionSource"]; "site_id"?: string | null; "device_id"?: string | null; "alarm_id"?: string | null; "alarm_name"?: string | null; };
@@ -38,9 +40,13 @@ export interface components {
     "GuardrailStatus": "PASSED" | "PASSED_WITH_WARNINGS" | "NEED_USER_INPUT" | "BLOCKED";
     "HTTPValidationError": { "detail"?: (components["schemas"]["ValidationError"])[]; };
     "LiveResponse": { "status": "alive"; "trace_id": string; };
+    "LoginRequest": { "username": string; "password": string; };
+    "LogoutRequest": { "refresh_token": string; };
     "ReadyDependencies": { "mysql": "up" | "down"; "redis": "up" | "down"; "influxdb": "up" | "down"; "minio": "up" | "down" | "optional"; "milvus": "up" | "down" | "optional"; "embedding": "up" | "down" | "optional"; "reranker": "up" | "down" | "optional"; "langfuse"?: "optional"; };
     "ReadyResponse": { "status": "ready" | "not_ready"; "dependencies": components["schemas"]["ReadyDependencies"]; "capabilities": { [key: string]: "ready" | "degraded" | "not_ready"; }; "trace_id": string; };
     "RecommendedAction": { "action_id": string; "description": string; "risk_level": components["schemas"]["RiskLevel"]; "requires_human_confirmation": boolean; "required_role"?: string | null; "evidence_refs"?: (string)[]; "execution_status"?: components["schemas"]["ActionExecutionStatus"]; };
+    "RefreshRequest": { "refresh_token": string; };
+    "ResetPasswordRequest": { "temporary_password": string; };
     "RiskLevel": "low" | "medium" | "high" | "critical" | "unknown";
     "SessionMessageRequest": { "message": string; "clarification_answers"?: (components["schemas"]["ClarificationAnswer"])[]; "expected_memory_revision"?: number | null; "followup_mode"?: string | null; };
     "SessionSource": "alarm" | "chat";
@@ -53,6 +59,12 @@ export interface components {
     "TimelineResponse": { "session_id": string; "history_complete": boolean; "items": (components["schemas"]["TimelineItem"])[]; };
     "TimeseriesPoint": { "timestamp": string; "value": number; "quality"?: string; };
     "TimeseriesSeries": { "metric": string; "unit"?: string | null; "points": (components["schemas"]["TimeseriesPoint"])[]; };
+    "TokenResponse": { "access_token": string; "refresh_token": string; "token_type"?: string; "access_expires_in": number; "refresh_expires_in": number; "user": components["schemas"]["UserProfile"]; };
+    "UserCreateRequest": { "username": string; "display_name": string; "email"?: string | null; "role": components["schemas"]["ActorRole"]; "initial_password": string; };
+    "UserListResponse": { "items": (components["schemas"]["UserProfile"])[]; "next_cursor"?: string | null; "has_more"?: boolean; };
+    "UserPatchRequest": { "display_name"?: string | null; "email"?: string | null; "role"?: components["schemas"]["ActorRole"] | null; };
+    "UserProfile": { "user_id": string; "username": string; "display_name": string; "email"?: string | null; "role": components["schemas"]["ActorRole"]; "status": components["schemas"]["UserStatus"]; "must_change_password": boolean; "last_login_at"?: string | null; "created_at": string; "updated_at": string; };
+    "UserStatus": "ACTIVE" | "DISABLED";
     "ValidationError": { "loc": (string | number)[]; "msg": string; "type": string; "input"?: unknown; "ctx"?: {  }; };
   };
 }

@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
-import { backendHeaders, backendUnavailableResponse, backendUrl } from "@/lib/api/server-client";
+import { backendHeaders, backendUnavailableResponse, backendUrl, sameOrigin } from "@/lib/api/server-client";
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
+  if (!["GET", "HEAD"].includes(request.method) && !sameOrigin(request)) {
+    return Response.json(
+      { error: { code: "CSRF_REJECTED", message: "Cross-origin request rejected" } },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const target = backendUrl(`/api/v1/${path.join("/")}`);
   target.search = request.nextUrl.search;
   const headers = await backendHeaders();
@@ -26,6 +32,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     const value = response.headers.get(name);
     if (value) outgoing.set(name, value);
   }
+  if (!["GET", "HEAD"].includes(request.method)) outgoing.set("Cache-Control", "no-store");
   return new Response(response.body, { status: response.status, headers: outgoing });
 }
 

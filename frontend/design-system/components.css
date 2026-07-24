@@ -1,4 +1,5 @@
 .app-frame { height: 100dvh; display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); overflow: hidden; }
+.app-frame.auth-frame { grid-template-columns: minmax(0, 1fr); }
 .navigation-rail { background: var(--surface-canvas); border-right: 1px solid var(--border-subtle); padding: var(--space-3) 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); z-index: 5; }
 .brand-mark { width: 2rem; height: 2rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 0.72rem; font-weight: 700; letter-spacing: -.04em; background: var(--surface-panel); }
 .rail-link, .icon-button { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: grid; place-items: center; color: var(--text-secondary); background: transparent; cursor: pointer; }
@@ -96,5 +97,7 @@ textarea.input { padding: var(--space-3); min-height: 6rem; resize: vertical; }
 .command-results span { color: var(--text-muted); font: .7rem var(--font-mono); }
 .reviews-layout { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: var(--space-8); }
 .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--space-2); margin-bottom: var(--space-4); }
+.users-toolbar { height: auto; padding-block: var(--space-3); display: grid; grid-template-columns: minmax(12rem, 1.4fr) minmax(9rem, 1fr) minmax(9rem, 1fr) auto; gap: var(--space-2); }
+.users-toolbar .button { white-space: nowrap; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
 .responsive-drawer > .inspector { flex: 1; border-left: 0; }

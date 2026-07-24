@@ -32,17 +32,33 @@
 	test-integration-frontend-api up-phase7 down-phase7 frontend-docker-build \
 	frontend-docker-smoke prepare-phase7-e2e-data phase7-check
 
+.PHONY: bootstrap-admin test-unit-auth test-contract-auth test-integration-auth \
+	frontend-test-auth frontend-e2e-auth auth-check
+
+.PHONY: module-list module-check
+
 LOCAL_TEST_ENV = APP_ENV=test AUTH_MODE=development_headers INTERNAL_API_KEY= \
 	PILOT_MODE=false PILOT_ALLOWED_ACTORS= INDEX_EXECUTION_MODE=sync \
 	GRAPH_MODE=disabled RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules \
 	EMBEDDING_MODE=disabled RERANK_MODE=disabled MODEL_MODE=disabled \
 	OBSERVABILITY_MODE=local
+AUTH_INTEGRATION_DSN = mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent_auth_integration
+AUTH_E2E_DSN = mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent_auth_e2e
+AUTH_ACCESS_SECRET = auth-access-secret-at-least-thirty-two-bytes
+AUTH_REFRESH_SECRET = auth-refresh-secret-at-least-thirty-two-bytes
 
 verify-design:
 	git diff --exit-code -- docs/immutable/能源设备运维诊断Agent_详细设计.md
 
 architecture-check:
 	uv run python scripts/check_module_boundaries.py
+
+module-list:
+	@uv run python scripts/run_module_check.py --list
+
+module-check:
+	@test -n "$(MODULE)" || (echo "usage: make module-check MODULE=<module>"; exit 2)
+	$(LOCAL_TEST_ENV) uv run python scripts/run_module_check.py "$(MODULE)"
 
 lint:
 	uv run ruff format --check .
@@ -457,4 +473,68 @@ frontend-docker-smoke: frontend-docker-build
 phase7-check: verify-design architecture-check up-phase7 migrate phase6-check test-unit-phase7 test-contract-phase7 \
 	test-integration-frontend-api frontend-contract-check frontend-lint frontend-typecheck \
 	frontend-test frontend-build prepare-phase7-e2e-data frontend-e2e frontend-visual \
+	frontend-docker-smoke
+
+bootstrap-admin:
+	uv run python -m energy_agent.users.cli bootstrap-admin
+
+test-unit-auth:
+	$(LOCAL_TEST_ENV) uv run pytest tests/unit/test_phase7_5_auth.py
+
+test-contract-auth:
+	$(LOCAL_TEST_ENV) uv run pytest tests/contract/test_phase7_5_auth_contracts.py
+
+test-integration-auth: up-core
+	@set -e; \
+		auth_db=energy_agent_auth_integration; \
+		cleanup() { \
+			docker compose exec -T mysql mysql -uroot -proot_dev \
+				-e "DROP DATABASE IF EXISTS $$auth_db" >/dev/null; \
+			docker compose exec -T redis redis-cli -n 14 FLUSHDB >/dev/null; \
+		}; \
+		trap cleanup EXIT; \
+		cleanup; \
+		docker compose exec -T mysql mysql -uroot -proot_dev \
+			-e "CREATE DATABASE $$auth_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON $$auth_db.* TO 'energy'@'%';"; \
+		MYSQL_DSN="$(AUTH_INTEGRATION_DSN)" \
+			uv run alembic -c migrations/control/alembic.ini upgrade head; \
+		APP_ENV=test AUTH_MODE=jwt INTERNAL_API_KEY=auth-integration-key \
+		MYSQL_DSN="$(AUTH_INTEGRATION_DSN)" REDIS_URL=redis://localhost:6379/14 \
+		JWT_ACCESS_SECRET="$(AUTH_ACCESS_SECRET)" JWT_REFRESH_SECRET="$(AUTH_REFRESH_SECRET)" \
+		PILOT_MODE=false RATE_LIMIT_ENABLED=true INDEX_EXECUTION_MODE=sync GRAPH_MODE=disabled \
+		RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules EMBEDDING_MODE=disabled \
+		RERANK_MODE=disabled MODEL_MODE=disabled OBSERVABILITY_MODE=local \
+		uv run pytest -m integration tests/integration/auth
+
+frontend-test-auth:
+	cd frontend && pnpm test -- tests/unit/auth.test.tsx
+
+frontend-e2e-auth: up-core
+	@set -e; \
+		auth_db=energy_agent_auth_e2e; \
+		cleanup() { \
+			docker compose exec -T mysql mysql -uroot -proot_dev \
+				-e "DROP DATABASE IF EXISTS $$auth_db" >/dev/null; \
+			docker compose exec -T redis redis-cli -n 15 FLUSHDB >/dev/null; \
+		}; \
+		trap cleanup EXIT; \
+		cleanup; \
+		docker compose exec -T mysql mysql -uroot -proot_dev \
+			-e "CREATE DATABASE $$auth_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON $$auth_db.* TO 'energy'@'%';"; \
+		MYSQL_DSN="$(AUTH_E2E_DSN)" \
+			uv run alembic -c migrations/control/alembic.ini upgrade head; \
+		APP_ENV=test AUTH_MODE=jwt MYSQL_DSN="$(AUTH_E2E_DSN)" \
+		JWT_ACCESS_SECRET="$(AUTH_ACCESS_SECRET)" JWT_REFRESH_SECRET="$(AUTH_REFRESH_SECRET)" \
+		BOOTSTRAP_ADMIN_USERNAME=e2e-admin \
+		BOOTSTRAP_ADMIN_PASSWORD=e2e-admin-password-1 \
+		BOOTSTRAP_ADMIN_DISPLAY_NAME="E2E Admin" \
+			uv run python -m energy_agent.users.cli bootstrap-admin; \
+		uv run python /Users/chl/.codex/skills/webapp-testing/scripts/with_server.py --timeout 60 \
+			--server "APP_ENV=test AUTH_MODE=jwt INTERNAL_API_KEY=auth-e2e-key MYSQL_DSN=$(AUTH_E2E_DSN) REDIS_URL=redis://localhost:6379/15 JWT_ACCESS_SECRET=$(AUTH_ACCESS_SECRET) JWT_REFRESH_SECRET=$(AUTH_REFRESH_SECRET) PILOT_MODE=false RATE_LIMIT_ENABLED=true RATE_LIMIT_AUTH_LOGIN_USERNAME=50 RATE_LIMIT_AUTH_LOGIN_SOURCE=100 RATE_LIMIT_AUTH_REFRESH_PER_MINUTE=100 LOG_LEVEL=WARNING INDEX_EXECUTION_MODE=sync GRAPH_MODE=disabled RETRIEVAL_MODE=keyword_only QUERY_REWRITE_MODE=rules EMBEDDING_MODE=disabled RERANK_MODE=disabled MODEL_MODE=disabled OBSERVABILITY_MODE=local uv run uvicorn energy_agent.app:app --host 127.0.0.1 --port 8000 --log-level warning" --port 8000 \
+			--server "cd frontend && BACKEND_BASE_URL=http://127.0.0.1:8000 BACKEND_INTERNAL_API_KEY=auth-e2e-key FRONTEND_AUTH_MODE=jwt AUTH_COOKIE_SECURE=false pnpm dev" --port 3000 \
+			-- zsh -lc "cd frontend && PHASE75_REAL_E2E=1 pnpm exec playwright test tests/e2e/auth.spec.ts --project=chromium --workers=1"
+
+auth-check: verify-design architecture-check lint typecheck test-unit-auth test-contract-auth \
+	test-integration-auth openapi-export frontend-generate-client frontend-lint \
+	frontend-typecheck frontend-test-auth frontend-e2e-auth docker-smoke \
 	frontend-docker-smoke

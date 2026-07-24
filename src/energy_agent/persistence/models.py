@@ -351,6 +351,52 @@ class AuditEventModel(Base):
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
 
 
+class AppUserModel(Base):
+    __tablename__ = "app_user"
+    __table_args__ = (UniqueConstraint("email", name="uq_app_user_email"),)
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    username: Mapped[str] = mapped_column(String(128), nullable=False)
+    username_normalized: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
+    password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+    must_change_password: Mapped[bool] = mapped_column(nullable=False, default=True)
+    token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    failed_login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    last_login_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    last_password_changed_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    created_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+
+
+class AuthRefreshSessionModel(Base):
+    __tablename__ = "auth_refresh_session"
+    __table_args__ = (
+        Index("ix_auth_refresh_user_revoked", "user_id", "revoked_at"),
+        Index("ix_auth_refresh_family", "token_family_id"),
+        Index("ix_auth_refresh_expires", "expires_at"),
+    )
+
+    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("app_user.user_id"), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_family_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    jti: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    rotated_from_session_id: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    expires_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6))
+    revoke_reason: Mapped[str | None] = mapped_column(String(128))
+    ip_hash: Mapped[str | None] = mapped_column(String(64))
+    user_agent_hash: Mapped[str | None] = mapped_column(String(64))
+
+
 class IndexJobModel(Base):
     __tablename__ = "index_job"
     __table_args__ = (

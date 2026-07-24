@@ -1,6 +1,11 @@
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import Any, Protocol
 
+from pydantic import BaseModel
+
+from energy_agent.agent.events import DiagnosisEventEmitter
+from energy_agent.agent.state import DiagnosisState
 from energy_agent.contracts.diagnosis import (
     DiagnosisResultCreate,
     DiagnosisResultRecord,
@@ -9,12 +14,29 @@ from energy_agent.contracts.diagnosis import (
     DiagnosisSessionCreate,
     DiagnosisSessionRecord,
     DiagnosisSessionUpdate,
+    SessionMemoryPayload,
     StepLogCreate,
     StepLogRecord,
 )
 from energy_agent.core.context import ActorContext, ServiceActorContext
 from energy_agent.reliability.contracts import AlarmDedupHit
 from energy_agent.timeline.contracts import TimelineEventCreate
+from energy_agent.tools.contracts import ToolResult
+
+MemoryWriterPort = Callable[[DiagnosisState], Awaitable[None]]
+ToolLogPort = Callable[[str, ToolResult, datetime, datetime], Awaitable[None]]
+StepLogPort = Callable[
+    [
+        DiagnosisState,
+        str,
+        dict[str, object] | None,
+        BaseException | None,
+        datetime,
+        datetime,
+        int,
+    ],
+    Awaitable[None],
+]
 
 
 class DiagnosisSessionPort(Protocol):
@@ -106,3 +128,47 @@ class AlarmDedupPort(Protocol):
         alarm_id: str,
         session_id: str,
     ) -> None: ...
+
+
+class SessionMemoryPort(Protocol):
+    async def save(self, payload: SessionMemoryPayload) -> None: ...
+
+    async def get(self, session_id: str, *, trace_id: str) -> SessionMemoryPayload | None: ...
+
+
+class ModelGenerationPort(Protocol):
+    async def generate(
+        self,
+        *,
+        trace_id: str,
+        session_id: str,
+        node_name: str,
+        prompt_version: str,
+        system_prompt: str,
+        evidence_package: dict[str, object],
+        output_schema: type[BaseModel],
+    ) -> BaseModel | None: ...
+
+
+class ToolExecutorPort(Protocol):
+    @property
+    def tool_names(self) -> frozenset[str]: ...
+
+    async def execute(
+        self, name: str, arguments: dict[str, object], trace_id: str
+    ) -> ToolResult: ...
+
+
+class DiagnosisGraphPort(Protocol):
+    async def ainvoke(self, state: DiagnosisState) -> Any: ...
+
+
+class DiagnosisRuntimeFactoryPort(Protocol):
+    def create(
+        self,
+        *,
+        tool_logger: ToolLogPort,
+        memory_writer: MemoryWriterPort,
+        step_logger: StepLogPort,
+        emitter: DiagnosisEventEmitter,
+    ) -> DiagnosisGraphPort: ...

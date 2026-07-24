@@ -11,7 +11,8 @@ from energy_agent.catalog.contracts import (
     SiteListResponse,
     TemplateCapability,
 )
-from energy_agent.catalog.repository import CatalogRepository, encode_cursor
+from energy_agent.catalog.cursors import encode_cursor
+from energy_agent.catalog.ports import CatalogRepositoryPort
 from energy_agent.core.config import Settings
 from energy_agent.templates.registry import TemplateAmbiguousError, TemplateNotFoundError
 from energy_agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY, route_template
@@ -39,7 +40,7 @@ def map_alarm(record: AlarmRecord) -> AlarmItem:
 
 
 class CatalogService:
-    def __init__(self, repository: CatalogRepository, settings: Settings) -> None:
+    def __init__(self, repository: CatalogRepositoryPort, settings: Settings) -> None:
         self.repository = repository
         self.settings = settings
 

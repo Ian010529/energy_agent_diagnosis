@@ -27,32 +27,70 @@ CONCRETE_PROVIDER_EXCEPTIONS = {
     "retrieval/smoke.py": "provider smoke-test composition root",
 }
 
-SERVICE_FILES = {
-    "agent/service.py",
-    "agent/session_service.py",
-    "agent/execution_service.py",
-    "agent/persistence_coordinator.py",
-    "cases/service.py",
-    "cases/diagnosis_review.py",
-    "cases/lifecycle.py",
-    "cases/indexing.py",
-    "catalog/service.py",
-    "timeline/service.py",
-    "evidence/service.py",
-    "retrieval/service.py",
-    "graph/service.py",
-}
-
 # Application services may depend on module-owned Protocols, never concrete
 # persistence adapters. Infrastructure-oriented repositories/handlers are not
 # included here because they are adapter implementations, not application code.
-APPLICATION_SERVICE_FILES = SERVICE_FILES | {
+ADDITIONAL_APPLICATION_FILES = {
+    "agent/persistence_coordinator.py",
+    "cases/diagnosis_review.py",
+    "cases/lifecycle.py",
+    "cases/indexing.py",
     "cases/application.py",
     "cases/review_recorder.py",
     "indexing/publisher.py",
-    "indexing/service.py",
-    "retrieval/ingestion/service.py",
 }
+
+LOGICAL_MODULES = {
+    "agent",
+    "cases",
+    "catalog",
+    "evidence",
+    "graph",
+    "guardrails",
+    "indexing",
+    "memory",
+    "model",
+    "retrieval",
+    "timeline",
+    "tools",
+    "users",
+}
+
+APPLICATION_GRAPH_EXCLUSIONS = {
+    "graph/bootstrap.py",
+    "indexing/worker.py",
+    "retrieval/ingestion/cli.py",
+    "retrieval/ingestion/index_tickets.py",
+    "retrieval/smoke.py",
+}
+
+
+def is_application_service(relative: str) -> bool:
+    return (
+        relative.endswith("/service.py")
+        or relative.endswith("_service.py")
+        or relative in ADDITIONAL_APPLICATION_FILES
+    )
+
+
+def is_application_graph_file(relative: str) -> bool:
+    if relative in APPLICATION_GRAPH_EXCLUSIONS:
+        return False
+    parts = relative.split("/")
+    if parts[0] not in LOGICAL_MODULES:
+        return False
+    if any(part in {"implementations", "ingestion"} for part in parts[1:-1]):
+        return False
+    filename = parts[-1]
+    return filename not in {
+        "bootstrap.py",
+        "cli.py",
+        "gateway.py",
+        "repository.py",
+        "session_store.py",
+        "smoke.py",
+        "worker.py",
+    }
 
 
 def imported_modules(tree: ast.AST) -> list[tuple[int, str]]:
@@ -96,10 +134,27 @@ def check_python(path: Path) -> list[Violation]:
             )
         ):
             add(line, "contracts-inward-only", module)
-        if relative in SERVICE_FILES and module.startswith(("fastapi", "starlette")):
+        if is_application_service(relative) and module.startswith(("fastapi", "starlette")):
             add(line, "services-framework-free", module)
-        if relative in APPLICATION_SERVICE_FILES and module.startswith("energy_agent.persistence"):
+        if is_application_service(relative) and module.startswith(
+            ("energy_agent.persistence", "energy_agent.providers", "sqlalchemy")
+        ):
             add(line, "application-no-persistence-adapters", module)
+        if is_application_service(relative):
+            owner = relative.split("/", 1)[0]
+            if module.startswith(f"energy_agent.{owner}.repository"):
+                add(line, "application-depends-on-port", module)
+        if relative.startswith("agent/") and module.startswith(
+            (
+                "energy_agent.memory.session_store",
+                "energy_agent.model.gateway",
+                "energy_agent.tools.executor",
+                "energy_agent.tools.registry",
+            )
+        ):
+            add(line, "agent-capability-contract-only", module)
+        if relative.startswith("guardrails/") and module.startswith("energy_agent.agent"):
+            add(line, "guardrails-no-agent", module)
         if relative == "evidence/service.py" and module.startswith(
             ("sqlalchemy", "energy_agent.persistence.models")
         ):
@@ -137,10 +192,50 @@ def check_python(path: Path) -> list[Violation]:
     return violations
 
 
+def logical_module_cycles() -> list[list[str]]:
+    edges: dict[str, set[str]] = {module: set() for module in LOGICAL_MODULES}
+    for path in sorted(SRC.rglob("*.py")):
+        relative = path.relative_to(SRC).as_posix()
+        if not is_application_graph_file(relative):
+            continue
+        source = relative.split("/", 1)[0]
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for _, imported in imported_modules(tree):
+            if not imported.startswith("energy_agent."):
+                continue
+            target = imported.split(".", 2)[1]
+            if target in LOGICAL_MODULES and target != source:
+                edges[source].add(target)
+
+    cycles: set[tuple[str, ...]] = set()
+
+    def visit(start: str, current: str, path: list[str]) -> None:
+        for target in edges[current]:
+            if target == start:
+                ring = path[:]
+                rotations = [tuple(ring[index:] + ring[:index]) for index in range(len(ring))]
+                cycles.add(min(rotations))
+            elif target not in path:
+                visit(start, target, [*path, target])
+
+    for module in sorted(LOGICAL_MODULES):
+        visit(module, module, [module])
+    return [list(cycle) for cycle in sorted(cycles)]
+
+
 def main() -> int:
     violations: list[Violation] = []
     for path in sorted(SRC.rglob("*.py")):
         violations.extend(check_python(path))
+    for cycle in logical_module_cycles():
+        violations.append(
+            Violation(
+                Path("src/energy_agent"),
+                1,
+                "logical-module-cycle",
+                " -> ".join([*cycle, cycle[0]]),
+            )
+        )
     frontend = ROOT / "frontend"
     for path in sorted(frontend.rglob("*.ts*")):
         if not path.is_file():

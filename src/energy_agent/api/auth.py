@@ -14,6 +14,11 @@ from energy_agent.core.errors import (
 
 def actor_from_request(request: Request, *, explicit: bool = False) -> ActorContext:
     settings = request.app.state.container.settings
+    if settings.auth_mode == "jwt":
+        actor = request.scope.get("energy_actor")
+        if not isinstance(actor, ActorContext):
+            raise ActorRequiredError("Authenticated user is required")
+        return actor
     actor_id = request.headers.get("X-Actor-ID")
     role_value = request.headers.get("X-Actor-Role")
     if settings.auth_mode == "trusted_headers":

@@ -27,7 +27,9 @@ return current
 
 
 class RateLimiter(Protocol):
-    async def allow(self, actor_id: str, group: str, limit: int) -> tuple[bool, int]: ...
+    async def allow(
+        self, actor_id: str, group: str, limit: int, window_seconds: int = 60
+    ) -> tuple[bool, int]: ...
 
     async def acquire_stream(self, actor_id: str, limit: int) -> bool: ...
 
@@ -42,9 +44,11 @@ class RedisRateLimiter:
     def actor_hash(actor_id: str) -> str:
         return hashlib.sha256(actor_id.encode()).hexdigest()[:24]
 
-    async def allow(self, actor_id: str, group: str, limit: int) -> tuple[bool, int]:
+    async def allow(
+        self, actor_id: str, group: str, limit: int, window_seconds: int = 60
+    ) -> tuple[bool, int]:
         key = f"rate:v1:{group}:{self.actor_hash(actor_id)}"
-        allowed, ttl = await self.redis.eval(_SCRIPT, 1, key, 60, limit)
+        allowed, ttl = await self.redis.eval(_SCRIPT, 1, key, window_seconds, limit)
         return bool(allowed), max(1, int(ttl))
 
     async def acquire_stream(self, actor_id: str, limit: int) -> bool:

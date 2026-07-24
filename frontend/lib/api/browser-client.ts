@@ -9,7 +9,73 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+let refreshFlight: Promise<boolean> | null = null;
+type AuthMessage = "auth-refreshed" | "auth-logged-out";
+const localListeners = new Set<(message: AuthMessage) => void>();
+const channel = typeof window !== "undefined" && "BroadcastChannel" in window
+  ? new BroadcastChannel("energy-auth")
+  : null;
+
+function publishAuth(message: AuthMessage) {
+  for (const listener of localListeners) listener(message);
+  channel?.postMessage(message);
+}
+
+export async function refreshSession(): Promise<boolean> {
+  if (refreshFlight) return refreshFlight;
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), 5_000);
+  const refresh = () => fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    keepalive: true,
+    signal: controller.signal,
+  }).then((response) => {
+    if (response.ok) publishAuth("auth-refreshed");
+    return response.ok;
+  }).catch(() => false);
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  const refreshWithLock = async (): Promise<boolean> => {
+    try {
+      if (!locks) return await refresh();
+      return await locks.request(
+        "energy-auth-refresh",
+        { signal: controller.signal },
+        refresh,
+      );
+    } catch {
+      return false;
+    } finally {
+      globalThis.clearTimeout(timeout);
+    }
+  };
+  const flight = refreshWithLock().finally(() => { refreshFlight = null; });
+  refreshFlight = flight;
+  return flight;
+}
+
+export function broadcastLogout() {
+  publishAuth("auth-logged-out");
+}
+
+export function subscribeAuth(
+  listener: (message: AuthMessage) => void,
+): () => void {
+  localListeners.add(listener);
+  const onMessage = (event: MessageEvent) => {
+    if (event.data === "auth-refreshed" || event.data === "auth-logged-out") {
+      listener(event.data);
+    }
+  };
+  channel?.addEventListener("message", onMessage);
+  return () => {
+    localListeners.delete(listener);
+    channel?.removeEventListener("message", onMessage);
+  };
+}
+
+export async function api<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const response = await fetch(`/api/backend/${path.replace(/^\//, "")}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
@@ -19,10 +85,16 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     const payload = await response.json().catch(() => ({})) as {
       error?: { code?: string; message?: string };
     };
+    const code = payload.error?.code ?? "UNKNOWN";
+    if (!retried && response.status === 401 && ["AUTH_TOKEN_EXPIRED", "AUTH_TOKEN_INVALID"].includes(code)) {
+      if (await refreshSession()) return api<T>(path, init, true);
+      broadcastLogout();
+      if (typeof window !== "undefined") window.location.assign("/login");
+    }
     throw new ApiError(
       payload.error?.message ?? `Request failed (${response.status})`,
       response.status,
-      payload.error?.code ?? "UNKNOWN",
+      code,
       Number(response.headers.get("retry-after")) || null,
     );
   }

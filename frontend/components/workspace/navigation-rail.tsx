@@ -1,10 +1,11 @@
 "use client";
 
-import { BriefcaseMedical, ClipboardCheck, FileStack, MonitorCog, SunMoon } from "lucide-react";
+import { BriefcaseMedical, ClipboardCheck, FileStack, LogOut, MonitorCog, SunMoon, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { nextTheme, resolvedTheme } from "@/lib/theme";
+import { useAuth } from "@/lib/auth/provider";
 
 const links = [
   { href: "/diagnosis", label: "诊断", icon: BriefcaseMedical },
@@ -15,6 +16,7 @@ const links = [
 
 export function NavigationRail() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const sync = () => {
@@ -41,10 +43,13 @@ export function NavigationRail() {
           <Icon size={18} strokeWidth={1.7} aria-hidden />
         </Link>
       ))}
+      {user?.role === "admin" ? <Link href="/users" className="rail-link" title="用户管理" aria-label="用户管理" aria-current={pathname.startsWith("/users") ? "page" : undefined}><Users size={18} /></Link> : null}
       <span className="rail-spacer" />
       <button className="icon-button theme-rail" onClick={toggleTheme} aria-label="循环切换 system、light、dark 主题" title="切换主题偏好">
         <SunMoon size={17} />
       </button>
+      <Link href="/account" className="rail-link" title={user ? `${user.display_name} · ${user.role}` : "账户"} aria-label="账户"><UserRound size={17} /></Link>
+      <button className="icon-button theme-rail" onClick={() => void logout()} aria-label="退出"><LogOut size={17} /></button>
     </nav>
   );
 }

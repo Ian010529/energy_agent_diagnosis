@@ -1,4 +1,3 @@
-from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
 from langgraph.graph import END, START, StateGraph
@@ -10,26 +9,23 @@ from energy_agent.agent.nodes.diagnosis import (
     _extract_entity_ids,
     build_diagnosis_nodes,
 )
+from energy_agent.agent.ports import MemoryWriterPort, ModelGenerationPort, ToolExecutorPort
 from energy_agent.agent.state import DiagnosisState
 from energy_agent.contracts.common import DiagnosisPhase
 from energy_agent.guardrails.service import GuardrailService
-from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.tracing import Tracer
 from energy_agent.templates.routing import DEFAULT_TEMPLATE_REGISTRY
-from energy_agent.tools.executor import ToolExecutor
 
-MEMORY_WRITER = Callable[[DiagnosisState], Awaitable[None]]
-
-__all__ = ["MEMORY_WRITER", "_extract_entity_ids", "build_diagnosis_graph"]
+__all__ = ["_extract_entity_ids", "build_diagnosis_graph"]
 
 
 def build_diagnosis_graph(
-    executor: ToolExecutor,
+    executor: ToolExecutorPort,
     tracer: Tracer,
     *,
-    memory_writer: MEMORY_WRITER,
+    memory_writer: MemoryWriterPort,
     step_logger: NodeLogCallable | None = None,
-    model_gateway: ModelGateway | None = None,
+    model_gateway: ModelGenerationPort | None = None,
     event_emitter: DiagnosisEventEmitter | None = None,
 ) -> Any:
     emitter = event_emitter or NoopDiagnosisEventEmitter()

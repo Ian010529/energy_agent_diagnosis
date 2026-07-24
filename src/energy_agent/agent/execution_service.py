@@ -10,10 +10,11 @@ from energy_agent.agent.ports import (
     AuditPort,
     DiagnosisResultPort,
     DiagnosisRunPort,
+    DiagnosisRuntimeFactoryPort,
     DiagnosisSessionPort,
     DiagnosisStepLogPort,
+    SessionMemoryPort,
 )
-from energy_agent.agent.runtime_factory import RuntimeFactory
 from energy_agent.agent.state import (
     AlarmContext,
     DeviceContext,
@@ -47,8 +48,6 @@ from energy_agent.core.errors import (
 from energy_agent.core.idempotency import request_fingerprint
 from energy_agent.core.ids import new_id
 from energy_agent.core.time import utc_now
-from energy_agent.memory.session_store import RedisSessionStore
-from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.metrics import (
     ALARM_DEDUP,
     DIAGNOSIS_DURATION,
@@ -60,11 +59,9 @@ from energy_agent.observability.metrics import (
     SESSION_FAILURES,
 )
 from energy_agent.observability.tracing import Tracer
-from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.timeline.contracts import TimelineEventType
 from energy_agent.timeline.ports import TimelineWriter
 from energy_agent.tools.contracts import ToolResult
-from energy_agent.tools.registry import ToolRegistry
 
 
 class DiagnosisExecutionService:
@@ -75,13 +72,11 @@ class DiagnosisExecutionService:
         runs: DiagnosisRunPort,
         results: DiagnosisResultPort,
         step_logs: DiagnosisStepLogPort,
-        memory: RedisSessionStore,
-        tools: ToolRegistry,
+        memory: SessionMemoryPort,
+        runtime_factory: DiagnosisRuntimeFactoryPort,
         tracer: Tracer,
-        model_gateway: ModelGateway | None = None,
         audit: AuditPort | None = None,
         alarm_dedup: AlarmDedupPort | None = None,
-        circuit_breakers: CircuitBreakerRegistry | None = None,
         timeline: TimelineWriter | None = None,
     ) -> None:
         self.sessions = sessions
@@ -89,12 +84,10 @@ class DiagnosisExecutionService:
         self.results = results
         self.step_logs = step_logs
         self.memory = memory
-        self.tools = tools
+        self.runtime_factory = runtime_factory
         self.tracer = tracer
-        self.model_gateway = model_gateway
         self.audit = audit
         self.alarm_dedup = alarm_dedup
-        self.circuit_breakers = circuit_breakers
         self.timeline = timeline
 
     @staticmethod
@@ -517,9 +510,7 @@ class DiagnosisExecutionService:
             )
 
         emitter = event_emitter or NoopDiagnosisEventEmitter()
-        graph = RuntimeFactory(
-            self.tools, self.tracer, self.model_gateway, self.circuit_breakers
-        ).create(
+        graph = self.runtime_factory.create(
             tool_logger=log_tool,
             memory_writer=write_memory,
             step_logger=log_step,

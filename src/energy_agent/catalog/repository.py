@@ -1,6 +1,4 @@
-import base64
-import binascii
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -11,6 +9,7 @@ from energy_agent.catalog.contracts import (
     DiagnosisSessionItem,
     SiteItem,
 )
+from energy_agent.catalog.cursors import decode_cursor, encode_cursor, query_datetime
 from energy_agent.core.errors import InvalidRequestError, ResourceNotFoundError
 from energy_agent.core.time import ensure_utc
 from energy_agent.persistence.models import (
@@ -20,28 +19,7 @@ from energy_agent.persistence.models import (
     DiagnosisSessionModel,
 )
 
-
-def encode_cursor(value: str) -> str:
-    return base64.urlsafe_b64encode(value.encode()).decode().rstrip("=")
-
-
-def decode_cursor(value: str | None) -> str | None:
-    if not value:
-        return None
-    try:
-        decoded = base64.b64decode(
-            value + "=" * (-len(value) % 4), altchars=b"-_", validate=True
-        ).decode()
-        if not decoded:
-            raise ValueError("empty cursor")
-        return decoded
-    except (binascii.Error, ValueError, UnicodeDecodeError) as exc:
-        raise InvalidRequestError("Cursor is invalid") from exc
-
-
-def query_datetime(value: object) -> datetime:
-    parsed = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
-    return parsed.astimezone(UTC).replace(tzinfo=None) if parsed.tzinfo is not None else parsed
+__all__ = ["CatalogRepository", "decode_cursor", "encode_cursor", "query_datetime"]
 
 
 class CatalogRepository:

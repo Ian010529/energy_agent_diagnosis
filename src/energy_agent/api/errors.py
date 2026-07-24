@@ -13,6 +13,7 @@ from energy_agent.core.errors import (
     DomainError,
     InvalidRequestError,
     PermissionDeniedError,
+    RateLimitExceededError,
     ResourceNotFoundError,
 )
 from energy_agent.core.ids import new_id
@@ -51,7 +52,9 @@ def install_error_handlers(app: FastAPI) -> None:
     async def handle_domain_error(request: Request, exc: DomainError) -> JSONResponse:
         log_event(logger, logging.WARNING, "domain_error", error_code=exc.code)
         status = (
-            401
+            429
+            if isinstance(exc, RateLimitExceededError)
+            else 401
             if isinstance(exc, AuthenticationError)
             else 403
             if isinstance(exc, PermissionDeniedError)

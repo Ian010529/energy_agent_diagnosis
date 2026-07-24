@@ -1,6 +1,8 @@
+from collections.abc import Sequence
 from typing import Any, Protocol
 
 from energy_agent.core.context import ActorContext, ServiceActorContext
+from energy_agent.indexing.contracts import IndexJobRecord, IndexJobStatus
 
 
 class EmbeddingPort(Protocol):
@@ -34,3 +36,32 @@ class IndexAuditPort(Protocol):
         case_id: str | None = None,
         snapshot: dict[str, Any] | None = None,
     ) -> None: ...
+
+
+class IndexConsumerRepositoryPort(Protocol):
+    async def start(self, job_id: str) -> IndexJobRecord | None: ...
+
+    async def finish(self, job_id: str, status: IndexJobStatus) -> None: ...
+
+    async def fail(
+        self,
+        job_id: str,
+        *,
+        error_code: str,
+        error_message: str,
+        retry_delay_ms: int | None,
+    ) -> None: ...
+
+
+class OutboxRecordPort(Protocol):
+    id: int
+    job_id: str
+    payload: dict[str, Any]
+
+
+class IndexOutboxRepositoryPort(Protocol):
+    async def pending_outbox(self, limit: int = 50) -> Sequence[OutboxRecordPort]: ...
+
+    async def mark_published(self, outbox_id: int, job_id: str) -> None: ...
+
+    async def mark_publish_failed(self, outbox_id: int, error_code: str) -> None: ...

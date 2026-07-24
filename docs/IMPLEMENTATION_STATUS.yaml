@@ -11,16 +11,43 @@ development_mode:
   priority: vertical_slice_first
 
 current_phase:
-  id: PHASE_7_FRONTEND_MVP_AND_PRODUCT_VALIDATION
-  status: COMPLETED
+  id: PHASE_7_5_JWT_USER_AUTH_AND_MANAGEMENT
+  status: IN_PROGRESS
   objective: >
-    完成 Codex-inspired 前端、BFF、真实 SSE 诊断线程、证据审查、
-    人工审核、案例管理、系统状态和跨设备响应式设计。
+    在现有模块化单体、Next.js BFF 和四角色权限基础上，
+    增量实现 JWT 登录、用户账户、管理员用户管理、密码安全、
+    Refresh Token 轮换和前端身份保护。
+
+current_task:
+  - add_user_persistence
+  - add_jwt_authentication
+  - add_refresh_rotation
+  - add_admin_user_management
+  - integrate_bff_http_only_cookies
+  - add_login_and_account_pages
+  - add_route_protection
 
 architecture_boundary_review:
   status: COMPLETED
   baseline_commit: "3a9736952dabd8e5d410e853a60935232637d95e"
   architecture_check: PASSED
+  service_adapter_violations: 0
+  logical_module_cycles: 0
+  targeted_module_checks: PASSED
+  independently_checked_modules:
+    - agent
+    - cases
+    - catalog
+    - evidence
+    - graph
+    - guardrails
+    - indexing
+    - memory
+    - model
+    - retrieval
+    - timeline
+    - tools
+    - users
   report_path: docs/development/MODULE_BOUNDARIES.md
   behavior_change: false
   openapi_change: false
@@ -67,6 +94,61 @@ last_completed:
   - phase_5_async_index_graph_and_scenario_expansion
   - phase_6_evaluation_risk_and_pilot_hardening
   - phase_7_frontend_mvp_and_product_validation
+
+phase7_5_validation:
+  implementation: COMPLETED
+  acceptance_date: "2026-07-24"
+  acceptance_scope: PHASE_7_5_VERTICAL_SLICE
+  auth_check: TARGETED_EQUIVALENT_PASSED
+  targeted_module_gate: PASSED
+  real_user_bugfixes:
+    invalid_access_cookie_redirect_loop: FIXED
+    cross_tab_refresh_race: FIXED_WITH_BROWSER_LOCK_AND_TIMEOUT
+    same_tab_auth_event_delivery: FIXED
+    login_navigation_race: FIXED
+    revoked_session_login_loading_deadlock: FIXED
+    logout_audit_on_invalid_refresh: FIXED
+    csrf_scheme_validation: FIXED
+    auth_response_cache_control: FIXED
+    login_rate_limit_message: FIXED
+    auth_rate_limit_group_collision: FIXED
+    concurrent_last_admin_removal: FIXED_WITH_MYSQL_ROW_LOCK
+    sse_access_expiry_recovery: FIXED
+  real_user_bugfix_validation:
+    chromium_invalid_cookie_recovery: PASSED
+    chromium_complete_account_lifecycle: PASSED
+    mysql_concurrent_admin_removal: PASSED
+    frontend_unit: PASSED
+    frontend_typecheck: PASSED
+    frontend_production_build: PASSED
+  targeted_scope:
+    - jwt_authentication
+    - refresh_rotation_and_session_recovery
+    - admin_user_management
+    - auth_bff_and_real_browser_paths
+  targeted_checks:
+    immutable_design: PASSED
+    architecture_boundary: PASSED
+    independent_module_checks_13_of_13: PASSED
+    backend_lint_and_typecheck: PASSED
+    backend_unit_9: PASSED
+    backend_contract_2: PASSED
+    mysql_redis_integration_4: PASSED
+    frontend_unit_61: PASSED
+    frontend_lint: PASSED
+    frontend_typecheck: PASSED
+    frontend_production_build: PASSED
+    openapi_frontend_contract: PASSED
+    chromium_real_user_flow_2: PASSED
+    static_security_scan: PASSED
+    dependency_audit: PASSED
+    backend_docker_smoke: PASSED
+    frontend_docker_smoke: PASSED
+  phase7_check: NOT_RUN_BY_CURRENT_SCOPE
+  reason: >
+    按用户最新指令仅系统验收 Phase 7.5 新增模块及其真实用户纵向链路；
+    本阶段未修改诊断算法，因此未重跑包含 Phase 6 外部模型 calibration、
+    regression 或 holdout 的完整 phase7-check。
 
 data_assets:
   pilot_medium_v1:

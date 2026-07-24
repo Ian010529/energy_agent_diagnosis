@@ -8,6 +8,7 @@ from energy_agent.cases.service import CaseService
 from energy_agent.catalog.service import CatalogService
 from energy_agent.evidence.service import EvidenceService
 from energy_agent.timeline.service import TimelineService
+from energy_agent.users.service import AuthService, UserService
 
 
 def get_container(request: Request) -> ApplicationContainer:
@@ -34,8 +35,18 @@ def get_evidence_service(request: Request) -> EvidenceService:
     return get_container(request).services.evidence
 
 
+def get_auth_service(request: Request) -> AuthService:
+    return get_container(request).services.auth
+
+
+def get_user_service(request: Request) -> UserService:
+    return get_container(request).services.users
+
+
 DiagnosisServiceDependency = Annotated[DiagnosisService, Depends(get_diagnosis_service)]
 CaseServiceDependency = Annotated[CaseService, Depends(get_case_service)]
 CatalogServiceDependency = Annotated[CatalogService, Depends(get_catalog_service)]
 TimelineServiceDependency = Annotated[TimelineService, Depends(get_timeline_service)]
 EvidenceServiceDependency = Annotated[EvidenceService, Depends(get_evidence_service)]
+AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
+UserServiceDependency = Annotated[UserService, Depends(get_user_service)]

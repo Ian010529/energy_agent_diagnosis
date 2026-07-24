@@ -2,7 +2,9 @@
 
 一期后端采用 FastAPI 模块化单体，保留 gateway、agent、retrieval、tool 和 memory
 逻辑边界。Phase 1–6 后端包含诊断主链路、完整混合 RAG、人工协作、案例生命周期、
-异步索引、图谱增强和试点硬化；Phase 7 已完成前端 MVP 与产品闭环。
+异步索引、图谱增强和试点硬化；Phase 7 已完成前端 MVP 与产品闭环。Phase 7.5
+增加管理员创建的单角色用户、Argon2id 密码、Access/Refresh JWT、Refresh 轮换、
+首次登录强制改密和账户管理；系统不提供公开注册或自助找回密码。
 
 Phase 7 已在 `frontend/` 中提供能源诊断工作台。浏览器只访问 Next.js BFF，
 由服务端代理向 FastAPI 注入内部认证信息；内部 API Key 不进入浏览器 bundle。
@@ -56,6 +58,18 @@ make frontend-lint frontend-typecheck frontend-test frontend-build
 
 服务端变量见 `.env.example`。`BACKEND_INTERNAL_API_KEY` 不得改为
 `NEXT_PUBLIC_*`；生产模式不提供浏览器角色切换。
+
+JWT 模式需在 `.env` 配置不同的、至少 32 字节的
+`JWT_ACCESS_SECRET` 与 `JWT_REFRESH_SECRET`，并设置 `AUTH_MODE=jwt`、
+`FRONTEND_AUTH_MODE=jwt`。生产环境使用 `AUTH_COOKIE_SECURE=true`。迁移后仅在
+没有 ACTIVE admin 时执行：
+
+```bash
+make bootstrap-admin
+```
+
+浏览器只接收用户资料；Access/Refresh JWT 均由 BFF 保存到 HttpOnly Cookie，
+签名密钥仅存在于后端。
 
 ## Phase 3 operations
 

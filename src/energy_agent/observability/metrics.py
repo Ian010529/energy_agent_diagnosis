@@ -3,6 +3,14 @@ from prometheus_client import Counter, Gauge, Histogram
 HTTP_REQUESTS = Counter(
     "energy_http_requests_total", "HTTP requests", ["method", "route", "status"]
 )
+AUTH_ATTEMPTS = Counter("energy_auth_attempts_total", "Authentication attempts", ["outcome"])
+AUTH_REFRESH = Counter("energy_auth_refresh_total", "Refresh attempts", ["outcome"])
+AUTH_SESSIONS_REVOKED = Counter(
+    "energy_auth_sessions_revoked_total", "Revoked authentication sessions", ["reason_category"]
+)
+USER_ADMIN_ACTIONS = Counter(
+    "energy_user_admin_actions_total", "Administrative user actions", ["action", "outcome"]
+)
 HTTP_DURATION = Histogram(
     "energy_http_request_duration_seconds", "HTTP request duration", ["method", "route"]
 )

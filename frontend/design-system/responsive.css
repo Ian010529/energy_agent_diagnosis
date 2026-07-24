@@ -5,6 +5,7 @@
   .workspace { grid-template-columns: minmax(14rem, 15.5rem) minmax(0, 1fr); }
   .workspace > .inspector { position: fixed; right: 0; top: 0; bottom: 0; width: min(24rem, 88vw); z-index: 20; box-shadow: -12px 0 32px rgba(0,0,0,.12); }
   .workspace > .inspector[data-collapsed="true"] { display: none; }
+  .users-toolbar { grid-template-columns: minmax(12rem, 1fr) minmax(9rem, 1fr); }
 }
 @media (max-width: 47.9375rem) {
   .app-frame { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 3.75rem; }
@@ -25,6 +26,7 @@
   .command-trigger { right: var(--space-3); bottom: 4.25rem; width: 2.75rem; padding: 0; justify-content: center; }
   .command-trigger span, .command-trigger kbd { display: none; }
   .reviews-layout { grid-template-columns: 1fr; gap: var(--space-5); }
+  .users-toolbar { grid-template-columns: 1fr; }
   .responsive-drawer { width: 100vw !important; }
 }
 @media (pointer: coarse) {

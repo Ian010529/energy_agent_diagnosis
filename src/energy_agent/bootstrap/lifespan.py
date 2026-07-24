@@ -11,6 +11,7 @@ from energy_agent.bootstrap.repositories import build_repositories
 from energy_agent.bootstrap.services import build_services
 from energy_agent.core.config import Settings
 from energy_agent.core.context import get_context
+from energy_agent.core.errors import MilvusUnavailableError
 from energy_agent.core.ids import new_id
 from energy_agent.graph.service import GraphService
 from energy_agent.memory.session_store import RedisSessionStore
@@ -73,6 +74,7 @@ def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncConte
         engine = create_mysql_engine(settings.mysql_dsn)
         session_factory = create_session_factory(engine)
         redis = create_redis_client(settings.redis_url)
+        rate_limiter = RedisRateLimiter(redis)
         influx_client = InfluxDBClient(
             url=settings.influxdb_url,
             token=settings.influxdb_token,
@@ -138,20 +140,26 @@ def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncConte
             if settings.embedding_mode == "openai_compatible"
             else None
         )
-        vector_search = (
-            MilvusVectorProvider(
-                uri=settings.milvus_uri,
-                token=settings.milvus_token,
-                manual_collection=settings.milvus_manual_collection,
-                ticket_collection=settings.milvus_ticket_collection,
-                case_collection=settings.milvus_case_collection,
-                dimension=settings.milvus_vector_dimension,
-                metric_type=settings.milvus_metric_type,
-                circuit_breaker=circuit_breakers.get("milvus"),
-            )
-            if settings.retrieval_mode == "hybrid"
-            else None
-        )
+        vector_search = None
+        if settings.retrieval_mode == "hybrid":
+            try:
+                vector_search = MilvusVectorProvider(
+                    uri=settings.milvus_uri,
+                    token=settings.milvus_token,
+                    manual_collection=settings.milvus_manual_collection,
+                    ticket_collection=settings.milvus_ticket_collection,
+                    case_collection=settings.milvus_case_collection,
+                    dimension=settings.milvus_vector_dimension,
+                    metric_type=settings.milvus_metric_type,
+                    circuit_breaker=circuit_breakers.get("milvus"),
+                )
+            except MilvusUnavailableError:
+                log_event(
+                    logger,
+                    logging.WARNING,
+                    "milvus_startup_degraded",
+                    error_code=MilvusUnavailableError.code,
+                )
         reranker = (
             HttpRerankerProvider(
                 base_url=settings.rerank_base_url or "",
@@ -178,7 +186,17 @@ def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncConte
         if minio:
             await minio.ensure_bucket()
         if vector_search:
-            await vector_search.ensure_collections()
+            try:
+                await vector_search.ensure_collections()
+            except MilvusUnavailableError:
+                await _close("milvus", vector_search.close())
+                vector_search = None
+                log_event(
+                    logger,
+                    logging.WARNING,
+                    "milvus_startup_degraded",
+                    error_code=MilvusUnavailableError.code,
+                )
 
         async def model_rewrite(payload: dict[str, object]) -> object:
             if not model:
@@ -255,11 +273,12 @@ def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncConte
             memory=memory,
             tracer=tracer,
             circuit_breakers=circuit_breakers,
+            rate_limiter=rate_limiter,
         )
         app.state.container = ApplicationContainer(
             settings=settings,
             tracer=tracer,
-            rate_limiter=RedisRateLimiter(redis),
+            rate_limiter=rate_limiter,
             repositories=repositories,
             providers=providers,
             services=services,

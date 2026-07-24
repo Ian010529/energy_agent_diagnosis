@@ -17,8 +17,11 @@ from energy_agent.indexing.handlers import (
     PermanentIndexError,
     StaleIndexEventError,
 )
-from energy_agent.indexing.ports import IndexAuditPort, IndexMessagePort
-from energy_agent.indexing.repository import IndexRepository
+from energy_agent.indexing.ports import (
+    IndexAuditPort,
+    IndexConsumerRepositoryPort,
+    IndexMessagePort,
+)
 from energy_agent.observability.logging import log_event
 from energy_agent.observability.metrics import (
     GRAPH_PROJECTION,
@@ -36,7 +39,7 @@ class IndexConsumer:
     def __init__(
         self,
         *,
-        repository: IndexRepository,
+        repository: IndexConsumerRepositoryPort,
         handlers: IndexHandlers,
         rabbitmq: IndexMessagePort,
         tracer: Tracer,

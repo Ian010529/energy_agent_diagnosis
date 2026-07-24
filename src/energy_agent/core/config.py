@@ -15,8 +15,19 @@ class Settings(BaseSettings):
 
     app_name: str = "energy-agent"
     app_env: str = "local"
-    auth_mode: Literal["development_headers", "trusted_headers"] = "development_headers"
+    auth_mode: Literal["development_headers", "trusted_headers", "jwt"] = "development_headers"
     internal_api_key: str | None = None
+    jwt_access_secret: str | None = None
+    jwt_refresh_secret: str | None = None
+    jwt_issuer: str = "energy-agent"
+    jwt_access_audience: str = "energy-agent-api"
+    jwt_refresh_audience: str = "energy-agent-refresh"
+    jwt_access_ttl_minutes: int = Field(default=15, ge=1)
+    jwt_refresh_ttl_days: int = Field(default=7, ge=1)
+    bootstrap_admin_username: str | None = None
+    bootstrap_admin_password: str | None = None
+    bootstrap_admin_display_name: str | None = None
+    bootstrap_admin_email: str | None = None
     log_level: str = "INFO"
     log_format: Literal["console", "json"] = "console"
     mysql_dsn: str = "mysql+aiomysql://energy:energy_dev@localhost:3306/energy_agent"
@@ -118,6 +129,9 @@ class Settings(BaseSettings):
     rate_limit_review_per_minute: int = Field(default=10, ge=1)
     rate_limit_case_write_per_minute: int = Field(default=10, ge=1)
     rate_limit_stream_concurrent: int = Field(default=2, ge=1)
+    rate_limit_auth_login_username: int = Field(default=5, ge=1)
+    rate_limit_auth_login_source: int = Field(default=20, ge=1)
+    rate_limit_auth_refresh_per_minute: int = Field(default=30, ge=1)
     request_body_max_bytes: int = Field(default=1_048_576, ge=1_024)
     cors_allow_origins: str = ""
     worker_metrics_port: int = Field(default=9101, ge=1024, le=65_535)
@@ -128,10 +142,19 @@ class Settings(BaseSettings):
             raise ValueError("development_headers authentication is limited to local and test")
         if self.auth_mode == "trusted_headers" and not self.internal_api_key:
             raise ValueError("INTERNAL_API_KEY is required for trusted_headers authentication")
-        if self.pilot_mode and (self.auth_mode != "trusted_headers" or not self.internal_api_key):
-            raise ValueError(
-                "PILOT_MODE requires trusted_headers authentication and INTERNAL_API_KEY"
-            )
+        if self.auth_mode == "jwt":
+            if not self.internal_api_key:
+                raise ValueError("INTERNAL_API_KEY is required for JWT authentication")
+            if not self.jwt_access_secret or len(self.jwt_access_secret.encode()) < 32:
+                raise ValueError("JWT_ACCESS_SECRET must contain at least 32 bytes")
+            if not self.jwt_refresh_secret or len(self.jwt_refresh_secret.encode()) < 32:
+                raise ValueError("JWT_REFRESH_SECRET must contain at least 32 bytes")
+            if self.jwt_access_secret == self.jwt_refresh_secret:
+                raise ValueError("Access and refresh JWT secrets must differ")
+        if self.pilot_mode and (
+            self.auth_mode not in {"trusted_headers", "jwt"} or not self.internal_api_key
+        ):
+            raise ValueError("PILOT_MODE requires gateway authentication and INTERNAL_API_KEY")
         if self.index_execution_mode == "sync" and self.app_env not in {"local", "test"}:
             raise ValueError("INDEX_EXECUTION_MODE=sync is limited to local and test")
         if self.graph_mode == "neo4j" and not self.neo4j_password:

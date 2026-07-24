@@ -37,6 +37,8 @@ from energy_agent.retrieval.service import RetrievalService
 from energy_agent.timeline.repository import TimelineRepository
 from energy_agent.timeline.service import TimelineService
 from energy_agent.tools.registry import ToolRegistry
+from energy_agent.users.repository import RefreshSessionRepository, UserRepository
+from energy_agent.users.service import AuthService, UserService
 
 
 @dataclass(slots=True)
@@ -52,6 +54,8 @@ class RepositoryContainer:
     reviews: DiagnosisReviewRepository
     catalog: CatalogRepository
     timeline: TimelineRepository
+    users: UserRepository
+    auth_sessions: RefreshSessionRepository
 
 
 @dataclass(slots=True)
@@ -79,6 +83,8 @@ class ServiceContainer:
     evidence: EvidenceService
     retrieval: RetrievalService
     graph: GraphService
+    auth: AuthService
+    users: UserService
 
 
 @dataclass(slots=True)

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { QueryProvider } from "@/lib/query/provider";
-import { NavigationRail } from "@/components/workspace/navigation-rail";
-import { CommandMenu } from "@/components/workspace/command-menu";
+import { AppFrame } from "@/components/workspace/app-frame";
 import "@/design-system/primitives.css";
 import "@/design-system/semantic-light.css";
 import "@/design-system/semantic-dark.css";
@@ -21,11 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body>
         <QueryProvider>
-          <div className="app-frame">
-            <NavigationRail />
-            <main className="main-surface">{children}</main>
-            <CommandMenu />
-          </div>
+          <AppFrame>{children}</AppFrame>
         </QueryProvider>
       </body>
     </html>

@@ -4,6 +4,7 @@ from energy_agent.bootstrap.container import (
     RepositoryContainer,
     ServiceContainer,
 )
+from energy_agent.bootstrap.diagnosis_runtime import DefaultDiagnosisRuntimeFactory
 from energy_agent.cases.service import CaseService
 from energy_agent.catalog.service import CatalogService
 from energy_agent.core.config import Settings
@@ -14,10 +15,13 @@ from energy_agent.observability.tracing import Tracer
 from energy_agent.persistence.repositories.review_recorder import (
     RepositoryDiagnosisReviewRecorder,
 )
+from energy_agent.reliability.rate_limit import RateLimiter
 from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.retrieval.service import RetrievalService
 from energy_agent.timeline.service import TimelineService
 from energy_agent.tools.registry import ToolRegistry
+from energy_agent.users.jwt import JWTCodec
+from energy_agent.users.service import AuthService, UserService
 
 
 def build_services(
@@ -30,6 +34,7 @@ def build_services(
     memory: RedisSessionStore,
     tracer: Tracer,
     circuit_breakers: CircuitBreakerRegistry,
+    rate_limiter: RateLimiter,
 ) -> ServiceContainer:
     review_recorder = RepositoryDiagnosisReviewRecorder(repositories.reviews)
     timeline = TimelineService(
@@ -47,12 +52,15 @@ def build_services(
             results=repositories.results,
             step_logs=repositories.steps,
             memory=memory,
-            tools=tools,
+            runtime_factory=DefaultDiagnosisRuntimeFactory(
+                tools=tools,
+                tracer=tracer,
+                model=providers.model,
+                circuit_breakers=circuit_breakers,
+            ),
             tracer=tracer,
-            model_gateway=providers.model,
             audit=repositories.audit,
             alarm_dedup=repositories.alarm_dedup,
-            circuit_breakers=circuit_breakers,
             timeline=timeline,
         ),
         cases=CaseService(
@@ -81,4 +89,17 @@ def build_services(
         ),
         retrieval=retrieval,
         graph=providers.graph,
+        auth=AuthService(
+            repositories.users,
+            repositories.auth_sessions,
+            repositories.audit,
+            JWTCodec(settings),
+            rate_limiter,
+            settings,
+        ),
+        users=UserService(
+            repositories.users,
+            repositories.auth_sessions,
+            repositories.audit,
+        ),
     )

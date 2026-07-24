@@ -5,8 +5,10 @@ from energy_agent.agent.ports import (
     AuditPort,
     DiagnosisResultPort,
     DiagnosisRunPort,
+    DiagnosisRuntimeFactoryPort,
     DiagnosisSessionPort,
     DiagnosisStepLogPort,
+    SessionMemoryPort,
 )
 from energy_agent.agent.session_service import SessionService
 from energy_agent.contracts.diagnosis import (
@@ -16,12 +18,8 @@ from energy_agent.contracts.diagnosis import (
     DiagnosisResponse,
 )
 from energy_agent.core.context import ActorContext
-from energy_agent.memory.session_store import RedisSessionStore
-from energy_agent.model.gateway import ModelGateway
 from energy_agent.observability.tracing import Tracer
-from energy_agent.reliability.registry import CircuitBreakerRegistry
 from energy_agent.timeline.ports import TimelineWriter
-from energy_agent.tools.registry import ToolRegistry
 
 
 class DiagnosisService:
@@ -34,13 +32,11 @@ class DiagnosisService:
         runs: DiagnosisRunPort,
         results: DiagnosisResultPort,
         step_logs: DiagnosisStepLogPort,
-        memory: RedisSessionStore,
-        tools: ToolRegistry,
+        memory: SessionMemoryPort,
+        runtime_factory: DiagnosisRuntimeFactoryPort,
         tracer: Tracer,
-        model_gateway: ModelGateway | None = None,
         audit: AuditPort | None = None,
         alarm_dedup: AlarmDedupPort | None = None,
-        circuit_breakers: CircuitBreakerRegistry | None = None,
         timeline: TimelineWriter | None = None,
     ) -> None:
         execution = DiagnosisExecutionService(
@@ -49,12 +45,10 @@ class DiagnosisService:
             results=results,
             step_logs=step_logs,
             memory=memory,
-            tools=tools,
+            runtime_factory=runtime_factory,
             tracer=tracer,
-            model_gateway=model_gateway,
             audit=audit,
             alarm_dedup=alarm_dedup,
-            circuit_breakers=circuit_breakers,
             timeline=timeline,
         )
         self._execution = execution

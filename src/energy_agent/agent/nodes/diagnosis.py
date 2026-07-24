@@ -1,10 +1,10 @@
 import re
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
 
 from energy_agent.agent.events import DiagnosisEventEmitter
+from energy_agent.agent.ports import MemoryWriterPort, ModelGenerationPort, ToolExecutorPort
 from energy_agent.agent.state import (
     AlarmContext,
     ClarificationQuestion,
@@ -20,10 +20,9 @@ from energy_agent.core.time import utc_now
 from energy_agent.guardrails.contracts import GuardrailStatus, RecommendedAction
 from energy_agent.guardrails.risk import classify_action
 from energy_agent.guardrails.service import GuardrailService
-from energy_agent.model.gateway import (
+from energy_agent.model.contracts import (
     CandidateCauseEnvelope,
     ClarificationEnvelope,
-    ModelGateway,
 )
 from energy_agent.observability.tracing import Tracer
 from energy_agent.templates.registry import (
@@ -33,9 +32,7 @@ from energy_agent.templates.registry import (
 )
 from energy_agent.templates.rules import evaluate_candidate_rules
 from energy_agent.tools.contracts import ToolResult, ToolStatus
-from energy_agent.tools.executor import ToolExecutor
 
-MEMORY_WRITER = Callable[[DiagnosisState], Awaitable[None]]
 _ALARM_ID = re.compile(r"(?<![A-Za-z0-9_.:-])((?:EVAL-)?ALARM-[A-Za-z0-9_.:-]+)", re.I)
 _DEVICE_ID = re.compile(
     r"(?<![A-Za-z0-9_.:-])([A-Za-z0-9_.:-]*(?:PCS|PV_INVERTER|PV)-[A-Za-z0-9_.:-]+)",
@@ -45,11 +42,11 @@ _DEVICE_ID = re.compile(
 
 @dataclass(frozen=True, slots=True)
 class DiagnosisNodeDependencies:
-    executor: ToolExecutor
+    executor: ToolExecutorPort
     tracer: Tracer
     templates: TemplateRegistry
     guardrails: GuardrailService
-    model: ModelGateway | None
+    model: ModelGenerationPort | None
     emitter: DiagnosisEventEmitter
 
 
@@ -93,7 +90,7 @@ def _tool_summary(name: str, result: ToolResult) -> ToolResultSummary:
 def build_diagnosis_nodes(
     dependencies: DiagnosisNodeDependencies,
     *,
-    memory_writer: MEMORY_WRITER,
+    memory_writer: MemoryWriterPort,
 ) -> dict[str, Any]:
     executor = dependencies.executor
     tracer = dependencies.tracer
@@ -103,7 +100,7 @@ def build_diagnosis_nodes(
     emitter = dependencies.emitter
     tool_data: dict[str, Any] = {}
     planning_allowed_tools = {
-        *executor.registry.names,
+        *executor.tool_names,
         # Neo4j is optional. Older/embedded registries may omit the adapter;
         # execution then produces an explicit degraded Tool result.
         "query_graph_relations",

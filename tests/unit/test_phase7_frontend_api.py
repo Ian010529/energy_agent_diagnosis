@@ -29,7 +29,6 @@ from energy_agent.core.idempotency import request_fingerprint
 from energy_agent.evidence.service import EvidenceService
 from energy_agent.observability.tracing import LocalTracer
 from energy_agent.timeline.contracts import TimelineEventType, timeline_event_id
-from energy_agent.tools.registry import ToolRegistry
 
 
 def evidence_service(**overrides: object) -> EvidenceService:
@@ -199,6 +198,7 @@ def diagnosis_service(
         results=SimpleNamespace(),
         step_logs=SimpleNamespace(create=AsyncMock()),
         memory=SimpleNamespace(save=AsyncMock(), get=AsyncMock(return_value=None)),
+        runtime_factory=SimpleNamespace(create=lambda **_: SimpleNamespace()),
     )
     service = DiagnosisService(
         sessions=dependencies.sessions,
@@ -206,7 +206,7 @@ def diagnosis_service(
         results=dependencies.results,
         step_logs=dependencies.step_logs,
         memory=dependencies.memory,
-        tools=ToolRegistry(),
+        runtime_factory=dependencies.runtime_factory,
         tracer=LocalTracer(),
         alarm_dedup=alarm_dedup,
     )
@@ -255,7 +255,7 @@ async def test_create_session_idempotency_replay_precedes_alarm_dedup() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cancelled_stream_restores_retryable_session(monkeypatch) -> None:
+async def test_cancelled_stream_restores_retryable_session() -> None:
     service, dependencies = diagnosis_service()
     persisted = SessionMemoryPayload(
         session_id="session-1",
@@ -277,9 +277,7 @@ async def test_cancelled_stream_restores_retryable_session(monkeypatch) -> None:
         trace_id="trace-1",
     )
     graph = SimpleNamespace(ainvoke=AsyncMock(side_effect=asyncio.CancelledError))
-    monkeypatch.setattr(
-        "energy_agent.agent.runtime_factory.build_diagnosis_graph", lambda *args, **kwargs: graph
-    )
+    dependencies.runtime_factory.create = lambda **_: graph
 
     with pytest.raises(asyncio.CancelledError):
         await service.diagnose(DiagnosisChatRequest(session_id="session-1", message="diagnose"))

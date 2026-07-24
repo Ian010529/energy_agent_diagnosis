@@ -1,10 +1,10 @@
-from energy_agent.agent.state import DiagnosisState
 from energy_agent.contracts.diagnosis_components import CandidateCause
 from energy_agent.guardrails.contracts import GuardrailDecision, GuardrailStatus
 from energy_agent.guardrails.generation import check_generation
 from energy_agent.guardrails.input import check_input
 from energy_agent.guardrails.output import check_output
 from energy_agent.guardrails.planning import check_plan
+from energy_agent.guardrails.ports import GuardrailStatePort
 from energy_agent.observability.metrics import (
     GUARDRAIL_DECISIONS,
     UNSUPPORTED_CLAIMS,
@@ -27,7 +27,7 @@ class GuardrailService:
             UNSUPPORTED_CLAIMS.labels(reason="graph_only").inc()
         return decision
 
-    def check_input(self, state: DiagnosisState) -> GuardrailDecision:
+    def check_input(self, state: GuardrailStatePort) -> GuardrailDecision:
         return self._record(
             "input",
             check_input(
@@ -38,7 +38,7 @@ class GuardrailService:
             ),
         )
 
-    def check_plan(self, state: DiagnosisState, allowed_tools: set[str]) -> GuardrailDecision:
+    def check_plan(self, state: GuardrailStatePort, allowed_tools: set[str]) -> GuardrailDecision:
         return self._record(
             "planning",
             check_plan(
@@ -51,7 +51,7 @@ class GuardrailService:
         )
 
     def check_generation(
-        self, state: DiagnosisState, candidates: list[CandidateCause] | None = None
+        self, state: GuardrailStatePort, candidates: list[CandidateCause] | None = None
     ) -> GuardrailDecision:
         return self._record(
             "generation",
@@ -61,7 +61,7 @@ class GuardrailService:
             ),
         )
 
-    def check_output(self, state: DiagnosisState) -> GuardrailDecision:
+    def check_output(self, state: GuardrailStatePort) -> GuardrailDecision:
         response = state.final_response or {}
         raw_safety_notes = response.get("safety_notes", [])
         safety_notes = (
@@ -81,7 +81,7 @@ class GuardrailService:
 
     def evaluate(
         self,
-        state: DiagnosisState,
+        state: GuardrailStatePort,
         candidates: list[CandidateCause] | None = None,
     ) -> GuardrailDecision:
         generation = self.check_generation(state, candidates)
@@ -104,7 +104,7 @@ class GuardrailService:
         )
 
     @staticmethod
-    def supported_candidates(state: DiagnosisState) -> list[CandidateCause]:
+    def supported_candidates(state: GuardrailStatePort) -> list[CandidateCause]:
         return [
             candidate
             for candidate in state.candidate_causes

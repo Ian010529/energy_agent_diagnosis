@@ -35,6 +35,10 @@ class ToolExecutor:
         self.tool_logger = tool_logger
         self.circuit_breakers = circuit_breakers
 
+    @property
+    def tool_names(self) -> frozenset[str]:
+        return self.registry.names
+
     async def execute(self, name: str, arguments: dict[str, object], trace_id: str) -> ToolResult:
         self.calls += 1
         if self.calls > MAX_TOOL_CALLS_PER_RUN:

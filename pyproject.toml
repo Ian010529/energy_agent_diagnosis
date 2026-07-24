@@ -25,6 +25,8 @@ dependencies = [
   "uvicorn[standard]>=0.35,<1",
   "prometheus-client>=0.22,<1",
   "aiomysql>=0.2,<1",
+  "pwdlib[argon2]>=0.3.0",
+  "pyjwt>=2.13.0",
 ]
 
 [dependency-groups]

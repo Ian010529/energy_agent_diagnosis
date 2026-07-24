@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
-import { backendHeaders, backendUnavailableResponse, backendUrl } from "@/lib/api/server-client";
+import { backendHeaders, backendUnavailableResponse, backendUrl, sameOrigin } from "@/lib/api/server-client";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ sessionId: string }> }) {
+  if (!sameOrigin(request)) return Response.json(
+    { error: { code: "CSRF_REJECTED" } },
+    { status: 403, headers: { "Cache-Control": "no-store" } },
+  );
   const { sessionId } = await context.params;
   const controller = new AbortController();
   request.signal.addEventListener("abort", () => controller.abort(), { once: true });

@@ -16,6 +16,7 @@ from energy_agent.persistence.repositories.diagnosis_run import (
 from energy_agent.persistence.repositories.diagnosis_session import DiagnosisSessionRepository
 from energy_agent.persistence.repositories.diagnosis_step_log import DiagnosisStepLogRepository
 from energy_agent.timeline.repository import TimelineRepository
+from energy_agent.users.repository import RefreshSessionRepository, UserRepository
 
 
 def build_repositories(
@@ -34,4 +35,6 @@ def build_repositories(
         reviews=DiagnosisReviewRepository(sessions),
         catalog=CatalogRepository(sessions),
         timeline=TimelineRepository(sessions),
+        users=UserRepository(sessions),
+        auth_sessions=RefreshSessionRepository(sessions),
     )

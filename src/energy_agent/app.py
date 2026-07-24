@@ -6,6 +6,7 @@ from fastapi.responses import Response
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 
+from energy_agent.api.auth_sessions import router as auth_sessions_router
 from energy_agent.api.cases import router as cases_router
 from energy_agent.api.catalog import router as catalog_router
 from energy_agent.api.diagnosis import router as diagnosis_router
@@ -14,9 +15,16 @@ from energy_agent.api.evidence import router as evidence_router
 from energy_agent.api.health import router as health_router
 from energy_agent.api.metrics import router as metrics_router
 from energy_agent.api.session_queries import router as session_queries_router
+from energy_agent.api.users import router as users_router
 from energy_agent.bootstrap.lifespan import build_lifespan
 from energy_agent.core.config import Settings, get_settings
 from energy_agent.core.context import ActorRole, RequestContext, bind_context, reset_context
+from energy_agent.core.errors import (
+    AuthenticationError,
+    AuthPasswordChangeRequiredError,
+    AuthTokenMissingError,
+    DomainError,
+)
 from energy_agent.core.ids import trusted_or_new_id
 from energy_agent.observability.logging import log_event
 from energy_agent.observability.metrics import (
@@ -27,6 +35,15 @@ from energy_agent.observability.metrics import (
 )
 
 logger = logging.getLogger(__name__)
+
+_AUTH_SERVICE_RATE_LIMIT_PATHS = {
+    "/api/v1/auth/login",
+    "/api/v1/auth/refresh",
+}
+
+
+def _uses_generic_write_rate_limit(method: str, path: str) -> bool:
+    return method in {"POST", "PUT", "PATCH"} and path not in _AUTH_SERVICE_RATE_LIMIT_PATHS
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -85,6 +102,66 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         started = monotonic()
         try:
+            if selected_settings.auth_mode == "jwt" and request.url.path.startswith("/api/v1/"):
+                if request.headers.get("X-Internal-API-Key") != selected_settings.internal_api_key:
+                    exc = AuthenticationError("Internal API authentication failed")
+                    return error_response(
+                        code=exc.code,
+                        message=exc.safe_message,
+                        status_code=401,
+                    )
+                public = {
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/refresh",
+                }
+                if request.url.path not in public:
+                    authorization = request.headers.get("authorization", "")
+                    if not authorization.startswith("Bearer "):
+                        exc = AuthTokenMissingError("Access token is required")
+                        return error_response(
+                            code=exc.code,
+                            message=exc.safe_message,
+                            status_code=401,
+                        )
+                    try:
+                        (
+                            actor,
+                            profile,
+                        ) = await request.app.state.container.services.auth.authenticate_access(
+                            authorization[7:]
+                        )
+                        request.scope["energy_actor"] = actor
+                        request.scope["energy_user"] = profile
+                        actor_id = actor.actor_id
+                        actor_role = actor.actor_role
+                        reset_context(token)
+                        token = bind_context(
+                            RequestContext(
+                                trace_id=trace_id,
+                                request_id=request_id,
+                                actor_id=actor_id,
+                                actor_role=actor_role,
+                            )
+                        )
+                        allowed_during_password_change = {
+                            "/api/v1/auth/me",
+                            "/api/v1/auth/change-password",
+                            "/api/v1/auth/logout",
+                            "/api/v1/auth/logout-all",
+                        }
+                        if (
+                            profile.must_change_password
+                            and request.url.path not in allowed_during_password_change
+                        ):
+                            raise AuthPasswordChangeRequiredError("Password change is required")
+                    except DomainError as exc:
+                        return error_response(
+                            code=exc.code,
+                            message=exc.safe_message,
+                            status_code=403
+                            if isinstance(exc, AuthPasswordChangeRequiredError)
+                            else 401,
+                        )
             if request.method in {"POST", "PUT", "PATCH"}:
                 content_length = request.headers.get("content-length")
                 if (
@@ -104,11 +181,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         message="Request body exceeds the configured limit",
                         status_code=413,
                     )
-            if selected_settings.rate_limit_enabled and request.method in {
-                "POST",
-                "PUT",
-                "PATCH",
-            }:
+            if selected_settings.rate_limit_enabled and _uses_generic_write_rate_limit(
+                request.method, request.url.path
+            ):
                 path = request.url.path
                 group = (
                     "review"
@@ -183,6 +258,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             reset_context(token)
 
     install_error_handlers(app)
+    app.include_router(auth_sessions_router)
+    app.include_router(users_router)
     app.include_router(health_router)
     app.include_router(catalog_router)
     app.include_router(session_queries_router)
